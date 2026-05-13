@@ -214,6 +214,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void, onNext?: () => void, isSettings?: boolean }) {
   const [fbConnected, setFbConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [igConnected, setIgConnected] = useState(false);
+  const [isConnectingIg, setIsConnectingIg] = useState(false);
 
   useEffect(() => {
     const appId = process.env.NEXT_PUBLIC_META_APP_ID;
@@ -290,6 +292,15 @@ function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void
     });
   };
 
+  const connectInstagram = async () => {
+    setIsConnectingIg(true);
+    // Simulate fetching Instagram accounts connected to the FB page
+    setTimeout(() => {
+      setIgConnected(true);
+      setIsConnectingIg(false);
+    }, 1000);
+  };
+
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
       <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Connect Platforms</h2>
@@ -323,22 +334,38 @@ function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: igConnected ? 'rgba(16, 185, 129, 0.05)' : 'white', border: igConnected ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '16px', transition: 'all 0.3s' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '48px', height: '48px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>in</div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px' }}>Instagram Business</h4>
-              <p style={{ fontSize: '13px', color: 'var(--text-light)' }}>Connect via Facebook first</p>
+              <h4 style={{ fontWeight: 600, fontSize: '16px', color: igConnected ? '#065f46' : 'var(--text-color)' }}>Instagram Business</h4>
+              <p style={{ fontSize: '13px', color: igConnected ? '#059669' : 'var(--text-light)' }}>
+                {igConnected ? 'Connected via Facebook' : (fbConnected ? 'Ready to connect' : 'Connect via Facebook first')}
+              </p>
             </div>
           </div>
-          <button className="btn-secondary" style={{ padding: '10px 20px', fontSize: '14px', opacity: 0.5 }} disabled>Connect</button>
+          <button 
+            className="btn-secondary" 
+            style={{ 
+              padding: '10px 20px', fontSize: '14px', 
+              opacity: (fbConnected || igConnected) ? 1 : 0.5,
+              background: igConnected ? '#ecfdf5' : 'white',
+              color: igConnected ? '#059669' : 'var(--text-color)',
+              borderColor: igConnected ? '#34d399' : '#e2e8f0',
+              cursor: (fbConnected || igConnected) ? 'pointer' : 'not-allowed'
+            }} 
+            disabled={!fbConnected || igConnected || isConnectingIg}
+            onClick={connectInstagram}
+          >
+            {isConnectingIg ? 'Connecting...' : igConnected ? '✓ Connected' : 'Connect'}
+          </button>
         </div>
       </div>
 
       {!isSettings && (
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '32px' }}>
           {onBack && <button className="btn-secondary" onClick={onBack}>← Back</button>}
-          {onNext && <button className="btn-primary" onClick={onNext}>{fbConnected ? 'Continue →' : 'Skip & Continue →'}</button>}
+          {onNext && <button className="btn-primary" onClick={onNext}>{(fbConnected || igConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
         </div>
       )}
     </div>
