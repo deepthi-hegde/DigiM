@@ -380,13 +380,34 @@ function CampaignDashboard() {
   // New States
   const [freq, setFreq] = useState('3 times a week');
   const [maxAge, setMaxAge] = useState(35);
+  const [prompt, setPrompt] = useState('');
+  const [category, setCategory] = useState('Product Showcase');
+  const [gender, setGender] = useState('All');
+  const [generatedText, setGeneratedText] = useState('');
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      const response = await fetch('/api/campaign/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          maxAge,
+          gender,
+          freq,
+          category
+        })
+      });
+      const data = await response.json();
+      setGeneratedText(data.generated_text);
       setGenerated(true);
-    }, 2000); // Simulate AI generation delay
+    } catch (error) {
+      console.error("Failed to generate campaign", error);
+      alert("Error generating campaign");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -403,7 +424,7 @@ function CampaignDashboard() {
         <div style={{ flex: '1 1 400px' }}>
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Campaign Goal & Prompt</label>
-            <textarea className="input-field" placeholder="e.g., Promote our new summer silk collection..." rows={3}></textarea>
+            <textarea className="input-field" placeholder="e.g., Promote our new summer silk collection..." rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)}></textarea>
           </div>
 
           <div style={{ marginBottom: '24px' }}>
@@ -430,7 +451,12 @@ function CampaignDashboard() {
                 </div>
                 <div>
                   <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Category</span>
-                  <select className="input-field"><option>Product Showcase</option><option>Behind the Scenes</option><option>Promotions</option><option>Knowledge Info</option></select>
+                  <select className="input-field" value={category} onChange={(e) => setCategory(e.target.value)}>
+                    <option>Product Showcase</option>
+                    <option>Behind the Scenes</option>
+                    <option>Promotions</option>
+                    <option>Knowledge Info</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -441,7 +467,11 @@ function CampaignDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                  <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Gender</span>
-                 <select className="input-field"><option>All</option><option>Female</option><option>Male</option></select>
+                 <select className="input-field" value={gender} onChange={(e) => setGender(e.target.value)}>
+                   <option>All</option>
+                   <option>Female</option>
+                   <option>Male</option>
+                 </select>
               </div>
               <div>
                  <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Group: 18 - {maxAge}</span>
@@ -488,11 +518,10 @@ function CampaignDashboard() {
               <div style={{ background: 'linear-gradient(135deg, #a7f3d0 0%, #34d399 100%)', borderRadius: '16px', height: '240px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#064e3b', fontWeight: 700, fontSize: '20px', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.1)' }}>
                 [ AI Generated Textile Photo ]
               </div>
-              <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', flexGrow: 1, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)' }}>
+              <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', flexGrow: 1, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', whiteSpace: 'pre-wrap' }}>
                 <p style={{ fontSize: '15px', lineHeight: '1.7', color: 'var(--text-color)' }}>
                   <strong style={{ fontSize: '16px' }}>MarketFlow Silks</strong><br/><br/>
-                  Step into elegance with our new premium formal wear collection! 👔 Perfect for your next big event.<br/><br/>
-                  ✨ Visit our store today for an exclusive 20% discount. #FormalWear #LocalFashion
+                  {generatedText}
                 </p>
               </div>
               <button className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', marginTop: '24px', width: '100%', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)' }}>

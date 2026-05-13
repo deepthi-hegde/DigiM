@@ -17,6 +17,23 @@ app.add_middleware(
 app.include_router(meta_router, prefix="/api/meta", tags=["Meta API"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 
+from pydantic import BaseModel
+
+class CampaignRequest(BaseModel):
+    prompt: str
+    maxAge: int
+    gender: str
+    freq: str
+    category: str
+
+@app.post("/api/campaign/generate")
+def generate_campaign(payload: CampaignRequest):
+    # This would typically connect to an LLM like Gemini
+    return {
+        "status": "success",
+        "generated_text": f"Step into elegance with our new premium formal wear collection! 👔 Perfect for your next big event.\n\n✨ Target: {payload.gender}, up to {payload.maxAge} years.\nFrequency: {payload.freq}\n\nVisit our store today for an exclusive 20% discount. #FormalWear #LocalFashion"
+    }
+
 @app.get("/")
 def health_check():
     return {"status": "ok", "message": "MarketFlow AI Backend is running"}
