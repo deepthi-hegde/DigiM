@@ -17,14 +17,14 @@ app.add_middleware(
 app.include_router(meta_router, prefix="/api/meta", tags=["Meta API"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class CampaignRequest(BaseModel):
-    prompt: str
-    maxAge: int
-    gender: str
-    freq: str
-    category: str
+    prompt: str = Field(..., min_length=1)
+    maxAge: int = Field(..., ge=13, le=100)
+    gender: str = Field(..., min_length=1)
+    freq: str = Field(..., min_length=1)
+    category: str = Field(..., min_length=1)
 
 @app.post("/api/campaign/generate")
 def generate_campaign(payload: CampaignRequest):

@@ -211,7 +211,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
   );
 }
 
-function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void, onNext?: () => void, isSettings?: boolean }) {
+export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void, onNext?: () => void, isSettings?: boolean }) {
   const [fbConnected, setFbConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [igConnected, setIgConnected] = useState(false);
@@ -372,7 +372,7 @@ function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void
   );
 }
 
-function CampaignDashboard() {
+export function CampaignDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [aiManaged, setAiManaged] = useState(true);
