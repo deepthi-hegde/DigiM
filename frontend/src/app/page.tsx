@@ -374,6 +374,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
 
 export function CampaignDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [aiManaged, setAiManaged] = useState(true);
   
@@ -407,6 +408,31 @@ export function CampaignDashboard() {
       alert("Error generating campaign");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/campaign/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: generatedText,
+          tenant_id: 1 // Default tenant
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert("Published successfully! " + (data.message || ""));
+      } else {
+        alert("Failed to publish: " + data.detail);
+      }
+    } catch (error) {
+      console.error("Failed to publish", error);
+      alert("Error publishing campaign");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -524,8 +550,13 @@ export function CampaignDashboard() {
                   {generatedText}
                 </p>
               </div>
-              <button className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', marginTop: '24px', width: '100%', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)' }}>
-                Approve & Publish to Meta
+              <button 
+                className="btn-primary" 
+                style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', marginTop: '24px', width: '100%', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
+                onClick={handlePublish}
+                disabled={isPublishing}
+              >
+                {isPublishing ? 'Publishing...' : 'Approve & Publish to Meta'}
               </button>
             </div>
           )}

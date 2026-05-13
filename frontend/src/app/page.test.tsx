@@ -113,4 +113,67 @@ describe('CampaignDashboard Component', () => {
     consoleSpy.mockRestore();
     alertSpy.mockRestore();
   });
+
+  it('publishes generated campaign correctly', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    
+    // First, simulate generating the campaign
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ generated_text: "Here is your awesome ad!" })
+    });
+
+    render(<CampaignDashboard />);
+    fireEvent.click(screen.getByText('✨ Generate AI Content'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Here is your awesome ad!/i)).toBeTruthy();
+    });
+
+    // Now simulate publishing
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: "Published successfully!" })
+    });
+
+    const publishButton = screen.getByText('Approve & Publish to Meta');
+    fireEvent.click(publishButton);
+
+    expect(screen.getByText('Publishing...')).toBeTruthy();
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith('Published successfully! Published successfully!');
+    });
+    alertSpy.mockRestore();
+  });
+
+  it('handles publish error', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    
+    // Generate campaign
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ generated_text: "Test ad text" })
+    });
+
+    render(<CampaignDashboard />);
+    fireEvent.click(screen.getByText('✨ Generate AI Content'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Test ad text/i)).toBeTruthy();
+    });
+
+    // Simulate publish failure
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Publish failed"));
+
+    fireEvent.click(screen.getByText('Approve & Publish to Meta'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith('Error publishing campaign');
+    });
+
+    consoleSpy.mockRestore();
+    alertSpy.mockRestore();
+  });
 });

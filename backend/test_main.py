@@ -79,3 +79,44 @@ def test_campaign_generate_empty_string():
     }
     response = client.post("/api/campaign/generate", json=payload)
     assert response.status_code == 422
+
+# DIG-8 Tests: Publish Campaign
+def test_campaign_publish_no_account_connected():
+    # Attempt to publish with an unknown tenant_id
+    payload = {
+        "message": "Test message",
+        "tenant_id": 9999
+    }
+    response = client.post("/api/campaign/publish", json=payload)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "No Meta account connected"
+
+def test_campaign_publish_mock_success(monkeypatch):
+    # We need to simulate a connected MetaAccount in the database.
+    # Since we use an in-memory or a real DB without mocking get_db here easily,
+    # let's mock the get_db dependency directly.
+    from db.schema import MetaAccount
+    
+    class MockQuery:
+        def filter_by(self, **kwargs):
+            return self
+        def first(self):
+            return MetaAccount(tenant_id=1, page_id="pending_page_selection", page_name="Test", access_token="token")
+
+    class MockSession:
+        def query(self, *args, **kwargs):
+            return MockQuery()
+
+    from db.database import get_db
+    app.dependency_overrides[get_db] = lambda: MockSession()
+    
+    payload = {
+        "message": "Test message",
+        "tenant_id": 1
+    }
+    response = client.post("/api/campaign/publish", json=payload)
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+    assert "Mock published" in response.json()["message"]
+    
+    app.dependency_overrides.clear()
