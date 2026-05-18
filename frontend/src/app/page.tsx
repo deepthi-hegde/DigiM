@@ -6,6 +6,13 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "436151523456-testclientid.apps.googleusercontent.com";
 
+declare global {
+  interface Window {
+    FB: any;
+    fbAsyncInit: () => void;
+  }
+}
+
 function Stepper({ currentStep }: { currentStep: number }) {
   const steps = ["Account", "Profile", "Platforms", "Campaign"];
   return (
@@ -101,24 +108,22 @@ function Login({ onNext }: { onNext: () => void }) {
               size="large"
               width="300"
             />
-            {/* Dev bypass button for testing without a valid Google Client ID */}
-            {process.env.NODE_ENV === 'development' && (
-              <button 
-                onClick={onNext} 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px dashed #cbd5e1', 
-                  color: '#64748b', 
-                  padding: '8px 16px', 
-                  borderRadius: '20px', 
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  marginTop: '8px'
-                }}
-              >
-                (Dev Mode) Bypass Google SSO 
-              </button>
-            )}
+            {/* Demo bypass button for testing on live environments without a valid Google Client ID */}
+            <button 
+              onClick={onNext} 
+              style={{ 
+                background: 'transparent', 
+                border: '1px dashed #cbd5e1', 
+                color: '#64748b', 
+                padding: '8px 16px', 
+                borderRadius: '20px', 
+                fontSize: '12px',
+                cursor: 'pointer',
+                marginTop: '8px'
+              }}
+            >
+              Demo Mode (Bypass Google SSO) 
+            </button>
         </div>
       </div>
     </div>
