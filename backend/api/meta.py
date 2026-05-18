@@ -32,31 +32,53 @@ class ConnectMetaRequest(BaseModel):
 def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_db)):
     """
     Saves the Meta Page credentials to the database for the current tenant.
+    Automatically checks for linked Instagram accounts.
     """
+    # Try to find a linked Instagram account
+    ig_id = None
+    try:
+        ig_res = get_instagram_accounts(payload.page_id, payload.access_token)
+        ig_id = ig_res.get("instagram_business_account", {}).get("id")
+    except:
+        pass
+
     account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id, page_id=payload.page_id).first()
     if not account:
         account = MetaAccount(
             tenant_id=payload.tenant_id,
             page_id=payload.page_id,
             page_name=payload.page_name,
-            access_token=payload.access_token
+            access_token=payload.access_token,
+            ig_user_id=ig_id
         )
         db.add(account)
     else:
         account.access_token = payload.access_token
         account.page_name = payload.page_name
+        account.ig_user_id = ig_id
     
     db.commit()
-    return {"status": "success", "message": f"Connected {payload.page_name}"}
+    return {
+        "status": "success", 
+        "message": f"Connected {payload.page_name}",
+        "has_instagram": ig_id is not None
+    }
+
+# Simple in-memory cache for pages list to save API calls
+pages_cache = {}
 
 @router.get("/pages")
 def get_user_pages(user_access_token: str):
     """
     Fetch all Facebook Pages the user manages.
-    Requires 'pages_show_list' and 'pages_read_engagement' permissions.
     """
     if not user_access_token:
         raise HTTPException(status_code=400, detail="User access token required")
+
+    # Check cache
+    if user_access_token in pages_cache:
+        print("Returning cached pages list from memory")
+        return pages_cache[user_access_token]
 
     url = f"{META_GRAPH_URL}/me/accounts"
     params = {"access_token": user_access_token}
@@ -65,7 +87,9 @@ def get_user_pages(user_access_token: str):
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
         
-    return response.json()
+    data = response.json()
+    pages_cache[user_access_token] = data # Save to cache
+    return data
 
 @router.get("/instagram-accounts")
 def get_instagram_accounts(page_id: str, access_token: str):
@@ -109,7 +133,9 @@ def publish_to_facebook(payload: PublishRequest):
     
     response = requests.post(url, data=data)
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
+        error_detail = response.json()
+        message = error_detail.get("error", {}).get("message", str(error_detail))
+        raise HTTPException(status_code=response.status_code, detail=message)
         
     return response.json()
 

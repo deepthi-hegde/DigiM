@@ -43,12 +43,34 @@ describe('Platforms Component', () => {
       })
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.includes("/api/meta/pages")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            data: [{ id: "123", name: "MarketFlow Silks", access_token: "page_token" }]
+          })
+        });
+      }
+      if (url.includes("/api/meta/connect")) {
+        return Promise.resolve({ ok: true });
+      }
+      return Promise.reject(new Error("Unknown API Call: " + url));
+    });
 
     render(<Platforms />);
     const connectFbButton = screen.getAllByText('Connect', { selector: 'button' })[0];
     
     fireEvent.click(connectFbButton); // First connect button is Facebook
+
+    // Wait for the Page Selector to appear
+    await waitFor(() => {
+      expect(screen.getByText('Select Facebook Page')).toBeTruthy();
+    });
+
+    // Click confirm
+    const confirmButton = screen.getByText('Confirm & Connect');
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(screen.getByText('✓ Connected')).toBeTruthy();
@@ -56,7 +78,13 @@ describe('Platforms Component', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith("/api/meta/connect", expect.objectContaining({
-      method: "POST"
+      method: "POST",
+      body: JSON.stringify({
+        tenant_id: 1, 
+        page_id: "123",
+        page_name: "MarketFlow Silks",
+        access_token: "page_token"
+      })
     }));
   });
 });

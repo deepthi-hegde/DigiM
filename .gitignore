@@ -1,53 +1,49 @@
-# Node
-node_modules/
-.next/
-out/
-build/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnp.*
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.production
+backend/.env
+frontend/.env.local
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
 .Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
-.installed.cfg
+dist/
+build/
 *.egg
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Databases
+# Database
 *.db
 *.sqlite3
 
-# IDEs and OS files
+# Uploads / assets (served from GCS in production)
+backend/uploads/
+backend/assets/
+backend/scratch/
+
+# Accidental gcloud install
+backend/gcloud init/
+
+# Node / Next.js
+node_modules/
+.next/
+frontend/.next/
+frontend/node_modules/
+npm-debug.log*
+
+# macOS
 .DS_Store
-.idea/
+.AppleDouble
+.LSOverride
+
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo

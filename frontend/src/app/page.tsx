@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
@@ -212,10 +212,16 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 }
 
 export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () => void, onNext?: () => void, isSettings?: boolean }) {
-  const [fbConnected, setFbConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [igConnected, setIgConnected] = useState(false);
+  const [isFbConnected, setIsFbConnected] = useState(false);
+  const [fbPageName, setFbPageName] = useState("");
+  const [isIgConnected, setIsIgConnected] = useState(false);
+  const [isConnectingFb, setIsConnectingFb] = useState(false);
   const [isConnectingIg, setIsConnectingIg] = useState(false);
+
+  // New state for Page Selection
+  const [fbPages, setFbPages] = useState<any[]>([]);
+  const [showPageSelector, setShowPageSelector] = useState(false);
+  const [selectedPageId, setSelectedPageId] = useState("");
 
   useEffect(() => {
     const appId = process.env.NEXT_PUBLIC_META_APP_ID;
@@ -242,61 +248,132 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           xfbml      : true,
           version    : 'v19.0'
         });
-        (window as any).FB._initialized = true;
       }
     } else {
       console.warn("Facebook SDK Initialization Skipped: NEXT_PUBLIC_META_APP_ID is missing from .env.local");
       // Define a dummy fbAsyncInit so the FB script doesn't crash when it runs
       (window as any).fbAsyncInit = function() {}; 
     }
+
+    // Load SDK asynchronously
+    (function (d, s, id) {
+      let js,
+        fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {
+        return;
+      }
+      js = d.createElement(s) as HTMLScriptElement;
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      if (fjs && fjs.parentNode) fjs.parentNode.insertBefore(js, fjs);
+    })(document, "script", "facebook-jssdk");
+  }, []);
+  
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const res = await fetch('/api/meta/status?tenant_id=1');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.connected) {
+            setIsFbConnected(true);
+            setFbPageName(data.page_name);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check meta status", e);
+      }
+    };
+    checkConnection();
   }, []);
 
-  const connectFacebook = async () => {
-    const FB = (window as any).FB;
-    if (!FB) {
+  const connectFacebook = () => {
+    if (!window.FB) {
       alert("Facebook SDK is still loading. Please try again in a moment.");
       return;
     }
+
+    setIsConnectingFb(true);
+
+    const loginOptions: any = {
+      scope: "public_profile,pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish",
+    };
     
-    setIsConnecting(true);
-    
-    // Trigger the real Facebook OAuth popup
-    FB.login(function(response: any) {
-      if (response.authResponse) {
-        console.log('OAuth Success! Access Token:', response.authResponse.accessToken);
-        
-        // Send the REAL token to our FastAPI backend via Next.js Proxy
-        fetch("/api/meta/connect", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            tenant_id: 1, 
-            page_id: "pending_page_selection", // We will add a page selector later
-            page_name: "Connected via OAuth",
-            access_token: response.authResponse.accessToken
-          })
-        }).then(res => {
-          if (res.ok) setFbConnected(true);
-        }).finally(() => {
-          setIsConnecting(false);
-        });
+    if (process.env.NEXT_PUBLIC_META_CONFIG_ID) {
+      loginOptions.config_id = process.env.NEXT_PUBLIC_META_CONFIG_ID;
+    }
+
+    window.FB.login(
+      (response: any) => {
+        const handleLoginResponse = async (response: any) => {
+          if (response.authResponse) {
+            console.log("OAuth Success! Access Token:", response.authResponse.accessToken);
+            try {
+              const pagesRes = await fetch(`/api/meta/pages?user_access_token=${response.authResponse.accessToken}`);
+              if (!pagesRes.ok) throw new Error("Failed to fetch pages");
+              
+              const pagesData = await pagesRes.json();
+              
+              if (pagesData.data && pagesData.data.length > 0) {
+                setFbPages(pagesData.data);
+                setSelectedPageId(pagesData.data[0].id);
+                setShowPageSelector(true);
+              } else {
+                alert("No Facebook Pages found. Please create a Facebook Page first.");
+              }
+            } catch (error) {
+              console.error("Error fetching pages:", error);
+              alert("Failed to retrieve Facebook Pages.");
+            } finally {
+              setIsConnectingFb(false);
+            }
+          } else {
+            console.log("User cancelled login or did not fully authorize.");
+            setIsConnectingFb(false);
+          }
+        };
+
+        handleLoginResponse(response);
+      },
+      loginOptions
+    );
+  };
+
+  const handleConfirmPage = async () => {
+    const selectedPage = fbPages.find(p => p.id === selectedPageId);
+    if (!selectedPage) return;
+
+    try {
+      // Send selected page and its specific page access token to the backend
+      const connectRes = await fetch("/api/meta/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: 1, 
+          page_id: selectedPage.id,
+          page_name: selectedPage.name,
+          access_token: selectedPage.access_token
+        })
+      });
+
+      if (connectRes.ok) {
+        setIsFbConnected(true);
+        setFbPageName(selectedPage.name);
+        setShowPageSelector(false);
       } else {
-        console.log('User cancelled login or did not fully authorize.');
-        setIsConnecting(false);
+        alert("Failed to connect page in backend");
       }
-    }, {
-      // For development/testing, we just request basic profile to bypass Meta's strict Business App Review requirements.
-      // Once the App is verified for Business Access, we will switch this back to:
-      // 'pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish'
-      scope: 'public_profile'
-    });
+    } catch (error) {
+      console.error("Error saving page:", error);
+      alert("Error saving page connection");
+    }
   };
 
   const connectInstagram = async () => {
     setIsConnectingIg(true);
     // Simulate fetching Instagram accounts connected to the FB page
     setTimeout(() => {
-      setIgConnected(true);
+      setIsIgConnected(true);
       setIsConnectingIg(false);
     }, 1000);
   };
@@ -304,43 +381,75 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
       <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Connect Platforms</h2>
-      <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>
-        Link your social accounts to publish AI campaigns directly.
-      </p>
+      <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>Link your social accounts to publish AI campaigns directly.</p>
+      
+      {showPageSelector && (
+        <div style={{ marginBottom: '40px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Select Facebook Page</h3>
+          <p style={{ color: 'var(--text-light)', marginBottom: '16px', fontSize: '14px' }}>Choose which Facebook Page you want to connect to MarketFlow.</p>
+          <select 
+            className="input-field" 
+            value={selectedPageId} 
+            onChange={(e) => setSelectedPageId(e.target.value)}
+            style={{ marginBottom: '16px' }}
+          >
+            {fbPages.map(page => (
+              <option key={page.id} value={page.id}>{page.name}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="btn-primary" onClick={handleConfirmPage}>Confirm & Connect</button>
+            <button className="btn-secondary" onClick={() => setShowPageSelector(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: fbConnected ? 'rgba(16, 185, 129, 0.05)' : 'white', border: fbConnected ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '16px', transition: 'all 0.3s' }}>
+        {/* Facebook Page Connection */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: '24px', 
+          borderRadius: '16px',
+          transition: 'all 0.3s',
+          ...(isFbConnected 
+            ? { background: 'rgba(16, 185, 129, 0.05)', border: '2px solid #10b981' }
+            : { background: 'white', border: '1px solid #e2e8f0' })
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '48px', height: '48px', background: '#1877F2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>f</div>
+            <div style={{ width: '48px', height: '48px', background: '#1877F2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>
+              f
+            </div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px', color: fbConnected ? '#065f46' : 'var(--text-color)' }}>Facebook Page</h4>
-              <p style={{ fontSize: '13px', color: fbConnected ? '#059669' : 'var(--text-light)' }}>
-                {fbConnected ? 'Connected as MarketFlow Silks' : 'Not connected'}
+              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isFbConnected ? '#065f46' : 'var(--text-color)' }}>
+                Facebook Page
+              </h4>
+              <p style={{ fontSize: '13px', color: isFbConnected ? '#059669' : 'var(--text-light)' }}>
+                {isFbConnected ? `Connected as ${fbPageName}` : 'Ready to connect'}
               </p>
             </div>
           </div>
           <button 
-            className="btn-secondary" 
-            style={{ 
-              padding: '10px 20px', fontSize: '14px', 
-              background: fbConnected ? '#ecfdf5' : 'white',
-              color: fbConnected ? '#059669' : 'var(--text-color)',
-              borderColor: fbConnected ? '#34d399' : '#e2e8f0'
+            className="btn-secondary"
+            onClick={() => {
+              setIsFbConnected(false); // Reset to allow re-selection
+              connectFacebook();
             }}
-            onClick={connectFacebook}
-            disabled={fbConnected || isConnecting}
+            disabled={isConnectingFb}
+            style={isFbConnected ? { padding: '10px 20px', fontSize: '14px', color: '#059669', borderColor: '#34d399', background: '#ecfdf5' } : { padding: '10px 20px', fontSize: '14px' }}
           >
-            {isConnecting ? 'Connecting...' : fbConnected ? '✓ Connected' : 'Connect'}
+            {isConnectingFb ? 'Connecting...' : (isFbConnected ? '✓ Change Page' : 'Connect')}
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: igConnected ? 'rgba(16, 185, 129, 0.05)' : 'white', border: igConnected ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '16px', transition: 'all 0.3s' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: isIgConnected ? 'rgba(16, 185, 129, 0.05)' : 'white', border: isIgConnected ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '16px', transition: 'all 0.3s' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '48px', height: '48px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>in</div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px', color: igConnected ? '#065f46' : 'var(--text-color)' }}>Instagram Business</h4>
-              <p style={{ fontSize: '13px', color: igConnected ? '#059669' : 'var(--text-light)' }}>
-                {igConnected ? 'Connected via Facebook' : (fbConnected ? 'Ready to connect' : 'Connect via Facebook first')}
+              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isIgConnected ? '#065f46' : 'var(--text-color)' }}>Instagram Business</h4>
+              <p style={{ fontSize: '13px', color: isIgConnected ? '#059669' : 'var(--text-light)' }}>
+                {isIgConnected ? 'Connected via Facebook' : (isFbConnected ? 'Ready to connect' : 'Connect via Facebook first')}
               </p>
             </div>
           </div>
@@ -348,16 +457,16 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
             className="btn-secondary" 
             style={{ 
               padding: '10px 20px', fontSize: '14px', 
-              opacity: (fbConnected || igConnected) ? 1 : 0.5,
-              background: igConnected ? '#ecfdf5' : 'white',
-              color: igConnected ? '#059669' : 'var(--text-color)',
-              borderColor: igConnected ? '#34d399' : '#e2e8f0',
-              cursor: (fbConnected || igConnected) ? 'pointer' : 'not-allowed'
+              opacity: (isFbConnected || isIgConnected) ? 1 : 0.5,
+              background: isIgConnected ? '#ecfdf5' : 'white',
+              color: isIgConnected ? '#059669' : 'var(--text-color)',
+              borderColor: isIgConnected ? '#34d399' : '#e2e8f0',
+              cursor: (isFbConnected || isIgConnected) ? 'pointer' : 'not-allowed'
             }} 
-            disabled={!fbConnected || igConnected || isConnectingIg}
+            disabled={!isFbConnected || isIgConnected || isConnectingIg}
             onClick={connectInstagram}
           >
-            {isConnectingIg ? 'Connecting...' : igConnected ? '✓ Connected' : 'Connect'}
+            {isConnectingIg ? 'Connecting...' : (isIgConnected ? '✓ Connected' : 'Connect')}
           </button>
         </div>
       </div>
@@ -365,7 +474,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       {!isSettings && (
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '32px' }}>
           {onBack && <button className="btn-secondary" onClick={onBack}>← Back</button>}
-          {onNext && <button className="btn-primary" onClick={onNext}>{(fbConnected || igConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
+          {onNext && <button className="btn-primary" onClick={onNext}>{(isFbConnected || isIgConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
         </div>
       )}
     </div>
@@ -378,38 +487,113 @@ export function CampaignDashboard() {
   const [generated, setGenerated] = useState(false);
   const [aiManaged, setAiManaged] = useState(true);
   
-  // New States
   const [freq, setFreq] = useState('3 times a week');
+  const [minAge, setMinAge] = useState(18);
   const [maxAge, setMaxAge] = useState(35);
   const [prompt, setPrompt] = useState('');
   const [category, setCategory] = useState('Product Showcase');
   const [gender, setGender] = useState('All');
   const [generatedText, setGeneratedText] = useState('');
+  const [visualSuggestion, setVisualSuggestion] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
+  const [selectedAssetUrl, setSelectedAssetUrl] = useState<string | null>(null);
+  const dashboardFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDashboardFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedAssetUrl(data.url);
+      }
+    } catch (error) {
+      console.error("Upload error", error);
+    }
+  };
 
   const handleGenerate = async () => {
+    if (!prompt) {
+      alert("Please enter a campaign goal/prompt");
+      return;
+    }
     setIsGenerating(true);
+    setGenerated(false);
     try {
       const response = await fetch('/api/campaign/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
+          minAge,
           maxAge,
           gender,
           freq,
           category
-        })
+        }),
       });
       const data = await response.json();
-      setGeneratedText(data.generated_text);
-      setGenerated(true);
+      if (data.status === 'success') {
+        setGeneratedText(data.generated_text);
+        setVisualSuggestion(data.visual_suggestion);
+        setGenerated(true);
+      } else {
+        alert("Generation failed: " + (data.message || "Unknown error"));
+      }
     } catch (error) {
-      console.error("Failed to generate campaign", error);
-      alert("Error generating campaign");
+      console.error("Failed to generate", error);
+      alert("Error generating campaign content");
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const handleGenerateAiImage = async () => {
+    if (!visualSuggestion) return;
+    setIsGeneratingImage(true);
+    try {
+      const res = await fetch('/api/campaign/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: visualSuggestion })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setSelectedAssetUrl(data.url);
+      } else {
+        alert("Image generation failed");
+      }
+    } catch (error) {
+      console.error("Image gen error", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const [metaStatus, setMetaStatus] = useState({ connected: false, page_name: '', has_instagram: false });
+  const [publishToIg, setPublishToIg] = useState(false);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/meta/status');
+        const data = await res.json();
+        setMetaStatus(data);
+      } catch (err) {
+        console.error("Failed to fetch meta status", err);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   const handlePublish = async () => {
     setIsPublishing(true);
@@ -418,15 +602,18 @@ export function CampaignDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: generatedText,
-          tenant_id: 1 // Default tenant
+          message: generatedText, 
+          image_url: selectedAssetUrl?.startsWith('http') ? selectedAssetUrl : null,
+          publish_to_instagram: publishToIg,
+          tenant_id: 1
         })
       });
       const data = await response.json();
       if (response.ok) {
         alert("Published successfully! " + (data.message || ""));
       } else {
-        alert("Failed to publish: " + data.detail);
+        const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
+        alert("Failed to publish: " + errorMsg);
       }
     } catch (error) {
       console.error("Failed to publish", error);
@@ -454,6 +641,50 @@ export function CampaignDashboard() {
           </div>
 
           <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
+            <div 
+              style={{ 
+                padding: '16px', 
+                border: '1px dashed #cbd5e1', 
+                borderRadius: '12px', 
+                background: '#f8fafc',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              {selectedAssetUrl ? (
+                <>
+                  <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', background: 'white' }}>
+                    {selectedAssetUrl.endsWith('.mp4') ? (
+                      <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                  </div>
+                  <div style={{ flexGrow: 1 }}>
+                    <div style={{ fontSize: '13px', color: 'var(--primary-color)', fontWeight: 600 }}>Asset Selected</div>
+                    <button 
+                      onClick={() => setSelectedAssetUrl(null)}
+                      style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div 
+                  onClick={() => dashboardFileInputRef.current?.click()}
+                  style={{ width: '100%', textAlign: 'center', cursor: 'pointer', fontSize: '13px', color: 'var(--text-light)' }}
+                >
+                  + Upload Image or Video for this post
+                </div>
+              )}
+            </div>
+            <input type="file" ref={dashboardFileInputRef} onChange={handleDashboardFileUpload} style={{ display: 'none' }} accept="image/*,video/*" />
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
               <input type="checkbox" checked={aiManaged} onChange={(e) => setAiManaged(e.target.checked)} /> 
               Fully AI-Managed Posting
@@ -471,9 +702,6 @@ export function CampaignDashboard() {
                     <option>Once a week</option>
                     <option>Custom</option>
                   </select>
-                  {freq === 'Custom' && (
-                    <input className="input-field" placeholder="e.g. 5 times a month" style={{ marginTop: '8px' }} />
-                  )}
                 </div>
                 <div>
                   <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Category</span>
@@ -500,24 +728,26 @@ export function CampaignDashboard() {
                  </select>
               </div>
               <div>
-                 <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Group: 18 - {maxAge}</span>
-                 <input 
-                   type="range" 
-                   min="18" max="65" 
-                   value={maxAge} 
-                   onChange={(e) => setMaxAge(parseInt(e.target.value))} 
-                   style={{ width: '100%', marginTop: '8px' }} 
-                 />
+                 <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Range</span>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <input 
+                     type="number" 
+                     className="input-field" 
+                     style={{ padding: '8px', width: '70px' }}
+                     value={minAge} 
+                     onChange={(e) => setMinAge(Math.max(13, parseInt(e.target.value) || 13))}
+                   />
+                   <span style={{ color: '#94a3b8', fontSize: '14px' }}>to</span>
+                   <input 
+                     type="number" 
+                     className="input-field" 
+                     style={{ padding: '8px', width: '70px' }}
+                     value={maxAge} 
+                     onChange={(e) => setMaxAge(Math.min(100, parseInt(e.target.value) || 100))}
+                   />
+                   <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>years</span>
+                 </div>
               </div>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '32px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Brand Dos & Don'ts</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: '12px', fontSize: '13px', border: '1px solid #10b981' }}>Do: Use emojis</span>
-              <span style={{ background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: '12px', fontSize: '13px', border: '1px solid #10b981' }}>Do: Emphasize quality</span>
-              <span style={{ background: '#fef2f2', color: '#dc2626', padding: '4px 12px', borderRadius: '12px', fontSize: '13px', border: '1px solid #ef4444' }}>Don't: Mention competitors</span>
             </div>
           </div>
 
@@ -535,31 +765,74 @@ export function CampaignDashboard() {
 
         {/* Right Column: AI Preview */}
         <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.5)', borderRadius: '24px', border: '2px dashed #cbd5e1', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
-          {!generated ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>
-              <p style={{ fontSize: '15px' }}>Click <strong>Generate</strong> to see your AI-crafted ad right here.</p>
-            </div>
-          ) : (
-            <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeInUp 0.5s ease-out' }}>
-              <div style={{ background: 'linear-gradient(135deg, #a7f3d0 0%, #34d399 100%)', borderRadius: '16px', height: '240px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#064e3b', fontWeight: 700, fontSize: '20px', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.1)' }}>
-                [ AI Generated Textile Photo ]
+          <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeInUp 0.5s ease-out' }}>
+            <div style={{ background: '#f1f5f9', borderRadius: '16px', height: '240px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.05)', overflow: 'hidden', position: 'relative' }}>
+                {selectedAssetUrl ? (
+                  selectedAssetUrl.endsWith('.mp4') ? (
+                    <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay loop muted />
+                  ) : (
+                    <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <div style={{ color: '#64748b', fontWeight: 600, fontSize: '15px', marginBottom: '12px' }}>[ No Image Selected ]</div>
+                    <button 
+                      className="btn-secondary" 
+                      style={{ fontSize: '13px', background: 'white' }}
+                      onClick={handleGenerateAiImage}
+                      disabled={isGeneratingImage}
+                    >
+                      {isGeneratingImage ? '🖌️ Painting...' : '✨ Generate Image with AI'}
+                    </button>
+                  </div>
+                )}
+                {isGeneratingImage && (
+                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                     <div style={{ fontWeight: 600 }}>✨ AI is creating your visual...</div>
+                   </div>
+                )}
               </div>
-              <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', flexGrow: 1, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', whiteSpace: 'pre-wrap' }}>
-                <p style={{ fontSize: '15px', lineHeight: '1.7', color: 'var(--text-color)' }}>
-                  <strong style={{ fontSize: '16px' }}>MarketFlow Silks</strong><br/><br/>
-                  {generatedText}
-                </p>
+
+              <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', minHeight: '300px' }}>
+                <textarea 
+                  value={generatedText}
+                  onChange={(e) => setGeneratedText(e.target.value)}
+                  style={{ width: '100%', flexGrow: 1, border: 'none', resize: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.6', color: 'var(--text-color)', fontFamily: 'inherit' }}
+                  placeholder="Edit your post content here..."
+                />
               </div>
-              <button 
-                className="btn-primary" 
-                style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', marginTop: '24px', width: '100%', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
-                onClick={handlePublish}
-                disabled={isPublishing}
-              >
-                {isPublishing ? 'Publishing...' : 'Approve & Publish to Meta'}
-              </button>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button 
+                  className="btn-primary" 
+                  style={{ flexGrow: 1, background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
+                  onClick={handlePublish}
+                  disabled={isPublishing}
+                >
+                  {isPublishing ? 'Publishing...' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook')}
+                </button>
+
+                {metaStatus.has_instagram && (
+                  <button 
+                    onClick={() => setPublishToIg(!publishToIg)}
+                    style={{ 
+                      padding: '0 20px', 
+                      borderRadius: '12px', 
+                      border: '1px solid #e2e8f0', 
+                      background: publishToIg ? 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' : 'white',
+                      color: publishToIg ? 'white' : '#64748b',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: publishToIg ? '0 4px 12px rgba(220, 39, 67, 0.3)' : 'none'
+                    }}
+                  >
+                    IG: {publishToIg ? 'ON' : 'OFF'}
+                  </button>
+                )}
+              </div>
             </div>
-          )}
         </div>
       </div>
     </div>
@@ -567,24 +840,108 @@ export function CampaignDashboard() {
 }
 
 function AssetsLibrary() {
+  const [assets, setAssets] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchAssets = async () => {
+    try {
+      const response = await fetch('/api/assets');
+      if (response.ok) {
+        const data = await response.json();
+        setAssets(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch assets", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssets();
+  }, []);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        await fetchAssets();
+      } else {
+        alert("Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error", error);
+      alert("Error uploading file");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%' }}>
-      <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Asset Library</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '28px', fontWeight: 700 }}>Asset Library</h2>
+        <button 
+          className="btn-primary" 
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          style={{ padding: '10px 20px' }}
+        >
+          {isUploading ? 'Uploading...' : '+ Upload Asset'}
+        </button>
+      </div>
       <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>
         Manage your product images, videos, and brand assets for the AI to use.
       </p>
-      <div 
-        style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '48px', textAlign: 'center', background: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.2s' }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.5)'}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ color: '#64748b', marginBottom: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+      
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        style={{ display: 'none' }} 
+        accept="image/*,video/*"
+      />
+
+      {assets.length === 0 ? (
+        <div 
+          style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '48px', textAlign: 'center', background: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.2s' }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ color: '#64748b', marginBottom: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+          </div>
+          <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '8px', fontSize: '16px' }}>Drag & drop new assets here</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '24px' }}>PNG, JPG, MP4 up to 50MB</p>
+          <button className="btn-secondary" style={{ padding: '10px 24px' }}>Browse Files</button>
         </div>
-        <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '8px', fontSize: '16px' }}>Drag & drop new assets here</p>
-        <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '24px' }}>PNG, JPG, MP4 up to 50MB</p>
-        <button className="btn-secondary" style={{ padding: '10px 24px' }}>Browse Files</button>
-      </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+          {assets.map((asset) => (
+            <div key={asset.id} className="asset-card" style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+              <div style={{ height: '150px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {asset.name.toLowerCase().endsWith('.mp4') ? (
+                  <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                ) : (
+                  <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
+              <div style={{ padding: '12px', fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {asset.name}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
