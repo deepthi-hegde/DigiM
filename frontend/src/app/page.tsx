@@ -308,40 +308,46 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       loginOptions.config_id = process.env.NEXT_PUBLIC_META_CONFIG_ID;
     }
 
-    window.FB.login(
-      (response: any) => {
-        const handleLoginResponse = async (response: any) => {
-          if (response.authResponse) {
-            console.log("OAuth Success! Access Token:", response.authResponse.accessToken);
-            try {
-              const pagesRes = await fetch(`/api/meta/pages?user_access_token=${response.authResponse.accessToken}`);
-              if (!pagesRes.ok) throw new Error("Failed to fetch pages");
-              
-              const pagesData = await pagesRes.json();
-              
-              if (pagesData.data && pagesData.data.length > 0) {
-                setFbPages(pagesData.data);
-                setSelectedPageId(pagesData.data[0].id);
-                setShowPageSelector(true);
-              } else {
-                alert("No Facebook Pages found. Please create a Facebook Page first.");
+    try {
+      window.FB.login(
+        (response: any) => {
+          const handleLoginResponse = async (response: any) => {
+            if (response.authResponse) {
+              console.log("OAuth Success! Access Token:", response.authResponse.accessToken);
+              try {
+                const pagesRes = await fetch(`/api/meta/pages?user_access_token=${response.authResponse.accessToken}`);
+                if (!pagesRes.ok) throw new Error("Failed to fetch pages");
+                
+                const pagesData = await pagesRes.json();
+                
+                if (pagesData.data && pagesData.data.length > 0) {
+                  setFbPages(pagesData.data);
+                  setSelectedPageId(pagesData.data[0].id);
+                  setShowPageSelector(true);
+                } else {
+                  alert("No Facebook Pages found. Please create a Facebook Page first.");
+                }
+              } catch (error) {
+                console.error("Error fetching pages:", error);
+                alert("Failed to retrieve Facebook Pages.");
+              } finally {
+                setIsConnectingFb(false);
               }
-            } catch (error) {
-              console.error("Error fetching pages:", error);
-              alert("Failed to retrieve Facebook Pages.");
-            } finally {
+            } else {
+              console.log("User cancelled login or did not fully authorize.");
               setIsConnectingFb(false);
             }
-          } else {
-            console.log("User cancelled login or did not fully authorize.");
-            setIsConnectingFb(false);
-          }
-        };
+          };
 
-        handleLoginResponse(response);
-      },
-      loginOptions
-    );
+          handleLoginResponse(response);
+        },
+        loginOptions
+      );
+    } catch (e) {
+      console.error("Facebook login error:", e);
+      alert("Error initializing Facebook login popup.");
+      setIsConnectingFb(false);
+    }
   };
 
   const handleConfirmPage = async () => {
