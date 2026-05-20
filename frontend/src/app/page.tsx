@@ -298,6 +298,11 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       return;
     }
 
+    if (!process.env.NEXT_PUBLIC_META_APP_ID) {
+      alert("Configuration Error: Missing Facebook App ID. If you are in production, ensure this was passed as a build argument to Docker.");
+      return;
+    }
+
     setIsConnectingFb(true);
 
     const loginOptions: any = {
@@ -343,9 +348,9 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         },
         loginOptions
       );
-    } catch (e) {
+    } catch (e: any) {
       console.error("Facebook login error:", e);
-      alert("Error initializing Facebook login popup.");
+      alert("Error initializing Facebook login popup: " + (e?.message || e));
       setIsConnectingFb(false);
     }
   };
