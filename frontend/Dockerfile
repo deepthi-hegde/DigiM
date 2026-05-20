@@ -13,8 +13,15 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Set build-time env vars if needed
-# ENV NEXT_PUBLIC_API_URL=...
+# Set build-time env vars
+ARG NEXT_PUBLIC_META_APP_ID
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_META_CONFIG_ID
+ARG BACKEND_URL
+ENV NEXT_PUBLIC_META_APP_ID=$NEXT_PUBLIC_META_APP_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_META_CONFIG_ID=$NEXT_PUBLIC_META_CONFIG_ID
+ENV BACKEND_URL=$BACKEND_URL
 RUN npm run build
 
 # Production image, copy all the files and run next
