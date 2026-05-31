@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()
 from google import genai
@@ -44,21 +45,27 @@ class CampaignRequest(BaseModel):
     gender: str = Field(..., min_length=1)
     freq: str = Field(..., min_length=1)
     category: str = Field(..., min_length=1)
+    businessName: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    industry: Optional[str] = None
+
 
 class CampaignPublishRequest(BaseModel):
     message: str
-    image_url: str = None
+    image_url: Optional[str] = None
     publish_to_instagram: bool = False
     tenant_id: int = 1
 
 @app.get("/api/meta/status")
 def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
-    account = db.query(MetaAccount).filter_by(tenant_id=tenant_id).first()
+    account = db.query(MetaAccount).filter_by(tenant_id=tenant_id)\
+        .order_by(MetaAccount.id.desc()).first()
     if account:
         return {
             "connected": True,
             "page_name": account.page_name,
-            "page_id": account.page_id
+            "page_id": account.page_id,
+            "has_instagram": bool(account.ig_user_id)
         }
     return {"connected": False}
 
@@ -78,12 +85,18 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
     fb_res = None
     ig_res = None
     
+    # In local development, if GCS is not configured, image_url starts with "/api/assets/raw/"
+    # Meta APIs cannot download images from localhost, so we substitute a high-quality public image for local testing.
+    image_url = payload.image_url
+    if image_url and not image_url.startswith("http"):
+        image_url = "https://picsum.photos/id/237/600/600.jpg"
+
     # 1. Post to Facebook
     pub_req = PublishRequest(
         page_id=account.page_id,
         message=payload.message,
         access_token=account.access_token,
-        image_url=payload.image_url
+        image_url=image_url
     )
     fb_res = publish_to_facebook(pub_req)
     
@@ -91,13 +104,16 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
     if payload.publish_to_instagram:
         if not account.ig_user_id:
             raise HTTPException(status_code=400, detail="No Instagram account linked to this Facebook Page")
-        if not payload.image_url:
+        if not image_url:
             raise HTTPException(status_code=400, detail="Instagram publishing requires an image")
             
         from api.meta import publish_to_instagram, InstagramPublishRequest
+        print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
+        print(f"DEBUG IG PUBLISH - image_url: {image_url}")
+        print(f"DEBUG IG PUBLISH - access_token prefix: {account.access_token[:30]}")
         ig_pub_req = InstagramPublishRequest(
             ig_user_id=account.ig_user_id,
-            image_url=payload.image_url,
+            image_url=image_url,
             caption=payload.message,
             access_token=account.access_token
         )
@@ -156,12 +172,28 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         else:
             category_instruction = "Style: Engaging."
 
+        business_info = ""
+        if payload.businessName:
+            business_info += f"\nBrand/Business Name: {payload.businessName}"
+        if payload.industry:
+            business_info += f"\nIndustry: {payload.industry}"
+        if payload.phoneNumber:
+            business_info += f"\nPhone Number to include (if relevant): {payload.phoneNumber}"
+
         prompt_text = f"""
-        You are an expert digital marketing copywriter for a premium textile brand. 
+        You are an expert digital marketing copywriter. {business_info}
         Create an engaging social media post for:
         Topic: {payload.prompt}
         Audience: {payload.gender}, {payload.minAge}-{payload.maxAge}
         Category: {payload.category} ({category_instruction})
+        
+        CRITICAL RULES FOR POST COPY:
+        1. NO PLACEHOLDERS: Do NOT include any placeholder text (such as [Your Name], [Link], [Phone], [Insert Details Here], etc.). 
+           - Use the real brand name '{payload.businessName or "our brand"}' instead of brand placeholders.
+           - If a phone number is provided ('{payload.phoneNumber or ""}'), use it. If not, do NOT write a phone number placeholder.
+           - Do not mention links unless a specific URL is provided.
+        2. KEEP IT SHORT: Keep the post copy concise and punchy (ideally under 80 words, 2-3 sentences max, plus 2-3 relevant hashtags). Only make it longer if the user explicitly asked for high detail in their prompt.
+        3. CALL TO ACTION: Make it a clear, direct, and realistic call to action.
         
         OUTPUT FORMAT:
         [CAPTION]
@@ -232,7 +264,7 @@ def generate_ai_image(payload: ImageGenRequest):
         response = client.models.generate_images(
             model='imagen-4.0-fast-generate-001',
             prompt=payload.prompt,
-            config=types.GenerateImageConfig(
+            config=types.GenerateImagesConfig(
                 number_of_images=1,
                 output_mime_type='image/jpeg'
             )
@@ -241,15 +273,44 @@ def generate_ai_image(payload: ImageGenRequest):
         if not response.generated_images:
             raise Exception("No images generated")
             
-        import uuid
+        import uuid, base64, requests as req
+        image_bytes = response.generated_images[0].image.image_bytes
         filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
         filepath = os.path.join(UPLOAD_DIR, filename)
         
         with open(filepath, "wb") as f:
-            f.write(response.generated_images[0].image_bytes)
+            f.write(image_bytes)
             
-        # Upload to GCS
+        # Try GCS first (production)
         public_url = upload_to_gcs(filepath, f"ai-gen/{filename}")
+        
+        # ============================================================
+        # TODO (GCP DEPLOYMENT): Remove this catbox.moe block entirely.
+        # For production, set GCS_BUCKET_NAME env var in Cloud Run and
+        # grant the Cloud Run service account roles/storage.objectAdmin
+        # on the bucket. The upload_to_gcs() call above will then return
+        # a proper public https://storage.googleapis.com/... URL.
+        # See: image_hosting_architecture.md for full setup instructions.
+        # ============================================================
+        # LOCAL DEV ONLY: upload to catbox.moe for a public URL so Meta
+        # can download the image. Images are temporary and public — do NOT
+        # use in production.
+        if not public_url.startswith("http"):
+            import requests as req
+            try:
+                with open(filepath, "rb") as img_file:
+                    catbox_res = req.post(
+                        "https://catbox.moe/user/api.php",
+                        data={"reqtype": "fileupload"},
+                        files={"fileToUpload": (filename, img_file, "image/jpeg")}
+                    )
+                if catbox_res.status_code == 200 and catbox_res.text.startswith("http"):
+                    public_url = catbox_res.text.strip()
+                    print(f"Uploaded to catbox.moe: {public_url}")
+                else:
+                    print(f"catbox.moe upload failed: {catbox_res.text}")
+            except Exception as upload_err:
+                print(f"Public upload failed: {upload_err}")
             
         return {"status": "success", "url": public_url}
     except Exception as e:

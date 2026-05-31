@@ -1,0 +1,8 @@
+.git
+.gitignore
+venv/
+.pytest_cache/
+marketflow.db
+scratch/
+uploads/
+assets/

@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_META_APP_ID=${_NEXT_PUBLIC_META_APP_ID}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_GOOGLE_CLIENT_ID=${_NEXT_PUBLIC_GOOGLE_CLIENT_ID}'
+      - '--build-arg'
+      - 'BACKEND_URL=${_BACKEND_URL}'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/digim-496018/marketflow-repo/frontend'
+      - '.'
+images:
+  - 'us-central1-docker.pkg.dev/digim-496018/marketflow-repo/frontend'
