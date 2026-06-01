@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiM — Facebook & Instagram Business Setup Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Base ────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f0f4ff;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    /* ── Download button (hidden when printing) ─────────────── */
+    .print-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #1e293b;
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .print-bar span { color: #94a3b8; font-size: 13px; }
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #1877F2, #6366f1);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-pdf:hover { opacity: 0.9; }
+
+    /* ── Page wrapper ───────────────────────────────────────── */
+    .page {
+      max-width: 820px;
+      margin: 80px auto 60px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(59,130,246,0.12);
+    }
+
+    /* ── Hero banner ────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0f1b2d 0%, #1e3a5f 50%, #2d1b69 100%);
+      padding: 48px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(24,119,242,0.35) 0%, transparent 60%),
+                  radial-gradient(ellipse at 30% 80%, rgba(99,102,241,0.25) 0%, transparent 50%);
+    }
+    .hero-content { position: relative; }
+    .hero-logos {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .logo-fb {
+      width: 52px; height: 52px;
+      background: #1877F2;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 28px; font-weight: 800;
+      box-shadow: 0 4px 16px rgba(24,119,242,0.4);
+    }
+    .logo-arrow { color: rgba(255,255,255,0.4); font-size: 24px; }
+    .logo-ig {
+      width: 52px; height: 52px;
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 20px; font-weight: 800;
+      box-shadow: 0 4px 16px rgba(220,39,67,0.4);
+    }
+    .hero h1 {
+      font-size: 32px; font-weight: 800;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      color: rgba(255,255,255,0.6);
+      font-size: 15px;
+    }
+    .hero-badge {
+      position: absolute;
+      top: 24px; right: 24px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 6px 14px;
+      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Body content ───────────────────────────────────────── */
+    .content { padding: 48px 56px; }
+
+    /* ── Section titles ─────────────────────────────────────── */
+    .section-title {
+      font-size: 18px; font-weight: 700;
+      color: #1e293b;
+      margin: 36px 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title:first-child { margin-top: 0; }
+    .section-title .pill {
+      background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+      border: 1px solid #c7d2fe;
+      color: #4f46e5;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Prerequisites table ────────────────────────────────── */
+    .prereq-table {
+      width: 100%; border-collapse: collapse;
+      background: #f8faff;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      font-size: 13.5px;
+    }
+    .prereq-table tr { border-bottom: 1px solid #e8edf5; }
+    .prereq-table tr:last-child { border-bottom: none; }
+    .prereq-table td { padding: 12px 16px; vertical-align: top; }
+    .prereq-table td:first-child { width: 32px; font-size: 18px; }
+    .prereq-table td:nth-child(2) { font-weight: 600; color: #1e293b; white-space: nowrap; width: 200px; }
+    .prereq-table td:nth-child(3) { color: #64748b; }
+
+    /* ── Alert boxes ─────────────────────────────────────────── */
+    .alert {
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      margin: 12px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .alert-warn  { background: #fff7ed; border-left: 4px solid #f97316; color: #7c2d12; }
+    .alert-info  { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e3a8a; }
+    .alert-tip   { background: #f0fdf4; border-left: 4px solid #22c55e; color: #14532d; }
+    .alert-icon  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Steps ───────────────────────────────────────────────── */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      gap: 20px;
+      position: relative;
+      padding-bottom: 28px;
+    }
+    .step:last-child { padding-bottom: 0; }
+    .step-left { display: flex; flex-direction: column; align-items: center; }
+    .step-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #1877F2, #6366f1);
+      color: white; font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      background: linear-gradient(to bottom, #c7d2fe, transparent);
+      margin-top: 8px;
+    }
+    .step:last-child .step-line { display: none; }
+    .step-body { flex: 1; padding-top: 6px; }
+    .step-title {
+      font-size: 15px; font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    .step-body p, .step-body li {
+      font-size: 13.5px;
+      color: #475569;
+      line-height: 1.7;
+    }
+    .step-body ul {
+      margin: 8px 0 0 20px;
+    }
+    .step-body code {
+      background: #f1f5f9;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #4f46e5;
+    }
+
+    /* ── Permission tags ─────────────────────────────────────── */
+    .perm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .perm-item {
+      background: #f8faff;
+      border: 1px solid #dde7ff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12.5px;
+    }
+    .perm-item code { color: #4f46e5; display: block; font-weight: 600; margin-bottom: 2px; }
+    .perm-item span { color: #64748b; }
+
+    /* ── Troubleshooting ─────────────────────────────────────── */
+    .trouble-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      background: #fafbff;
+    }
+    .trouble-err {
+      font-size: 13.5px; font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 6px;
+    }
+    .trouble-fix {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    /* ── Checklist ────────────────────────────────────────────── */
+    .checklist {
+      background: linear-gradient(135deg, #eff6ff, #faf5ff);
+      border: 1px solid #c7d2fe;
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .checklist ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13.5px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .check-box {
+      width: 18px; height: 18px;
+      border: 2px solid #818cf8;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      background: white;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid #f1f5f9; margin: 32px 0; }
+
+    /* ── Links section ───────────────────────────────────────── */
+    .links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .link-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8faff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: #1e40af;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .link-card:hover { background: #eff6ff; border-color: #93c5fd; }
+    .link-card .arrow { margin-left: auto; color: #93c5fd; }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 24px 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .footer strong { color: #64748b; }
+
+    /* ── Print styles ────────────────────────────────────────── */
+    @media print {
+      @page { margin: 18mm 15mm; size: A4; }
+      body { background: white; }
+      .print-bar { display: none !important; }
+      .page {
+        margin: 0; max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .alert, .checklist, .prereq-table, .trouble-item, .perm-item {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      .step { page-break-inside: avoid; }
+      .trouble-item { page-break-inside: avoid; }
+      .link-card { color: #1e40af !important; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10px; color: #94a3b8; }
+      .link-card::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed print bar -->
+  <div class="print-bar">
+    <span>DigiM App — Facebook Business Setup Guide</span>
+    <button class="btn-pdf" onclick="window.print()">
+      ⬇ Save as PDF
+    </button>
+  </div>
+
+  <div class="page">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-badge">Setup Guide v1.0</div>
+      <div class="hero-content">
+        <div class="hero-logos">
+          <div class="logo-fb">f</div>
+          <div class="logo-arrow">→</div>
+          <div class="logo-ig">in</div>
+        </div>
+        <h1>Facebook &amp; Instagram<br>Business Setup Guide</h1>
+        <p>Connect your Facebook Business Page to DigiM app and start publishing AI-generated campaigns in minutes.</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Prerequisites -->
+      <div class="section-title">
+        ✅ Prerequisites <span class="pill">BEFORE YOU BEGIN</span>
+      </div>
+
+      <table class="prereq-table">
+        <tr>
+          <td>🏢</td>
+          <td>Facebook Business Page</td>
+          <td>You must be an <strong>Admin</strong> of the Page. Personal profiles are not supported.</td>
+        </tr>
+        <tr>
+          <td>👤</td>
+          <td>Facebook Account</td>
+          <td>The account must have <strong>Admin access</strong> to the Business Page.</td>
+        </tr>
+        <tr>
+          <td>📸</td>
+          <td>Instagram (optional)</td>
+          <td>Must be a <strong>Business or Creator</strong> account — Personal accounts are not supported by Meta's API.</td>
+        </tr>
+        <tr>
+          <td>🔗</td>
+          <td>Instagram linked to Page</td>
+          <td>Link Instagram to your Facebook Page via <strong>Meta Business Suite</strong> first.</td>
+        </tr>
+      </table>
+
+      <div class="alert alert-warn">
+        <span class="alert-icon">⚠️</span>
+        <span><strong>Do not use a Personal Instagram account.</strong> Switch to a Business or Creator profile first: Instagram → Settings → Account → Switch to Professional Account.</span>
+      </div>
+
+      <hr />
+
+      <!-- Steps -->
+      <div class="section-title">📋 Step-by-Step Setup</div>
+
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title">Navigate to Platform Settings</div>
+            <p>Open <strong>DigiM app</strong> in your browser. Click the <strong>Integrations</strong> option in the left sidebar (gear icon).</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title">Connect Your Facebook Page</div>
+            <p>Locate the <strong>Facebook Page</strong> card (blue <em>f</em> icon) and click <strong>Connect</strong>. A Facebook login popup will appear — log in with the account that <em>administers</em> your Business Page.</p>
+            <div class="alert alert-info" style="margin-top:10px;">
+              <span class="alert-icon">ℹ️</span>
+              <span>If you see "Facebook SDK is still loading", wait 2–3 seconds and try again.</span>
+            </div>
+            <p style="margin-top:12px;margin-bottom:8px;font-size:13.5px;color:#475569;">Grant all requested permissions:</p>
+            <div class="perm-grid">
+              <div class="perm-item"><code>pages_show_list</code><span>See which Pages you manage</span></div>
+              <div class="perm-item"><code>pages_read_engagement</code><span>Read Page content</span></div>
+              <div class="perm-item"><code>pages_manage_posts</code><span>Publish posts on your behalf</span></div>
+              <div class="perm-item"><code>instagram_basic</code><span>Read your linked Instagram</span></div>
+              <div class="perm-item" style="grid-column: span 2;"><code>instagram_content_publish</code><span>Publish photos to Instagram</span></div>
+            </div>
+            <div class="alert alert-warn">
+              <span class="alert-icon">⚠️</span>
+              <span><strong>Grant all permissions.</strong> Skipping any will cause publishing to fail silently.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title">Select Your Business Page</div>
+            <p>After granting permissions, a <strong>"Select Facebook Page"</strong> dropdown appears inside DigiM app. Choose your Page from the list and click <strong>Confirm</strong>.</p>
+            <div class="alert alert-tip">
+              <span class="alert-icon">💡</span>
+              <span>DigiM app automatically upgrades your short-lived login token to a <strong>non-expiring Page access token</strong> — you won't need to reconnect.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">4</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title">Connect Instagram (Optional)</div>
+            <p>Once your Facebook Page is connected, the <strong>Instagram Business</strong> card becomes active. Click <strong>Connect</strong> — no second login needed.</p>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ️</span>
+              <span>DigiM app automatically finds the Instagram Business account linked to your Facebook Page. No extra login required.</span>
+            </div>
+            <p style="margin-top:8px;font-size:13px;color:#64748b;">Both cards will show a green ✅ checkmark when successfully connected.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">5</div>
+          </div>
+          <div class="step-body">
+            <div class="step-title">Publish Your First Campaign</div>
+            <p>Go to <strong>Campaigns</strong> → generate your AI content or write your own post → click <strong>"Publish to Facebook"</strong>. If Instagram is connected, a toggle appears to publish to both platforms simultaneously.</p>
+            <div class="alert alert-tip">
+              <span class="alert-icon">💡</span>
+              <span>Instagram posts require an <strong>image</strong> — text-only posts are not supported by the Instagram API.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <hr />
+
+      <!-- Troubleshooting -->
+      <div class="section-title">🔧 Troubleshooting</div>
+
+      <div class="trouble-item">
+        <div class="trouble-err">❌ "No Facebook Pages found"</div>
+        <div class="trouble-fix">Your Facebook account has no Pages. Create one at <strong>facebook.com/pages/create</strong>, or ask your Page admin to add you as an <strong>Admin</strong> (not just Editor).</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-err">❌ Instagram "Connect" button stays grayed out</div>
+        <div class="trouble-fix">Your Instagram account is not linked to your Facebook Page, or it's a Personal account. Open <strong>Meta Business Suite → Settings → Instagram Accounts</strong> → click Add to link it.</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-err">❌ Instagram publish fails with "media container" error</div>
+        <div class="trouble-fix">Instagram requires the image URL to be <strong>publicly accessible</strong>. Localhost or private storage URLs will fail. Use a CDN or cloud storage link.</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-err">❌ Post published but doesn't appear on the Page</div>
+        <div class="trouble-fix">Check your Facebook Page's <strong>Publishing Tools → Scheduled Posts</strong>. The post may be pending review or scheduled for a later time.</div>
+      </div>
+
+      <hr />
+
+      <!-- Checklist -->
+      <div class="section-title">📎 Quick Checklist</div>
+      <div class="checklist">
+        <ul>
+          <li><div class="check-box"></div> I have a Facebook Business Page and I am an Admin of it</li>
+          <li><div class="check-box"></div> I opened DigiM app and navigated to <strong>Integrations</strong></li>
+          <li><div class="check-box"></div> I clicked Connect and granted <strong>all</strong> permissions in the Facebook popup</li>
+          <li><div class="check-box"></div> I selected my Business Page from the dropdown and clicked Confirm</li>
+          <li><div class="check-box"></div> (Optional) My Instagram is a Business/Creator account linked to my Facebook Page</li>
+          <li><div class="check-box"></div> (Optional) The Instagram card shows ✅ Connected</li>
+          <li><div class="check-box"></div> I published a test campaign and confirmed it appeared on my Page</li>
+        </ul>
+      </div>
+
+      <hr />
+
+      <!-- Helpful Links -->
+      <div class="section-title">📚 Helpful Links</div>
+      <div class="links-grid">
+        <a class="link-card" href="https://www.facebook.com/pages/create" target="_blank">
+          🏢 Create a Facebook Business Page <span class="arrow">↗</span>
+        </a>
+        <a class="link-card" href="https://help.instagram.com/502981923235522" target="_blank">
+          📸 Switch Instagram to Business Account <span class="arrow">↗</span>
+        </a>
+        <a class="link-card" href="https://www.facebook.com/business/help/connect-instagram-to-page" target="_blank">
+          🔗 Link Instagram to Facebook Page <span class="arrow">↗</span>
+        </a>
+        <a class="link-card" href="https://business.facebook.com" target="_blank">
+          🛠 Meta Business Suite <span class="arrow">↗</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span>© 2025 <strong>DigiM</strong> — All rights reserved</span>
+      <span>For support, contact your DigiM app administrator</span>
+    </div>
+
+  </div>
+
+</body>
+</html>

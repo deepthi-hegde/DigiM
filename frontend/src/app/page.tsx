@@ -75,7 +75,7 @@ function Login({ onNext }: { onNext: () => void }) {
     <div className="fade-in-up glass-panel" style={{ padding: '48px', textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
       <div style={{ marginBottom: '40px' }}>
         <h1 style={{ fontSize: '36px', fontWeight: 800, background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-purple) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
-          MarketFlow AI
+          DigiM
         </h1>
         <p style={{ color: 'var(--text-light)', fontSize: '16px' }}>Grow your local business on autopilot.</p>
       </div>
@@ -579,7 +579,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       {showPageSelector && (
         <div style={{ marginBottom: '40px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Select Facebook Page</h3>
-          <p style={{ color: 'var(--text-light)', marginBottom: '16px', fontSize: '14px' }}>Choose which Facebook Page you want to connect to MarketFlow.</p>
+          <p style={{ color: 'var(--text-light)', marginBottom: '16px', fontSize: '14px' }}>Choose which Facebook Page you want to connect to DigiM app.</p>
           <select 
             className="input-field" 
             value={selectedPageId} 
@@ -1602,6 +1602,165 @@ function AssetsLibrary() {
   );
 }
 
+function FacebookSetupGuide() {
+  const [open, setOpen] = React.useState(false);
+
+  const Step = ({ num, title, children }: { num: number; title: string; children: React.ReactNode }) => (
+    <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #1877F2, #6366f1)', color: 'white', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{num}</div>
+      <div>
+        <h5 style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', marginBottom: '6px' }}>{title}</h5>
+        <div style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: '1.7' }}>{children}</div>
+      </div>
+    </div>
+  );
+
+  const Alert = ({ type, children }: { type: 'tip' | 'warn' | 'info'; children: React.ReactNode }) => {
+    const styles: Record<string, { bg: string; border: string; icon: string }> = {
+      tip:  { bg: '#f0fdf4', border: '#22c55e', icon: '💡' },
+      warn: { bg: '#fff7ed', border: '#f97316', icon: '⚠️' },
+      info: { bg: '#eff6ff', border: '#3b82f6', icon: 'ℹ️' },
+    };
+    const s = styles[type];
+    return (
+      <div style={{ background: s.bg, borderLeft: `4px solid ${s.border}`, borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: 'var(--text-color)', lineHeight: '1.6', margin: '8px 0' }}>
+        {s.icon} {children}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: open ? 'linear-gradient(135deg, #eff6ff, #faf5ff)' : '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '16px', color: 'var(--text-color)' }}>
+            <span style={{ fontSize: '22px' }}>📘</span>
+            5. Facebook & Instagram Business Setup Guide
+          </span>
+          <span style={{ fontSize: '20px', color: 'var(--text-light)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>⌄</span>
+        </button>
+        <a
+          href="/facebook-setup-guide.html"
+          target="_blank"
+          rel="noreferrer"
+          title="Open printable PDF guide"
+          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #1877F2, #6366f1)', color: 'white', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', transition: 'opacity 0.2s' }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          ⬇ PDF Guide
+        </a>
+      </div>
+
+      {open && (
+        <div style={{ marginTop: '16px', padding: '24px', background: '#fafbff', border: '1px solid #e2e8f0', borderRadius: '16px', animation: 'fadeIn 0.2s ease' }}>
+          {/* Overview */}
+          <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.7', marginBottom: '20px' }}>
+            Connect your Facebook Business Page (and optionally Instagram) to <strong>DigiM app</strong> to publish AI-generated campaigns directly — no copy-pasting required.
+          </p>
+
+          {/* Prerequisites */}
+          <div style={{ marginBottom: '24px', padding: '16px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>✅ Prerequisites Before You Begin</h5>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <tbody>
+                {[
+                  ['🏢', 'Facebook Business Page', 'You must be an Admin of the Page. Personal profiles not supported.'],
+                  ['👤', 'Facebook Account', 'Must have admin access to the Business Page.'],
+                  ['📸', 'Instagram (optional)', 'Must be a Business or Creator account — not a Personal account.'],
+                  ['🔗', 'Instagram linked to Page', 'Link Instagram to your Facebook Page via Meta Business Suite first.'],
+                ].map(([icon, req, detail]) => (
+                  <tr key={req} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '8px 4px', width: '28px', fontSize: '16px' }}>{icon}</td>
+                    <td style={{ padding: '8px', fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--text-color)' }}>{req}</td>
+                    <td style={{ padding: '8px', color: 'var(--text-light)' }}>{detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Alert type="warn">Do not use a Personal Instagram account. Switch to a Business/Creator profile first via Instagram → Settings → Account.</Alert>
+          </div>
+
+          {/* Steps */}
+          <h5 style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', marginBottom: '16px' }}>📋 Step-by-Step Setup</h5>
+
+          <Step num={1} title="Navigate to Platform Settings">
+            Open <strong>DigiM app</strong> → click the <strong>Settings (gear icon)</strong> in the sidebar → select the <strong>Integrations</strong> tab.
+          </Step>
+
+          <Step num={2} title="Connect Your Facebook Page">
+            <p style={{ marginBottom: '8px' }}>Locate the <strong>Facebook Page</strong> card and click <strong>Connect</strong>. A Facebook login popup will appear — log in with the account that <em>administers</em> your Business Page.</p>
+            <Alert type="info">If you see "Facebook SDK is still loading", wait 2–3 seconds and try again.</Alert>
+            <p style={{ marginTop: '8px', marginBottom: '4px' }}>Grant all requested permissions:</p>
+            <ul style={{ margin: '4px 0 0 16px', paddingLeft: '10px', listStyleType: 'disc' }}>
+              {['pages_show_list — See your managed Pages', 'pages_manage_posts — Publish on your behalf', 'instagram_basic — Read linked Instagram account', 'instagram_content_publish — Post photos to Instagram'].map(p => <li key={p}><code style={{ fontSize: '12px', background: '#f1f5f9', padding: '1px 4px', borderRadius: '4px' }}>{p.split(' — ')[0]}</code> — {p.split(' — ')[1]}</li>)}
+            </ul>
+            <Alert type="warn">Grant <strong>all</strong> permissions. Skipping any will cause publishing to fail.</Alert>
+          </Step>
+
+          <Step num={3} title="Select Your Business Page">
+            After granting permissions, a <strong>Select Facebook Page</strong> dropdown appears. Choose your Page and click <strong>Confirm</strong>.
+            <Alert type="tip">DigiM app automatically upgrades your short-lived login token to a <strong>non-expiring Page token</strong> — you won't need to reconnect.</Alert>
+          </Step>
+
+          <Step num={4} title="Connect Instagram (Optional)">
+            Once Facebook is connected, the <strong>Instagram Business</strong> card becomes active. Click <strong>Connect</strong> — no second login needed. DigiM app automatically finds the Instagram account linked to your Facebook Page.
+            <Alert type="info">No extra login required. Instagram is detected automatically via the Facebook Page link.</Alert>
+          </Step>
+
+          <Step num={5} title="Publish Your First Campaign">
+            Go to <strong>Campaigns</strong> → generate or write your post → click <strong>Publish to Facebook</strong>. If Instagram is connected, a toggle appears to publish to both simultaneously.
+            <Alert type="tip">Instagram posts require an image — text-only posts are not supported by the Instagram API.</Alert>
+          </Step>
+
+          {/* Troubleshooting */}
+          <div style={{ marginTop: '8px', padding: '16px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>🔧 Common Issues</h5>
+            {[
+              { err: '❌ "No Facebook Pages found"', fix: 'Your account has no Pages. Create one at facebook.com/pages/create, or ask your admin to add you as Admin (not just Editor).' },
+              { err: '❌ Instagram "Connect" grayed out', fix: 'Link your Instagram Business account to the Facebook Page first via Meta Business Suite → Settings → Instagram Accounts.' },
+              { err: '❌ Instagram publish fails with "media container" error', fix: 'The image URL must be publicly accessible. Localhost or private URLs will fail. Use a CDN or cloud storage link.' },
+              { err: '❌ Post published but not visible on Page', fix: "Check your Page's Publishing Tools → Scheduled Posts. The post may be pending or scheduled." },
+            ].map(({ err, fix }) => (
+              <div key={err} style={{ marginBottom: '10px', fontSize: '13px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-color)' }}>{err}</span>
+                <p style={{ color: 'var(--text-light)', marginTop: '2px', lineHeight: '1.6' }}>{fix}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Checklist */}
+          <div style={{ marginTop: '16px', padding: '16px', background: 'linear-gradient(135deg, #eff6ff, #faf5ff)', borderRadius: '12px', border: '1px solid #c7d2fe' }}>
+            <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '10px', color: 'var(--text-color)' }}>📎 Quick Checklist</h5>
+            <ul style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: '2', listStyleType: 'none', padding: 0 }}>
+              {[
+                'I have a Facebook Business Page and I am an Admin of it',
+                'I opened DigiM app → Integrations and clicked Connect on the Facebook card',
+                'I granted all permissions in the Facebook popup',
+                'I selected my Business Page from the dropdown',
+                '(Optional) My Instagram is a Business/Creator account linked to my Facebook Page',
+                '(Optional) Instagram card shows ✅ Connected',
+                'I published a test campaign and it appeared on my Page',
+              ].map(item => <li key={item}>☐ {item}</li>)}
+            </ul>
+          </div>
+
+          {/* Helpful Links */}
+          <div style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-light)' }}>
+            <strong style={{ color: 'var(--text-color)' }}>📚 Helpful Links: </strong>
+            <a href="https://www.facebook.com/pages/create" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', marginRight: '12px' }}>Create a Facebook Page</a>
+            <a href="https://help.instagram.com/502981923235522" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', marginRight: '12px' }}>Switch to Instagram Business</a>
+            <a href="https://www.facebook.com/business/help/connect-instagram-to-page" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>Link Instagram to Facebook Page</a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminPanel() {
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%' }}>
@@ -1653,7 +1812,7 @@ function AdminPanel() {
               </ul>
             </div>
 
-            <div>
+            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', color: 'var(--text-color)' }}>
                 4. Secure Local HTTPS & SSL Setup
               </h4>
@@ -1665,6 +1824,8 @@ function AdminPanel() {
                 Click <strong>Advanced</strong> &rarr; <strong>Proceed to localhost (unsafe)</strong>. This is normal for local HTTPS servers using self-signed certs.
               </div>
             </div>
+
+            <FacebookSetupGuide />
           </div>
         </div>
       </div>
@@ -1680,7 +1841,7 @@ function MainDashboard() {
     <div className="fade-in-up" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
       {/* Sidebar */}
       <div className="glass-panel" style={{ width: '250px', padding: '24px', position: 'sticky', top: '40px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '32px', background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-purple) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MarketFlow AI</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '32px', background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-purple) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DigiM app</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 
