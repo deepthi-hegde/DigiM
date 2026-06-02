@@ -329,11 +329,11 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           onDragLeave={handleDrag}
           onDrop={handleDrop}
           style={{ 
-            border: `2px dashed ${dragActive ? 'var(--primary-color)' : '#cbd5e1'}`, 
+            border: `2px dashed ${dragActive ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.25)'}`, 
             borderRadius: '16px', 
             padding: '32px', 
             textAlign: 'center', 
-            background: dragActive ? 'rgba(99, 102, 241, 0.05)' : 'rgba(255,255,255,0.5)', 
+            background: dragActive ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             transform: dragActive ? 'scale(1.01)' : 'scale(1)'
@@ -596,8 +596,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           </div>
         </div>
       )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
+       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
         {/* Facebook Page Connection */}
         <div style={{ 
           display: 'flex', 
@@ -606,19 +605,18 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           padding: '24px', 
           borderRadius: '16px',
           transition: 'all 0.3s',
-          ...(isFbConnected 
-            ? { background: 'rgba(16, 185, 129, 0.05)', border: '2px solid #10b981' }
-            : { background: 'white', border: '1px solid #e2e8f0' })
+          background: isFbConnected ? 'rgba(82, 183, 136, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+          border: isFbConnected ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '48px', height: '48px', background: '#1877F2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>
               f
             </div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isFbConnected ? '#065f46' : 'var(--text-color)' }}>
+              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isFbConnected ? 'var(--primary-color)' : 'var(--text-color)' }}>
                 Facebook Page
               </h4>
-              <p style={{ fontSize: '13px', color: isFbConnected ? '#059669' : 'var(--text-light)' }}>
+              <p style={{ fontSize: '13px', color: isFbConnected ? 'var(--text-color)' : 'var(--text-light)' }}>
                 {isFbConnected ? `Connected as ${fbPageName}` : 'Ready to connect'}
               </p>
             </div>
@@ -630,18 +628,28 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
               connectFacebook();
             }}
             disabled={isConnectingFb}
-            style={isFbConnected ? { padding: '10px 20px', fontSize: '14px', color: '#059669', borderColor: '#34d399', background: '#ecfdf5' } : { padding: '10px 20px', fontSize: '14px' }}
+            style={isFbConnected ? { padding: '10px 20px', fontSize: '14px', color: 'var(--primary-color)', borderColor: 'var(--primary-color)', background: 'rgba(82, 183, 136, 0.1)' } : { padding: '10px 20px', fontSize: '14px' }}
           >
             {isConnectingFb ? 'Connecting...' : (isFbConnected ? '✓ Change Page' : 'Connect')}
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: isIgConnected ? 'rgba(16, 185, 129, 0.05)' : 'white', border: isIgConnected ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '16px', transition: 'all 0.3s' }}>
+        {/* Instagram Connection */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: '24px', 
+          background: isIgConnected ? 'rgba(82, 183, 136, 0.05)' : 'rgba(255, 255, 255, 0.02)', 
+          border: isIgConnected ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)', 
+          borderRadius: '16px', 
+          transition: 'all 0.3s' 
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '48px', height: '48px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>in</div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isIgConnected ? '#065f46' : 'var(--text-color)' }}>Instagram Business</h4>
-              <p style={{ fontSize: '13px', color: isIgConnected ? '#059669' : 'var(--text-light)' }}>
+              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isIgConnected ? 'var(--primary-color)' : 'var(--text-color)' }}>Instagram Business</h4>
+              <p style={{ fontSize: '13px', color: isIgConnected ? 'var(--text-color)' : 'var(--text-light)' }}>
                 {isIgConnected ? 'Connected via Facebook' : (isFbConnected ? 'Ready to connect' : 'Connect via Facebook first')}
               </p>
             </div>
@@ -651,9 +659,9 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
             style={{ 
               padding: '10px 20px', fontSize: '14px', 
               opacity: (isFbConnected || isIgConnected) ? 1 : 0.5,
-              background: isIgConnected ? '#ecfdf5' : 'white',
-              color: isIgConnected ? '#059669' : 'var(--text-color)',
-              borderColor: isIgConnected ? '#34d399' : '#e2e8f0',
+              background: isIgConnected ? 'rgba(82, 183, 136, 0.1)' : 'transparent',
+              color: isIgConnected ? 'var(--primary-color)' : 'var(--text-color)',
+              borderColor: isIgConnected ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.2)',
               cursor: (isFbConnected || isIgConnected) ? 'pointer' : 'not-allowed'
             }} 
             disabled={!isFbConnected || isIgConnected || isConnectingIg}
@@ -664,7 +672,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         </div>
       </div>
 
-      <div style={{ marginTop: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+      <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(82, 183, 136, 0.03)', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
         <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '12px' }}>
           💡 Meta Integration Guide (Things to Know)
         </h4>
@@ -686,7 +694,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       </div>
 
       {!isSettings && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(82, 183, 136, 0.1)', paddingTop: '32px' }}>
           {onBack && <button className="btn-secondary" onClick={onBack}>← Back</button>}
           {onNext && <button className="btn-primary" onClick={onNext}>{(isFbConnected || isIgConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
         </div>
@@ -938,25 +946,22 @@ export function CampaignDashboard() {
                   type="button"
                   onClick={() => setPrompt(template.text)}
                   style={{
-                    background: 'white',
-                    border: '1px solid #cbd5e1',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(82, 183, 136, 0.2)',
                     borderRadius: '20px',
                     padding: '6px 12px',
                     fontSize: '11px',
-                    color: '#475569',
+                    color: 'var(--text-color)',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.borderColor = 'var(--primary-color)';
-                    e.currentTarget.style.color = 'var(--primary-color)';
-                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.02)';
+                    e.currentTarget.style.background = 'rgba(82, 183, 136, 0.1)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                    e.currentTarget.style.color = '#475569';
-                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.2)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
                   }}
                 >
                   {template.label}
@@ -1015,9 +1020,9 @@ export function CampaignDashboard() {
               }}
               style={{ 
                 padding: '16px', 
-                border: isDraggingOverAssetZone ? '2px dashed var(--primary-color)' : '1px dashed #cbd5e1', 
+                border: isDraggingOverAssetZone ? '2px dashed var(--primary-color)' : '1px dashed rgba(82, 183, 136, 0.25)', 
                 borderRadius: '12px', 
-                background: isDraggingOverAssetZone ? 'rgba(99, 102, 241, 0.05)' : '#f8fafc',
+                background: isDraggingOverAssetZone ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
@@ -1029,7 +1034,7 @@ export function CampaignDashboard() {
             >
               {selectedAssetUrl ? (
                 <>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', background: 'white' }}>
+                  <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(82, 183, 136, 0.2)', background: 'rgba(5, 8, 6, 0.8)' }}>
                     {selectedAssetUrl.endsWith('.mp4') ? (
                       <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
@@ -1103,7 +1108,7 @@ export function CampaignDashboard() {
                         height: '60px', 
                         borderRadius: '8px', 
                         overflow: 'hidden', 
-                        border: selectedAssetUrl === asset.url ? '2.5px solid var(--primary-color)' : '1px solid #e2e8f0', 
+                        border: selectedAssetUrl === asset.url ? '2.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)', 
                         cursor: 'grab', 
                         flexShrink: 0,
                         position: 'relative',
@@ -1131,7 +1136,7 @@ export function CampaignDashboard() {
           </div>
 
           {aiManaged && (
-            <div className="fade-in-up" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', marginBottom: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+            <div className="fade-in-up" style={{ background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(82, 183, 136, 0.15)', marginBottom: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.4)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Frequency</span>
@@ -1176,7 +1181,7 @@ export function CampaignDashboard() {
                      value={minAge} 
                      onChange={(e) => setMinAge(Math.max(13, parseInt(e.target.value) || 13))}
                    />
-                   <span style={{ color: '#94a3b8', fontSize: '14px' }}>to</span>
+                   <span style={{ color: 'var(--text-light)', fontSize: '14px' }}>to</span>
                    <input 
                      type="number" 
                      className="input-field" 
@@ -1203,11 +1208,11 @@ export function CampaignDashboard() {
         </div>
 
         {/* Right Column: AI Preview */}
-        <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.5)', borderRadius: '24px', border: '2px dashed #cbd5e1', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
+        <div style={{ flex: '1 1 400px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '24px', border: '2px dashed rgba(82, 183, 136, 0.25)', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
           <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeInUp 0.5s ease-out' }}>
 
             {/* Image Preview */}
-            <div style={{ background: '#f1f5f9', borderRadius: '16px', height: '240px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.05)', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ background: 'rgba(5, 8, 6, 0.6)', borderRadius: '16px', height: '240px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.4)', overflow: 'hidden', position: 'relative' }}>
                 {selectedAssetUrl ? (
                   <>
                     {selectedAssetUrl.endsWith('.mp4') ? (
@@ -1260,14 +1265,14 @@ export function CampaignDashboard() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '20px' }}>
                     <div style={{ fontSize: '40px', marginBottom: '8px' }}>🖼️</div>
-                    <div style={{ color: '#64748b', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>No image yet</div>
-                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>Edit the prompt below and click Generate</div>
+                    <div style={{ color: 'var(--text-light)', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>No image yet</div>
+                    <div style={{ color: 'var(--text-light)', opacity: 0.6, fontSize: '12px' }}>Edit the prompt below and click Generate</div>
                   </div>
                 )}
                 {isGeneratingImage && (
-                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, gap: '10px' }}>
+                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(12, 20, 16, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, gap: '10px' }}>
                      <div style={{ fontSize: '28px' }}>🎨</div>
-                     <div style={{ fontWeight: 700, color: '#6366f1', fontSize: '14px' }}>AI is creating your visual...</div>
+                     <div style={{ fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>AI is creating your visual...</div>
                    </div>
                 )}
               </div>
@@ -1286,15 +1291,13 @@ export function CampaignDashboard() {
                       borderRadius: '10px',
                       border: 'none',
                       background: isGeneratingImage || !visualSuggestion
-                        ? '#e2e8f0'
-                        : selectedAssetUrl
-                          ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                          : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                      color: isGeneratingImage || !visualSuggestion ? '#94a3b8' : 'white',
+                        ? 'rgba(255, 255, 255, 0.04)'
+                        : 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
+                      color: isGeneratingImage || !visualSuggestion ? 'var(--text-light)' : 'white',
                       fontSize: '13px',
                       fontWeight: 700,
                       cursor: isGeneratingImage || !visualSuggestion ? 'not-allowed' : 'pointer',
-                      boxShadow: isGeneratingImage || !visualSuggestion ? 'none' : '0 4px 12px rgba(99,102,241,0.35)',
+                      boxShadow: isGeneratingImage || !visualSuggestion ? 'none' : '0 4px 12px var(--primary-glow)',
                       transition: 'all 0.2s ease',
                     }}
                   >
@@ -1307,9 +1310,9 @@ export function CampaignDashboard() {
                       style={{
                         padding: '10px 12px',
                         borderRadius: '10px',
-                        border: '1.5px solid #e2e8f0',
-                        background: showPromptEditor ? '#f0f0ff' : 'white',
-                        color: showPromptEditor ? '#6366f1' : '#64748b',
+                        border: '1.5px solid rgba(82, 183, 136, 0.25)',
+                        background: showPromptEditor ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                        color: showPromptEditor ? 'var(--primary-color)' : 'var(--text-color)',
                         fontSize: '12px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -1335,21 +1338,21 @@ export function CampaignDashboard() {
                         boxSizing: 'border-box',
                         padding: '10px 12px',
                         borderRadius: '10px',
-                        border: '1.5px solid #6366f1',
+                        border: '1.5px solid var(--primary-color)',
                         fontSize: '12px',
                         lineHeight: '1.5',
-                        color: '#334155',
+                        color: 'var(--text-color)',
                         fontFamily: 'inherit',
                         resize: 'vertical',
                         outline: 'none',
-                        background: 'white',
+                        background: 'rgba(5, 8, 6, 0.8)',
                       }}
                     />
                   </div>
                 )}
               </div>
 
-              <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', minHeight: '300px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.15)', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', minHeight: '300px' }}>
                 <textarea 
                   value={generatedText}
                   onChange={(e) => setGeneratedText(e.target.value)}
@@ -1380,17 +1383,17 @@ export function CampaignDashboard() {
                     style={{ 
                       padding: '0 20px', 
                       borderRadius: '12px', 
-                      border: '1px solid #e2e8f0', 
+                      border: '1px solid rgba(82, 183, 136, 0.2)',
                       background: !metaStatus.has_instagram 
-                        ? '#f1f5f9' 
+                        ? 'rgba(255, 255, 255, 0.02)' 
                         : publishToIg 
                           ? 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' 
-                          : 'white',
+                          : 'rgba(255, 255, 255, 0.04)',
                       color: !metaStatus.has_instagram 
-                        ? '#94a3b8' 
+                        ? 'var(--text-light)' 
                         : publishToIg 
                           ? 'white' 
-                          : '#64748b',
+                          : 'var(--text-color)',
                       fontSize: '13px',
                       fontWeight: 700,
                       cursor: !metaStatus.has_instagram ? 'not-allowed' : 'pointer',
@@ -1424,9 +1427,9 @@ export function CampaignDashboard() {
             maxWidth: '650px',
             maxHeight: '80vh',
             padding: '32px',
-            background: 'white',
+            background: 'var(--glass-bg)',
             borderRadius: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
             display: 'flex',
             flexDirection: 'column',
           }}>
@@ -1448,10 +1451,10 @@ export function CampaignDashboard() {
               minHeight: '200px',
             }}>
               {libraryAssets.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-light)' }}>
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>📁</div>
                   <p style={{ fontWeight: 500, margin: 0 }}>No assets in library</p>
-                  <p style={{ fontSize: '12px', marginTop: '4px' }}>Upload assets in the "Asset Library" tab first.</p>
+                  <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '4px' }}>Upload assets in the "Asset Library" tab first.</p>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
@@ -1466,10 +1469,10 @@ export function CampaignDashboard() {
                         cursor: 'pointer',
                         borderRadius: '12px',
                         overflow: 'hidden',
-                        border: selectedAssetUrl === asset.url ? '3px solid var(--primary-color)' : '1px solid #e2e8f0',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                        border: selectedAssetUrl === asset.url ? '3px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                         transition: 'transform 0.2s, border-color 0.2s',
-                        background: '#f8fafc',
+                        background: 'rgba(255, 255, 255, 0.02)',
                         position: 'relative'
                       }}
                     >
@@ -1770,13 +1773,13 @@ function AdminPanel() {
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
-        <div style={{ background: 'white', borderRadius: '20px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.02)', borderRadius: '20px', padding: '32px', border: '1px solid rgba(82, 183, 136, 0.15)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <h3 style={{ fontSize: '20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary-color)', marginBottom: '24px' }}>
             🧠 System Know-How Reference
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+            <div style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)', paddingBottom: '20px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', color: 'var(--text-color)' }}>
                 1. AI Prompt Generation Pipeline
               </h4>
@@ -1786,7 +1789,7 @@ function AdminPanel() {
               </p>
             </div>
 
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+            <div style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)', paddingBottom: '20px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', color: 'var(--text-color)' }}>
                 2. Strict Copywriting Rules (Concise Posts & No Placeholders)
               </h4>
@@ -1795,11 +1798,11 @@ function AdminPanel() {
               </p>
               <ul style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.6', marginLeft: '20px', marginTop: '6px', listStyleType: 'disc' }}>
                 <li><strong>No Placeholders:</strong> Omit bracketed placeholder tags (e.g., <code>[Business Name]</code>, <code>[Link]</code>, <code>[Phone]</code>). Real details are resolved from the business profile or omitted entirely.</li>
-                <li><strong>Short & Punchy:</strong> Kept under 80 words (2-3 sentences max + 2-3 hashtags) to optimize for rapid scrolling on social feeds.</li>
+                <li><strong>Short & Punchy:</strong> Kept under 80 words (2-3 sentences max + 2-3 hashtags) to optimize for social scrolling.</li>
               </ul>
             </div>
 
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+            <div style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)', paddingBottom: '20px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', color: 'var(--text-color)' }}>
                 3. Drag-and-Drop / Asset Selection Mechanism
               </h4>
@@ -1812,7 +1815,7 @@ function AdminPanel() {
               </ul>
             </div>
 
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+            <div style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)', paddingBottom: '20px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', color: 'var(--text-color)' }}>
                 4. Secure Local HTTPS & SSL Setup
               </h4>
@@ -1820,13 +1823,414 @@ function AdminPanel() {
                 The Next.js development server runs using <code>next dev --experimental-https</code> with self-signed SSL certificates inside <code>frontend/certificates</code>. 
                 If you encounter a browser security warning:
               </p>
-              <div style={{ background: '#f8fafc', borderLeft: '4px solid #6366f1', padding: '12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px', color: 'var(--text-color)' }}>
+              <div style={{ background: 'rgba(82, 183, 136, 0.05)', borderLeft: '4px solid var(--primary-color)', padding: '12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px', color: 'var(--text-color)' }}>
                 Click <strong>Advanced</strong> &rarr; <strong>Proceed to localhost (unsafe)</strong>. This is normal for local HTTPS servers using self-signed certs.
               </div>
             </div>
 
             <FacebookSetupGuide />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => {
+      setSubmitted(false);
+      setContactForm({ name: '', email: '', message: '' });
+      window.showNotification?.("Message sent successfully! We'll get back to you soon.", "success");
+    }, 1000);
+  };
+
+  return (
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: 'var(--text-color)', background: 'radial-gradient(circle at 50% 50%, #0D2016 0%, #050806 100%)', scrollBehavior: 'smooth' }}>
+      {/* Sticky Header Nav */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(5, 8, 6, 0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(82, 183, 136, 0.1)', padding: '16px 24px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '22px', fontWeight: 800, color: 'var(--primary-color)' }}>
+            <span style={{ fontSize: '24px' }}>🌱</span> DigiM
+          </div>
+          <nav style={{ display: 'flex', gap: '32px' }}>
+            <a href="#about" style={{ color: 'var(--text-light)', textDecoration: 'none', fontWeight: 500, fontSize: '15px', transition: 'color 0.2s' }}>About</a>
+            <a href="#products" style={{ color: 'var(--text-light)', textDecoration: 'none', fontWeight: 500, fontSize: '15px', transition: 'color 0.2s' }}>Product & Services</a>
+            <a href="#features" style={{ color: 'var(--text-light)', textDecoration: 'none', fontWeight: 500, fontSize: '15px', transition: 'color 0.2s' }}>Features</a>
+            <a href="#contact" style={{ color: 'var(--text-light)', textDecoration: 'none', fontWeight: 500, fontSize: '15px', transition: 'color 0.2s' }}>Contact</a>
+          </nav>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button className="btn-secondary" onClick={onGetStarted} style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '10px' }}>Log In</button>
+            <button className="btn-primary" onClick={onGetStarted} style={{ padding: '8px 20px', fontSize: '14px', borderRadius: '10px' }}>Get Started</button>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section style={{ padding: '100px 24px 80px', maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+        <h1 className="fade-in-up" style={{ fontSize: '56px', fontWeight: 800, lineHeight: 1.15, marginBottom: '24px', background: 'linear-gradient(135deg, #ECFDF5 0%, #52B788 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          Grow Your Local Business <br /> On Autopilot with AI
+        </h1>
+        <p className="fade-in-up" style={{ fontSize: '18px', color: 'var(--text-light)', lineHeight: 1.6, maxWidth: '750px', margin: '0 auto 40px' }}>
+          DigiM app handles your social media marketing natively. Write, design, schedule, and analyze campaigns in seconds. Zero tech skills, design skills, or marketing background required.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+          <button className="btn-primary" onClick={onGetStarted} style={{ padding: '16px 36px', fontSize: '16px' }}>Launch Your First Campaign</button>
+          <a href="#features" className="btn-secondary" style={{ padding: '16px 36px', fontSize: '16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Explore Features</a>
+        </div>
+      </section>
+
+      {/* Value Propositions / Business Angle Section */}
+      <section id="about" style={{ padding: '80px 24px', borderTop: '1px solid rgba(82, 183, 136, 0.1)', background: 'rgba(12, 20, 16, 0.3)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '12px' }}>Built For Business Growth</h2>
+            <p style={{ color: 'var(--text-light)', fontSize: '16px', maxWidth: '600px', margin: '0 auto' }}>How DigiM app simplifies marketing and drives actual ROI for local businesses.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '32px' }}>
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏰</div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Save 10+ Hours / Week</h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Stop stressing over copy or graphics. Input a 1-sentence prompt and our AI generates tailored text and asset suggestions in seconds.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>📈</div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Maximize Marketing ROI</h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Reach local buyers. AI structures campaigns designed around target demographics, ages, and interests to optimize post value.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>🎯</div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Keep Absolute Consistency</h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Never forget to post. Keep your Facebook & Instagram pages active and engaging on autopilot.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>🛠</div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>No Tech Experience Needed</h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Designed with a single-column layout, plain language toggles, and clear setup checklists. Connect platforms with one click.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Products & Services Section */}
+      <section id="products" style={{ padding: '80px 24px', borderTop: '1px solid rgba(82, 183, 136, 0.1)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
+          <div>
+            <span style={{ color: 'var(--primary-color)', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>What We Deliver</span>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, marginTop: '8px', marginBottom: '24px' }}>All-In-One Social Marketing Engine</h2>
+            <p style={{ color: 'var(--text-light)', fontSize: '15px', lineHeight: 1.7, marginBottom: '20px' }}>
+              DigiM app gives you a private agency-level marketing suite at a fraction of the cost. From brand-aligned copy suggestions to asset organization and live publishing sync, everything you need is under one hood.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>✓</span>
+                <span>Self-driving content calendar suggestions</span>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>✓</span>
+                <span>Direct Meta Graph API integrations for Instant Syncing</span>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>✓</span>
+                <span>Drag-and-drop media asset vaulting</span>
+              </div>
+            </div>
+          </div>
+          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(82, 183, 136, 0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+              <div style={{ fontWeight: 700, fontSize: '14px' }}>Campaign Generator</div>
+              <div style={{ fontSize: '11px', color: 'var(--primary-color)', background: 'rgba(82, 183, 136, 0.1)', padding: '2px 8px', borderRadius: '10px' }}>AI Powered</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ background: 'rgba(5, 8, 6, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.05)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '4px' }}>Describe your promotion:</div>
+                <div style={{ fontSize: '13px' }}>"Launch our summer floral collection with 20% discount!"</div>
+              </div>
+              <div style={{ background: 'rgba(82, 183, 136, 0.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--primary-color)', marginBottom: '4px', fontWeight: 600 }}>Suggested AI Copy:</div>
+                <div style={{ fontSize: '12px', fontStyle: 'italic', lineHeight: 1.5 }}>"Bloom in style this season! 🌸 Elevate your summer wardrobe with 20% OFF our premium collections..."</div>
+              </div>
+              <button className="btn-primary" style={{ padding: '10px', fontSize: '13px', borderRadius: '8px', width: '100%' }} onClick={onGetStarted}>Generate Now</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section (Including Analytics) */}
+      <section id="features" style={{ padding: '80px 24px', borderTop: '1px solid rgba(82, 183, 136, 0.1)', background: 'rgba(12, 20, 16, 0.3)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '12px' }}>Powerful App Features</h2>
+            <p style={{ color: 'var(--text-light)', fontSize: '16px', maxWidth: '600px', margin: '0 auto' }}>Engineered for absolute ease of use and top performance.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🤖</span> Campaign Generator
+              </h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Leverages advanced Gemini API models to create cohesive captions, hashtags, and suggestions for visuals. Select tone, target age, gender, and category.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🔄</span> Multi-Platform Sync
+              </h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Directly connect Facebook Pages and Instagram Business accounts. Publish content immediately from our web dashboard with a single click.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>📊</span> FB & IG Analytics Dashboard
+              </h3>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6 }}>
+                Track reach, follower growth, impressions, and engagement rates. Compare Facebook and Instagram post metrics side-by-side to understand what works.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" style={{ padding: '80px 24px', borderTop: '1px solid rgba(82, 183, 136, 0.1)', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '12px' }}>Get In Touch</h2>
+          <p style={{ color: 'var(--text-light)', fontSize: '15px' }}>Have questions? Send us a message and our team will get right back to you.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '32px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-light)', marginBottom: '8px', fontWeight: 500 }}>Name</label>
+            <input className="input-field" placeholder="John Doe" required value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-light)', marginBottom: '8px', fontWeight: 500 }}>Email Address</label>
+            <input className="input-field" type="email" placeholder="john@example.com" required value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-light)', marginBottom: '8px', fontWeight: 500 }}>Message</label>
+            <textarea className="input-field" rows={4} style={{ resize: 'vertical' }} placeholder="Tell us what you're looking for..." required value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
+          </div>
+          <button type="submit" className="btn-primary" style={{ marginTop: '10px' }}>Send Message</button>
+        </form>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ marginTop: 'auto', borderTop: '1px solid rgba(82, 183, 136, 0.1)', padding: '32px 24px', background: 'rgba(5, 8, 6, 0.9)', textAlign: 'center', fontSize: '14px', color: 'var(--text-light)' }}>
+        <p>© 2026 DigiM app. All rights reserved. Empowering local business marketing.</p>
+      </footer>
+    </div>
+  );
+}
+
+function AnalyticsTab() {
+  const [loading, setLoading] = useState(true);
+  const [activePlatform, setActivePlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/meta/analytics?tenant_id=1')
+      .then(res => res.json())
+      .then(resData => {
+        setData(resData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load analytics:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', borderRadius: '16px', width: '100%' }}>
+        <span style={{ fontSize: '24px', display: 'block', marginBottom: '16px' }}>⏳</span>
+        <p style={{ fontWeight: 600, color: 'var(--primary-color)' }}>Fetching insights from Meta Graph API...</p>
+      </div>
+    );
+  }
+
+  const pData = data ? data[activePlatform] : null;
+  const isConnected = data ? data.connected : false;
+
+  return (
+    <div className="fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '28px', fontWeight: 800 }}>Marketing Performance</h2>
+          <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>
+            Real-time Reach and Engagement statistics for connected profiles.
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isConnected ? 'rgba(82, 183, 136, 0.1)' : 'rgba(131, 156, 143, 0.1)', border: `1px solid ${isConnected ? 'var(--primary-color)' : 'rgba(131, 156, 143, 0.2)'}`, padding: '8px 16px', borderRadius: '20px', fontSize: '13px' }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', background: isConnected ? 'var(--primary-color)' : '#9CA3AF', borderRadius: '50%' }}></span>
+          <span style={{ fontWeight: 600 }}>{isConnected ? `Connected to ${data.page_name}` : 'Running in Demo Mode'}</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', background: 'rgba(82, 183, 136, 0.05)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)', width: 'fit-content' }}>
+        <button 
+          onClick={() => setActivePlatform('facebook')}
+          style={{ background: activePlatform === 'facebook' ? 'var(--primary-color)' : 'transparent', color: activePlatform === 'facebook' ? '#000000' : 'var(--text-color)', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          📘 Facebook
+        </button>
+        <button 
+          onClick={() => setActivePlatform('instagram')}
+          style={{ background: activePlatform === 'instagram' ? 'var(--primary-color)' : 'transparent', color: activePlatform === 'instagram' ? '#000000' : 'var(--text-color)', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          📸 Instagram
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Followers</span>
+          <div style={{ fontSize: '32px', fontWeight: 800 }}>{pData?.followers.toLocaleString()}</div>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', fontWeight: 600 }}>↑ +8.4% this month</span>
+        </div>
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Estimated Reach</span>
+          <div style={{ fontSize: '32px', fontWeight: 800 }}>{pData?.reach.toLocaleString()}</div>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', fontWeight: 600 }}>↑ +14.2% this month</span>
+        </div>
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Impressions</span>
+          <div style={{ fontSize: '32px', fontWeight: 800 }}>{pData?.impressions.toLocaleString()}</div>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', fontWeight: 600 }}>↑ +11.8% this month</span>
+        </div>
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Engagement Rate</span>
+          <div style={{ fontSize: '32px', fontWeight: 800 }}>{pData?.engagement_rate}%</div>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', fontWeight: 600 }}>↑ +0.6% this month</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px' }}>Follower Growth (Last 6 Weeks)</h4>
+          <div style={{ height: '200px', width: '100%', position: 'relative' }}>
+            <svg style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+              <line x1="0" y1="40" x2="100%" y2="40" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              <line x1="0" y1="90" x2="100%" y2="90" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              <line x1="0" y1="140" x2="100%" y2="140" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              
+              <path 
+                d={`M 10,${150 - (pData?.follower_growth[0] / (activePlatform === 'facebook' ? 8 : 16))} 
+                   L 90,${150 - (pData?.follower_growth[1] / (activePlatform === 'facebook' ? 8 : 16))} 
+                   L 170,${150 - (pData?.follower_growth[2] / (activePlatform === 'facebook' ? 8 : 16))} 
+                   L 250,${150 - (pData?.follower_growth[3] / (activePlatform === 'facebook' ? 8 : 16))} 
+                   L 330,${150 - (pData?.follower_growth[4] / (activePlatform === 'facebook' ? 8 : 16))} 
+                   L 410,${150 - (pData?.follower_growth[5] / (activePlatform === 'facebook' ? 8 : 16))}`}
+                fill="none"
+                stroke="var(--primary-color)"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              
+              {pData?.follower_growth.map((val: number, idx: number) => (
+                <g key={idx}>
+                  <circle cx={10 + idx * 80} cy={150 - (val / (activePlatform === 'facebook' ? 8 : 16))} r="4" fill="var(--bg-dark)" stroke="var(--primary-color)" strokeWidth="2" />
+                  <text x={10 + idx * 80} y={130 - (val / (activePlatform === 'facebook' ? 8 : 16))} fill="var(--text-light)" fontSize="10" textAnchor="middle">{val}</text>
+                  <text x={10 + idx * 80} y="180" fill="var(--text-light)" fontSize="10" textAnchor="middle">Wk {idx + 1}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+          <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px' }}>Weekly Post Reach</h4>
+          <div style={{ height: '200px', width: '100%', position: 'relative' }}>
+            <svg style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+              <line x1="0" y1="40" x2="100%" y2="40" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              <line x1="0" y1="90" x2="100%" y2="90" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              <line x1="0" y1="140" x2="100%" y2="140" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
+              
+              <path 
+                d={`M 10,160 
+                   L 10,${160 - (pData?.reach_trend[0] / 35)} 
+                   L 90,${160 - (pData?.reach_trend[1] / 35)} 
+                   L 170,${160 - (pData?.reach_trend[2] / 35)} 
+                   L 250,${160 - (pData?.reach_trend[3] / 35)} 
+                   L 330,${160 - (pData?.reach_trend[4] / 35)} 
+                   L 410,${160 - (pData?.reach_trend[5] / 35)} 
+                   L 410,160 Z`}
+                fill="rgba(82, 183, 136, 0.1)"
+                stroke="none"
+              />
+              
+              <path 
+                d={`M 10,${160 - (pData?.reach_trend[0] / 35)} 
+                   L 90,${160 - (pData?.reach_trend[1] / 35)} 
+                   L 170,${160 - (pData?.reach_trend[2] / 35)} 
+                   L 250,${160 - (pData?.reach_trend[3] / 35)} 
+                   L 330,${160 - (pData?.reach_trend[4] / 35)} 
+                   L 410,${160 - (pData?.reach_trend[5] / 35)}`}
+                fill="none"
+                stroke="var(--primary-color)"
+                strokeWidth="2.5"
+              />
+
+              {pData?.reach_trend.map((val: number, idx: number) => (
+                <g key={idx}>
+                  <circle cx={10 + idx * 80} cy={160 - (val / 35)} r="3" fill="var(--primary-color)" />
+                  <text x={10 + idx * 80} y={145 - (val / 35)} fill="var(--text-light)" fontSize="9" textAnchor="middle">{val}</text>
+                  <text x={10 + idx * 80} y="180" fill="var(--text-light)" fontSize="10" textAnchor="middle">Wk {idx + 1}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', overflow: 'hidden' }}>
+        <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>Recent Post Performance</h4>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)', color: 'var(--text-light)', fontSize: '13px' }}>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Post Copy</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Likes</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Comments</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Shares</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pData?.recent_posts.map((post: any, idx: number) => (
+                <tr key={idx} style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.05)', fontSize: '14px', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '16px', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.text}</td>
+                  <td style={{ padding: '16px', fontWeight: 600 }}>👍 {post.likes}</td>
+                  <td style={{ padding: '16px', fontWeight: 600 }}>💬 {post.comments}</td>
+                  <td style={{ padding: '16px', fontWeight: 600 }}>🔄 {post.shares}</td>
+                  <td style={{ padding: '16px', color: 'var(--text-light)' }}>{post.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1841,40 +2245,47 @@ function MainDashboard() {
     <div className="fade-in-up" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
       {/* Sidebar */}
       <div className="glass-panel" style={{ width: '250px', padding: '24px', position: 'sticky', top: '40px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '32px', background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-purple) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DigiM app</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '32px', background: 'linear-gradient(135deg, var(--primary-color) 0%, #2D6A4F 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DigiM app</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 
             onClick={() => setActiveTab('campaigns')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'campaigns' ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === 'campaigns' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'campaigns' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'campaigns' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'campaigns' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'campaigns' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
             Campaigns
           </button>
           <button 
+            onClick={() => setActiveTab('analytics')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'analytics' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'analytics' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'analytics' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            Analytics
+          </button>
+          <button 
             onClick={() => setActiveTab('assets')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'assets' ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === 'assets' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'assets' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'assets' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'assets' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'assets' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Asset Library
           </button>
           <button 
             onClick={() => setActiveTab('profile')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'profile' ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === 'profile' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'profile' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'profile' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'profile' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'profile' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             Profile
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'settings' ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === 'settings' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'settings' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'settings' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'settings' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'settings' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Integrations
           </button>
           <button 
             onClick={() => setActiveTab('admin')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'admin' ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === 'admin' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'admin' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'admin' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'admin' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'admin' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
             Admin Panel
@@ -1883,19 +2294,20 @@ function MainDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
         {showWelcome && (
-          <div className="fade-in-up" style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', border: '1px solid #10b981', borderRadius: '16px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.1)' }}>
+          <div className="fade-in-up" style={{ background: 'rgba(82, 183, 136, 0.05)', border: '1px solid var(--primary-color)', borderRadius: '16px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 4px 12px var(--primary-glow)' }}>
             <div>
-              <h4 style={{ color: '#065f46', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>🎉 You are all set for now!</h4>
-              <p style={{ color: '#047857', fontSize: '14px', lineHeight: 1.5 }}>
-                Your business profile is ready. You can always add more images and videos later in the <strong>Assets</strong> menu. Now, let's create your first AI campaign!
+              <h4 style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>🎉 Welcome to DigiM app!</h4>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.5 }}>
+                Your marketing command center is ready. Check out the <strong>Analytics</strong> tab to see your profile's performance, or head to the <strong>Campaigns</strong> tab to generate posts on autopilot.
               </p>
             </div>
-            <button onClick={() => setShowWelcome(false)} style={{ background: 'transparent', border: 'none', color: '#047857', fontSize: '20px', cursor: 'pointer', opacity: 0.6 }}>×</button>
+            <button onClick={() => setShowWelcome(false)} style={{ background: 'transparent', border: 'none', color: 'var(--primary-color)', fontSize: '20px', cursor: 'pointer', opacity: 0.6 }}>×</button>
           </div>
         )}
         {activeTab === 'campaigns' && <CampaignDashboard />}
+        {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'assets' && <AssetsLibrary />}
         {activeTab === 'profile' && <Onboarding isSettings={true} />}
         {activeTab === 'settings' && <Platforms isSettings={true} />}
@@ -1906,7 +2318,7 @@ function MainDashboard() {
 }
 
 export default function App() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // Step 0 is the public Landing Page
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -1932,13 +2344,27 @@ export default function App() {
       {/* Inject the official Facebook JS SDK */}
       <Script src="https://connect.facebook.net/en_US/sdk.js" strategy="lazyOnload" crossOrigin="anonymous" />
       
-      <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-        {step > 1 && step < 4 && <Stepper currentStep={step} />}
-        {step === 1 && <Login onNext={() => setStep(2)} />}
-        {step === 2 && <Onboarding onBack={() => setStep(1)} onNext={() => setStep(3)} />}
-        {step === 3 && <Platforms onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-        {step === 4 && <MainDashboard />}
-      </div>
+      {step === 0 ? (
+        <LandingPage onGetStarted={() => setStep(1)} />
+      ) : (
+        <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+          {step > 1 && step < 4 && <Stepper currentStep={step} />}
+          {step === 1 && (
+            <div style={{ position: 'relative', width: '100%', maxWidth: '500px' }}>
+              <button 
+                onClick={() => setStep(0)} 
+                style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                ← Back to Webpage
+              </button>
+              <Login onNext={() => setStep(4)} />
+            </div>
+          )}
+          {step === 2 && <Onboarding onBack={() => setStep(1)} onNext={() => setStep(3)} />}
+          {step === 3 && <Platforms onBack={() => setStep(2)} onNext={() => setStep(4)} />}
+          {step === 4 && <MainDashboard />}
+        </div>
+      )}
 
       {notification && (
         <div 
@@ -1946,11 +2372,11 @@ export default function App() {
             position: 'fixed',
             top: '24px',
             right: '24px',
-            background: notification.type === 'success' ? '#10b981' : '#ef4444',
+            background: notification.type === 'success' ? '#2E7D58' : '#ef4444',
             color: 'white',
             padding: '16px 24px',
             borderRadius: '12px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
