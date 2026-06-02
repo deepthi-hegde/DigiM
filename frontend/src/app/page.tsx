@@ -1610,7 +1610,7 @@ function FacebookSetupGuide() {
 
   const Step = ({ num, title, children }: { num: number; title: string; children: React.ReactNode }) => (
     <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-      <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #1877F2, #6366f1)', color: 'white', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{num}</div>
+      <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary-color), var(--primary-color))', color: 'white', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{num}</div>
       <div>
         <h5 style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', marginBottom: '6px' }}>{title}</h5>
         <div style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: '1.7' }}>{children}</div>
@@ -1620,9 +1620,9 @@ function FacebookSetupGuide() {
 
   const Alert = ({ type, children }: { type: 'tip' | 'warn' | 'info'; children: React.ReactNode }) => {
     const styles: Record<string, { bg: string; border: string; icon: string }> = {
-      tip:  { bg: '#f0fdf4', border: '#22c55e', icon: '💡' },
-      warn: { bg: '#fff7ed', border: '#f97316', icon: '⚠️' },
-      info: { bg: '#eff6ff', border: '#3b82f6', icon: 'ℹ️' },
+      tip:  { bg: 'rgba(82, 183, 136, 0.05)', border: 'var(--primary-color)', icon: '💡' },
+      warn: { bg: 'rgba(249, 115, 22, 0.08)', border: '#f97316', icon: '⚠️' },
+      info: { bg: 'rgba(59, 130, 246, 0.08)', border: '#3b82f6', icon: 'ℹ️' },
     };
     const s = styles[type];
     return (
@@ -1637,7 +1637,7 @@ function FacebookSetupGuide() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button
           onClick={() => setOpen(o => !o)}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: open ? 'linear-gradient(135deg, #eff6ff, #faf5ff)' : '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', transition: 'all 0.2s' }}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: open ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(82, 183, 136, 0.15)', borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', transition: 'all 0.2s' }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '16px', color: 'var(--text-color)' }}>
             <span style={{ fontSize: '22px' }}>📘</span>
@@ -1650,7 +1650,7 @@ function FacebookSetupGuide() {
           target="_blank"
           rel="noreferrer"
           title="Open printable PDF guide"
-          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #1877F2, #6366f1)', color: 'white', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', transition: 'opacity 0.2s' }}
+          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, var(--secondary-color), var(--primary-color))', color: 'white', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 4px 12px var(--primary-glow)', transition: 'opacity 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
@@ -1659,14 +1659,14 @@ function FacebookSetupGuide() {
       </div>
 
       {open && (
-        <div style={{ marginTop: '16px', padding: '24px', background: '#fafbff', border: '1px solid #e2e8f0', borderRadius: '16px', animation: 'fadeIn 0.2s ease' }}>
+        <div style={{ marginTop: '16px', padding: '24px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(82, 183, 136, 0.15)', borderRadius: '16px', animation: 'fadeIn 0.2s ease' }}>
           {/* Overview */}
           <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.7', marginBottom: '20px' }}>
             Connect your Facebook Business Page (and optionally Instagram) to <strong>DigiM app</strong> to publish AI-generated campaigns directly — no copy-pasting required.
           </p>
 
           {/* Prerequisites */}
-          <div style={{ marginBottom: '24px', padding: '16px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(12, 20, 16, 0.4)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
             <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>✅ Prerequisites Before You Begin</h5>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <tbody>
@@ -1676,7 +1676,7 @@ function FacebookSetupGuide() {
                   ['📸', 'Instagram (optional)', 'Must be a Business or Creator account — not a Personal account.'],
                   ['🔗', 'Instagram linked to Page', 'Link Instagram to your Facebook Page via Meta Business Suite first.'],
                 ].map(([icon, req, detail]) => (
-                  <tr key={req} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <tr key={req} style={{ borderBottom: '1px solid rgba(82, 183, 136, 0.1)' }}>
                     <td style={{ padding: '8px 4px', width: '28px', fontSize: '16px' }}>{icon}</td>
                     <td style={{ padding: '8px', fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--text-color)' }}>{req}</td>
                     <td style={{ padding: '8px', color: 'var(--text-light)' }}>{detail}</td>
@@ -1699,7 +1699,7 @@ function FacebookSetupGuide() {
             <Alert type="info">If you see "Facebook SDK is still loading", wait 2–3 seconds and try again.</Alert>
             <p style={{ marginTop: '8px', marginBottom: '4px' }}>Grant all requested permissions:</p>
             <ul style={{ margin: '4px 0 0 16px', paddingLeft: '10px', listStyleType: 'disc' }}>
-              {['pages_show_list — See your managed Pages', 'pages_manage_posts — Publish on your behalf', 'instagram_basic — Read linked Instagram account', 'instagram_content_publish — Post photos to Instagram'].map(p => <li key={p}><code style={{ fontSize: '12px', background: '#f1f5f9', padding: '1px 4px', borderRadius: '4px' }}>{p.split(' — ')[0]}</code> — {p.split(' — ')[1]}</li>)}
+              {['pages_show_list — See your managed Pages', 'pages_manage_posts — Publish on your behalf', 'instagram_basic — Read linked Instagram account', 'instagram_content_publish — Post photos to Instagram'].map(p => <li key={p}><code style={{ fontSize: '12px', background: 'rgba(82, 183, 136, 0.1)', padding: '1px 4px', borderRadius: '4px' }}>{p.split(' — ')[0]}</code> — {p.split(' — ')[1]}</li>)}
             </ul>
             <Alert type="warn">Grant <strong>all</strong> permissions. Skipping any will cause publishing to fail.</Alert>
           </Step>
@@ -1720,7 +1720,7 @@ function FacebookSetupGuide() {
           </Step>
 
           {/* Troubleshooting */}
-          <div style={{ marginTop: '8px', padding: '16px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <div style={{ marginTop: '8px', padding: '16px', background: 'rgba(12, 20, 16, 0.4)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
             <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>🔧 Common Issues</h5>
             {[
               { err: '❌ "No Facebook Pages found"', fix: 'Your account has no Pages. Create one at facebook.com/pages/create, or ask your admin to add you as Admin (not just Editor).' },
@@ -1736,7 +1736,7 @@ function FacebookSetupGuide() {
           </div>
 
           {/* Quick Checklist */}
-          <div style={{ marginTop: '16px', padding: '16px', background: 'linear-gradient(135deg, #eff6ff, #faf5ff)', borderRadius: '12px', border: '1px solid #c7d2fe' }}>
+          <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(82, 183, 136, 0.05)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
             <h5 style={{ fontWeight: 700, fontSize: '14px', marginBottom: '10px', color: 'var(--text-color)' }}>📎 Quick Checklist</h5>
             <ul style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: '2', listStyleType: 'none', padding: 0 }}>
               {[
@@ -1754,9 +1754,9 @@ function FacebookSetupGuide() {
           {/* Helpful Links */}
           <div style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-light)' }}>
             <strong style={{ color: 'var(--text-color)' }}>📚 Helpful Links: </strong>
-            <a href="https://www.facebook.com/pages/create" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', marginRight: '12px' }}>Create a Facebook Page</a>
-            <a href="https://help.instagram.com/502981923235522" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', marginRight: '12px' }}>Switch to Instagram Business</a>
-            <a href="https://www.facebook.com/business/help/connect-instagram-to-page" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>Link Instagram to Facebook Page</a>
+            <a href="https://www.facebook.com/pages/create" target="_blank" rel="noreferrer" style={{ color: 'var(--primary-color)', marginRight: '12px' }}>Create a Facebook Page</a>
+            <a href="https://help.instagram.com/502981923235522" target="_blank" rel="noreferrer" style={{ color: 'var(--primary-color)', marginRight: '12px' }}>Switch to Instagram Business</a>
+            <a href="https://www.facebook.com/business/help/connect-instagram-to-page" target="_blank" rel="noreferrer" style={{ color: 'var(--primary-color)' }}>Link Instagram to Facebook Page</a>
           </div>
         </div>
       )}
