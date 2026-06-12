@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 from dotenv import load_dotenv
+# Reload trigger comment v4
 load_dotenv()
 from google import genai
 from google.genai import types
@@ -28,15 +29,142 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from db.database import get_db, engine
-from db.schema import Base, MetaAccount, Campaign
+from db.schema import Base, MetaAccount, Campaign, User, AuditLog, Tenant
 from api.meta import publish_to_facebook, PublishRequest
 from utils.storage import upload_to_gcs
+import datetime
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+class BrandProfileRequest(BaseModel):
+    tenant_id: int = 1
+    business_name: Optional[str] = None
+    business_description: Optional[str] = None
+    industry: Optional[str] = None
+    category: Optional[str] = None
+    brand_url: Optional[str] = None
+    brand_color_primary: Optional[str] = None
+    brand_color_secondary: Optional[str] = None
+    target_locations: Optional[str] = None   # comma-separated
+    target_gender: Optional[str] = "All"
+    target_age_min: Optional[int] = 18
+    target_age_max: Optional[int] = 35
+    persona_tone: Optional[str] = "casual"
+
+
+@app.post("/api/onboarding/brand-profile")
+def save_brand_profile(payload: BrandProfileRequest, db: Session = Depends(get_db)):
+    """Save or update the brand identity profile for a tenant."""
+    tenant = db.query(Tenant).filter_by(id=payload.tenant_id).first()
+    if not tenant:
+        # Create a stub tenant on first save (demo mode has no Google auth)
+        tenant = Tenant(
+            id=payload.tenant_id,
+            name=payload.business_name or "Demo Business",
+            email=f"demo_{payload.tenant_id}@digim.local",
+            is_active=True,
+        )
+        db.add(tenant)
+
+    if payload.business_name:
+        tenant.name = payload.business_name
+    if payload.business_description is not None:
+        tenant.business_description = payload.business_description
+    if payload.industry is not None:
+        tenant.industry = payload.industry
+    if payload.category is not None:
+        tenant.category = payload.category
+    if payload.brand_url is not None:
+        tenant.brand_url = payload.brand_url
+    if payload.brand_color_primary is not None:
+        tenant.brand_color_primary = payload.brand_color_primary
+    if payload.brand_color_secondary is not None:
+        tenant.brand_color_secondary = payload.brand_color_secondary
+    if payload.target_locations is not None:
+        tenant.target_locations = payload.target_locations
+    if payload.target_gender is not None:
+        tenant.target_gender = payload.target_gender
+    if payload.target_age_min is not None:
+        tenant.target_age_min = payload.target_age_min
+    if payload.target_age_max is not None:
+        tenant.target_age_max = payload.target_age_max
+    if payload.persona_tone is not None:
+        tenant.persona_tone = payload.persona_tone
+
+    db.commit()
+    db.refresh(tenant)
+    return {"status": "success", "message": "Brand profile saved."}
+
+
+@app.get("/api/onboarding/brand-profile")
+def get_brand_profile(tenant_id: int = 1, db: Session = Depends(get_db)):
+    """Retrieve the saved brand profile for a tenant."""
+    tenant = db.query(Tenant).filter_by(id=tenant_id).first()
+    if not tenant:
+        return {}
+    return {
+        "business_name": tenant.name,
+        "business_description": tenant.business_description,
+        "industry": tenant.industry,
+        "category": tenant.category,
+        "brand_url": tenant.brand_url,
+        "brand_color_primary": tenant.brand_color_primary,
+        "brand_color_secondary": tenant.brand_color_secondary,
+        "target_locations": tenant.target_locations,
+        "target_gender": tenant.target_gender,
+        "target_age_min": tenant.target_age_min,
+        "target_age_max": tenant.target_age_max,
+        "persona_tone": tenant.persona_tone,
+    }
+
+
+class ScrapeUrlRequest(BaseModel):
+    url: str
+
+
+@app.post("/api/onboarding/scrape-url")
+def scrape_brand_url(payload: ScrapeUrlRequest):
+    """Use Gemini to extract brand name, description and industry from a public URL."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return {
+            "status": "mock",
+            "business_name": "Sample Brand",
+            "business_description": "A creative local business.",
+            "industry": "Clothing & Apparel",
+        }
+    try:
+        import google.genai as genai
+        client = genai.Client(api_key=api_key)
+        prompt = (
+            f"Visit this URL or use its text content to extract brand information: {payload.url}\n"
+            "Return a JSON object with keys: business_name, business_description (1-2 sentences), industry.\n"
+            "Respond with ONLY valid JSON, no markdown."
+        )
+        config = types.GenerateContentConfig(
+            tools=[{"google_search": {}}]
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=config,
+        )
+        import json
+        text = response.text.strip()
+        # Strip any markdown code fences
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        data = json.loads(text)
+        return {"status": "success", **data}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
 
 class CampaignRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
@@ -48,6 +176,7 @@ class CampaignRequest(BaseModel):
     businessName: Optional[str] = None
     phoneNumber: Optional[str] = None
     industry: Optional[str] = None
+    tone: Optional[str] = "casual"
 
 
 class CampaignPublishRequest(BaseModel):
@@ -55,6 +184,8 @@ class CampaignPublishRequest(BaseModel):
     image_url: Optional[str] = None
     publish_to_instagram: bool = False
     tenant_id: int = 1
+    scheduled_time: Optional[str] = None  # ISO format string or None
+    campaign_id: Optional[int] = None
 
 @app.get("/api/meta/status")
 def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
@@ -76,9 +207,66 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         .order_by(MetaAccount.id.desc()).first()
     if not account:
         raise HTTPException(status_code=400, detail="No Meta account connected")
-    
+
+    # Handle Scheduling
+    if payload.scheduled_time:
+        try:
+            parsed_time = datetime.datetime.fromisoformat(payload.scheduled_time.replace("Z", "+00:00"))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid scheduled_time format: {e}")
+        
+        # Update existing campaign if campaign_id is provided, otherwise create a new one
+        campaign = None
+        if payload.campaign_id:
+            campaign = db.query(Campaign).filter_by(id=payload.campaign_id).first()
+            
+        if campaign:
+            campaign.scheduled_time = parsed_time
+            campaign.status = "scheduled"
+            campaign.generated_text = payload.message
+            if payload.image_url:
+                campaign.visual_suggestion = payload.image_url
+        else:
+            campaign = Campaign(
+                tenant_id=payload.tenant_id,
+                prompt="Scheduled direct post",
+                category="Direct",
+                min_age=18,
+                max_age=65,
+                gender="All",
+                generated_text=payload.message,
+                visual_suggestion=payload.image_url,
+                scheduled_time=parsed_time,
+                status="scheduled"
+            )
+            db.add(campaign)
+        
+        db.commit()
+        db.refresh(campaign)
+
+        # Log schedule action
+        log = AuditLog(
+            tenant_id=payload.tenant_id,
+            user_email="admin@digim.com",
+            action="Schedule Campaign",
+            details=f"Scheduled campaign {campaign.id} for {payload.scheduled_time}"
+        )
+        db.add(log)
+        db.commit()
+
+        return {"status": "scheduled", "campaign_id": campaign.id, "message": f"Successfully scheduled post for {payload.scheduled_time}"}
+
     # If the user hasn't selected a real page yet, mock the success to avoid graph API errors during testing
     if account.page_id == "pending_page_selection":
+        # Log mock publish
+        log = AuditLog(
+            tenant_id=payload.tenant_id,
+            user_email="admin@digim.com",
+            action="Publish Campaign (Mock)",
+            details="Mock published because page_id is pending_page_selection"
+        )
+        db.add(log)
+        db.commit()
         return {"status": "success", "message": "Mock published because page_id is pending_page_selection"}
 
     # Actual publish call to Meta
@@ -119,6 +307,16 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         )
         ig_res = publish_to_instagram(ig_pub_req)
         
+    # Log live publish
+    log = AuditLog(
+        tenant_id=payload.tenant_id,
+        user_email="admin@digim.com",
+        action="Publish Campaign",
+        details=f"Published to Facebook (and Instagram if linked)"
+    )
+    db.add(log)
+    db.commit()
+
     return {
         "status": "success", 
         "fb_response": fb_res,
@@ -142,22 +340,35 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         category=payload.category,
         min_age=payload.minAge,
         max_age=payload.maxAge,
-        gender=payload.gender
+        gender=payload.gender,
+        tone=payload.tone
     ).first()
     
     if existing_campaign:
         return {
             "status": "success",
+            "id": existing_campaign.id,
             "generated_text": existing_campaign.generated_text,
             "visual_suggestion": existing_campaign.visual_suggestion,
+            "is_liked": existing_campaign.is_liked,
             "cached": True
         }
+
+    # Retrieve liked campaigns to construct few-shot learning prompt context
+    liked_campaigns = db.query(Campaign).filter_by(tenant_id=1, is_liked=True).limit(3).all()
+    few_shot_context = ""
+    if liked_campaigns:
+        few_shot_context = "\nBelow are examples of posts the user has saved and likes (match this style and format):\n"
+        for c in liked_campaigns:
+            few_shot_context += f"Input Topic: {c.prompt}\nGenerated Post: {c.generated_text}\n---\n"
 
     if not api_key:
         return {
             "status": "success",
-            "generated_text": "Experience ultimate comfort with our premium linen shirts. 🌿 Breathable, stylish, and perfect for the sun!\n\n#SummerVibes #LinenLove",
+            "id": 999,
+            "generated_text": f"[Mock {payload.tone.capitalize()}] Experience ultimate comfort with our premium linen shirts. 🌿 Breathable, stylish, and perfect for the sun!\n\n#SummerVibes #LinenLove",
             "visual_suggestion": "A high-quality photo of a linen shirt on a sunny balcony.",
+            "is_liked": False,
             "cached": False
         }
         
@@ -172,27 +383,21 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         else:
             category_instruction = "Style: Engaging."
 
-        business_info = ""
-        if payload.businessName:
-            business_info += f"\nBrand/Business Name: {payload.businessName}"
-        if payload.industry:
-            business_info += f"\nIndustry: {payload.industry}"
-        if payload.phoneNumber:
-            business_info += f"\nPhone Number to include (if relevant): {payload.phoneNumber}"
-
         prompt_text = f"""
-        You are an expert digital marketing copywriter. {business_info}
+        You are an expert digital marketing copywriter. {few_shot_context}
+        
         Create an engaging social media post for:
         Topic: {payload.prompt}
         Audience: {payload.gender}, {payload.minAge}-{payload.maxAge}
         Category: {payload.category} ({category_instruction})
+        Requested Tone: {payload.tone} (e.g., formal, casual, elaborate, shorten)
         
         CRITICAL RULES FOR POST COPY:
         1. NO PLACEHOLDERS: Do NOT include any placeholder text (such as [Your Name], [Link], [Phone], [Insert Details Here], etc.). 
            - Use the real brand name '{payload.businessName or "our brand"}' instead of brand placeholders.
            - If a phone number is provided ('{payload.phoneNumber or ""}'), use it. If not, do NOT write a phone number placeholder.
            - Do not mention links unless a specific URL is provided.
-        2. KEEP IT SHORT: Keep the post copy concise and punchy (ideally under 80 words, 2-3 sentences max, plus 2-3 relevant hashtags). Only make it longer if the user explicitly asked for high detail in their prompt.
+        2. TONE & STYLE: Adhere strictly to the requested tone '{payload.tone}'. If shorten, keep it extremely brief. If elaborate, write a rich post.
         3. CALL TO ACTION: Make it a clear, direct, and realistic call to action.
         
         OUTPUT FORMAT:
@@ -219,7 +424,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         else:
             caption = full_text.strip()
             suggestion = "A professional lifestyle photo related to the product."
-
+ 
         new_campaign = Campaign(
             tenant_id=1,
             prompt=payload.prompt,
@@ -227,16 +432,30 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
             min_age=payload.minAge,
             max_age=payload.maxAge,
             gender=payload.gender,
+            tone=payload.tone,
             generated_text=caption,
             visual_suggestion=suggestion
         )
         db.add(new_campaign)
         db.commit()
+        db.refresh(new_campaign)
         
+        # Log the generation event
+        log = AuditLog(
+            tenant_id=1,
+            user_email="admin@digim.com",
+            action="Generate Campaign",
+            details=f"Generated campaign {new_campaign.id} with tone {payload.tone}"
+        )
+        db.add(log)
+        db.commit()
+
         return {
             "status": "success", 
+            "id": new_campaign.id,
             "generated_text": caption,
             "visual_suggestion": suggestion,
+            "is_liked": False,
             "cached": False
         }
     except Exception as e:
@@ -247,6 +466,29 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
             "status": "error",
             "message": str(e)
         }
+
+class LikeRequest(BaseModel):
+    is_liked: bool
+
+@app.post("/api/campaign/{campaign_id}/like")
+def toggle_campaign_like(campaign_id: int, payload: LikeRequest, db: Session = Depends(get_db)):
+    campaign = db.query(Campaign).filter_by(id=campaign_id).first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    campaign.is_liked = payload.is_liked
+    db.commit()
+    
+    # Log like action
+    log = AuditLog(
+        tenant_id=1,
+        user_email="admin@digim.com",
+        action="Like Campaign" if payload.is_liked else "Unlike Campaign",
+        details=f"Campaign ID: {campaign_id}"
+    )
+    db.add(log)
+    db.commit()
+
+    return {"status": "success", "is_liked": campaign.is_liked}
 
 class ImageGenRequest(BaseModel):
     prompt: str
@@ -262,7 +504,7 @@ def generate_ai_image(payload: ImageGenRequest):
         print(f"Generating image for: {payload.prompt}")
         
         response = client.models.generate_images(
-            model='imagen-4.0-fast-generate-001',
+            model='imagen-4.0-generate-001',
             prompt=payload.prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1,
@@ -337,6 +579,11 @@ async def upload_asset(file: UploadFile = File(...)):
         "type": "video" if file.content_type.startswith("video") else "image"
     }
 
+@app.get("/api/campaigns")
+def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
+    campaigns = db.query(Campaign).filter_by(tenant_id=tenant_id).order_by(Campaign.id.desc()).all()
+    return campaigns
+
 @app.get("/api/assets")
 def list_assets():
     if not os.path.exists(UPLOAD_DIR):
@@ -356,6 +603,14 @@ def list_assets():
 
 from fastapi.responses import FileResponse
 
+@app.delete("/api/assets/{filename}")
+def delete_asset(filename: str):
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"status": "success", "message": f"Deleted {filename}"}
+    raise HTTPException(status_code=404, detail="File not found")
+
 @app.get("/api/assets/raw/{filename}")
 def get_asset_file(filename: str):
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -363,6 +618,100 @@ def get_asset_file(filename: str):
         return FileResponse(file_path)
     raise HTTPException(status_code=404, detail="File not found")
 
+@app.get("/api/admin/logs")
+def get_audit_logs(user_email: str = "admin@digim.com", db: Session = Depends(get_db)):
+    if "admin" not in user_email:
+        raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
+    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
+    return logs
+
+class UserRoleRequest(BaseModel):
+    email: str
+    role: str
+
+@app.post("/api/admin/users/role")
+def assign_user_role(payload: UserRoleRequest, admin_email: str = "admin@digim.com", db: Session = Depends(get_db)):
+    if "admin" not in admin_email:
+        raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
+    user = db.query(User).filter_by(email=payload.email).first()
+    if not user:
+        user = User(email=payload.email, tenant_id=1, role=payload.role)
+        db.add(user)
+    else:
+        user.role = payload.role
+    db.commit()
+    return {"status": "success", "email": payload.email, "role": payload.role}
+
 @app.get("/")
 def health_check():
     return {"status": "ok", "message": "MarketFlow AI Backend is running"}
+
+import threading
+import time
+
+def process_scheduled_campaigns():
+    while True:
+        # Check every 30 seconds
+        time.sleep(30)
+        from db.database import SessionLocal
+        db = SessionLocal()
+        try:
+            now = datetime.datetime.utcnow()
+            # Query all scheduled posts whose execution time has passed
+            sched_posts = db.query(Campaign).filter(
+                Campaign.status == "scheduled",
+                Campaign.scheduled_time <= now
+            ).all()
+            
+            for post in sched_posts:
+                print(f"Auto-publishing scheduled campaign ID: {post.id}...")
+                account = db.query(MetaAccount).filter_by(tenant_id=post.tenant_id)\
+                    .order_by(MetaAccount.id.desc()).first()
+                if not account:
+                    post.status = "failed"
+                    db.commit()
+                    continue
+                
+                if account.page_id == "pending_page_selection":
+                    # Mock successful publication
+                    post.status = "published"
+                    db.commit()
+                    continue
+                
+                try:
+                    image_url = post.visual_suggestion
+                    if image_url and not image_url.startswith("http"):
+                        image_url = "https://picsum.photos/id/237/600/600.jpg"
+                    
+                    pub_req = PublishRequest(
+                        page_id=account.page_id,
+                        message=post.generated_text,
+                        access_token=account.access_token,
+                        image_url=image_url
+                    )
+                    publish_to_facebook(pub_req)
+                    post.status = "published"
+                    
+                    # Log the auto-publish action
+                    log = AuditLog(
+                        tenant_id=post.tenant_id,
+                        user_email="system@digim.com",
+                        action="Auto-Publish Scheduled Post",
+                        details=f"Campaign ID: {post.id} successfully published."
+                    )
+                    db.add(log)
+                except Exception as pub_err:
+                    print(f"Error publishing scheduled post {post.id}: {pub_err}")
+                    post.status = "failed"
+                
+                db.commit()
+        except Exception as err:
+            print(f"Error in scheduler processor loop: {err}")
+        finally:
+            db.close()
+
+@app.on_event("startup")
+def start_scheduler():
+    print("Starting scheduled post background worker thread...")
+    threading.Thread(target=process_scheduled_campaigns, daemon=True).start()
+

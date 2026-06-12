@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, create_engine, DateTime
 from sqlalchemy.orm import declarative_base, relationship
+import datetime
 
 Base = declarative_base()
 
@@ -15,10 +16,55 @@ class Tenant(Base):
     email = Column(String, unique=True, index=True)
     google_sso_id = Column(String, unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True)
-    
+
+    # Brand identity (captured during onboarding Step 1)
+    brand_url = Column(String, nullable=True)              # Optional website/social URL
+    brand_color_primary = Column(String, nullable=True)    # Hex colour e.g. #52B788
+    brand_color_secondary = Column(String, nullable=True)  # Hex colour
+    business_description = Column(String, nullable=True)   # Free-text tagline / description
+    industry = Column(String, nullable=True)               # e.g. Clothing & Apparel
+    category = Column(String, nullable=True)               # e.g. Textile Readymade
+
+    # Audience targeting (captured during onboarding Step 2)
+    target_locations = Column(String, nullable=True)       # Comma-separated city names
+    target_gender = Column(String, default="All")          # All | Female | Male
+    target_age_min = Column(Integer, default=18)
+    target_age_max = Column(Integer, default=35)
+    persona_tone = Column(String, default="casual")        # casual | formal | elaborate | shorten
+
     # Relationships
     meta_accounts = relationship("MetaAccount", back_populates="tenant")
     campaigns = relationship("Campaign", back_populates="tenant")
+    users = relationship("User", back_populates="tenant")
+
+
+class User(Base):
+    """
+    User account with RBAC (Role-Based Access Control) support.
+    """
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True)
+    email = Column(String, unique=True, index=True)
+    role = Column(String, default="editor")  # admin, editor, viewer
+    
+    # Relationships
+    tenant = relationship("Tenant", back_populates="users")
+
+
+class AuditLog(Base):
+    """
+    Keeps track of critical actions for compliance and admin oversight.
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, index=True)
+    user_email = Column(String, index=True)
+    action = Column(String)
+    details = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class MetaAccount(Base):
@@ -53,8 +99,15 @@ class Campaign(Base):
     generated_text = Column(String)
     visual_suggestion = Column(String, nullable=True)
     
+    # Scheduling & tones
+    tone = Column(String, default="casual")
+    is_liked = Column(Boolean, default=False)
+    scheduled_time = Column(DateTime, nullable=True)
+    status = Column(String, default="draft")  # draft, scheduled, published, failed
+    
     # Relationships
     tenant = relationship("Tenant", back_populates="campaigns")
+
 
 # Example of how to initialize the engine for SQLite for local dev
 # engine = create_engine("sqlite:///./marketflow.db", connect_args={"check_same_thread": False})

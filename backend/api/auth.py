@@ -22,33 +22,36 @@ def login_via_google(
     Validates Google SSO token, finds or creates the Tenant in PostgreSQL, 
     and returns session data.
     """
-    email = token_payload.get("email")
-    name = token_payload.get("name")
-    google_id = token_payload.get("sub")
-    
-    if not email:
-        raise HTTPException(status_code=400, detail="Email not found in token payload")
-
-    # Look for existing tenant
-    tenant = db.query(Tenant).filter(Tenant.email == email).first()
-    
-    if not tenant:
-        # Create new tenant
-        tenant = Tenant(
-            email=email,
-            name=name,
-            google_sso_id=google_id,
-            is_active=True
-        )
-        db.add(tenant)
-        db.commit()
-        db.refresh(tenant)
+    try:
+        email = token_payload.get("email")
+        name = token_payload.get("name")
+        google_id = token_payload.get("sub")
         
-    # In a real app, you would generate a native backend JWT here to send to the frontend.
-    # For now, we return the tenant details and instruct the frontend to keep using the Google token or a mock token.
-    return AuthResponse(
-        tenant_id=tenant.id,
-        name=tenant.name,
-        email=tenant.email,
-        token="mock-backend-jwt-token" 
-    )
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not found in token payload")
+    
+        # Look for existing tenant
+        tenant = db.query(Tenant).filter(Tenant.email == email).first()
+        
+        if not tenant:
+            # Create new tenant
+            tenant = Tenant(
+                email=email,
+                name=name or "Google User",
+                google_sso_id=google_id,
+                is_active=True
+            )
+            db.add(tenant)
+            db.commit()
+            db.refresh(tenant)
+            
+        return AuthResponse(
+            tenant_id=tenant.id,
+            name=tenant.name,
+            email=tenant.email,
+            token="mock-backend-jwt-token" 
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Auth/Database Error: {str(e)}")
