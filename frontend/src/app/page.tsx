@@ -1352,7 +1352,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (toneOverride?: string, categoryOverride?: string) => {
     if (!prompt) {
       notifyError("Please enter a campaign goal/prompt");
       return;
@@ -1386,11 +1386,11 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           maxAge,
           gender,
           freq,
-          category,
+          category: categoryOverride || category,
           businessName: bizName,
           phoneNumber: phone,
           industry: ind,
-          tone
+          tone: toneOverride || tone
         }),
       });
       const data = await response.json();
@@ -1692,28 +1692,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             </div>
           </div>
 
-          {/* Tone & Category selectors always visible under Campaign Setup */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Category</span>
-              <select className="input-field" value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option>Product Showcase</option>
-                <option>Behind the Scenes</option>
-                <option>Promotions</option>
-                <option>Knowledge Info</option>
-              </select>
-            </div>
-            <div>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Tone</span>
-              <select className="input-field" value={tone} onChange={(e) => setTone(e.target.value)}>
-                <option value="casual">Casual 😊</option>
-                <option value="formal">Formal 👔</option>
-                <option value="elaborate">Elaborate 📝</option>
-                <option value="shorten">Shorten ✂️</option>
-              </select>
-            </div>
-          </div>
-
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
             <div 
@@ -1932,7 +1910,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             <button 
               className="btn-primary" 
               style={{ flex: 1, padding: '16px', fontSize: '16px', opacity: isGenerating ? 0.7 : 1 }}
-              onClick={handleGenerate}
+              onClick={() => handleGenerate()}
               disabled={isGenerating}
             >
               {isGenerating ? '✨ AI is designing...' : '✨ Generate AI Content'}
@@ -2135,6 +2113,101 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                     />
                   </div>
                 )}
+              </div>
+
+              {/* Tone & Category selectors styled as premium interactive chips */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      { key: "Product Showcase", label: "Product Showcase 🛍️" },
+                      { key: "Behind the Scenes", label: "Behind the Scenes 🎬" },
+                      { key: "Promotions", label: "Promotions 📣" },
+                      { key: "Knowledge Info", label: "Knowledge Info 💡" }
+                    ].map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => {
+                          setCategory(cat.key);
+                          handleGenerate(tone, cat.key);
+                        }}
+                        style={{
+                          background: category === cat.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                          border: category === cat.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '20px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          color: category === cat.key ? 'var(--primary-color)' : 'var(--text-color)',
+                          fontWeight: category === cat.key ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          if (category !== cat.key) {
+                            e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (category !== cat.key) {
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                          }
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tone</span>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      { key: "casual", label: "Casual 😊" },
+                      { key: "formal", label: "Formal 👔" },
+                      { key: "elaborate", label: "Elaborate 📝" },
+                      { key: "shorten", label: "Shorten ✂️" }
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => {
+                          setTone(t.key);
+                          handleGenerate(t.key, category);
+                        }}
+                        style={{
+                          background: tone === t.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                          border: tone === t.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '20px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          color: tone === t.key ? 'var(--primary-color)' : 'var(--text-color)',
+                          fontWeight: tone === t.key ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          if (tone !== t.key) {
+                            e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (tone !== t.key) {
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                          }
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
