@@ -1269,6 +1269,97 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
   const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
 
+  // WhatsApp State variables
+  const [publishToWa, setPublishToWa] = useState(false);
+  const [waConnected, setWaConnected] = useState(false);
+  const [showWaSettings, setShowWaSettings] = useState(false);
+  const [waPhoneId, setWaPhoneId] = useState('');
+  const [waToken, setWaToken] = useState('');
+  const [waRecipient, setWaRecipient] = useState('');
+  const [waTemplateName, setWaTemplateName] = useState('hello_world');
+  const [isSendingWa, setIsSendingWa] = useState(false);
+
+  // Check WhatsApp connection configuration status on mount
+  useEffect(() => {
+    const checkWaStatus = async () => {
+      try {
+        const response = await fetch('/api/whatsapp/status?tenant_id=1');
+        if (response.ok) {
+          const data = await response.json();
+          setWaConnected(data.connected);
+          if (data.whatsapp_phone_number_id) {
+            setWaPhoneId(data.whatsapp_phone_number_id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch WhatsApp status", err);
+      }
+    };
+    checkWaStatus();
+  }, []);
+
+  const handleSaveWaSettings = async () => {
+    if (!waPhoneId || !waToken) {
+      notifyError("Please fill in both Phone Number ID and Access Token.");
+      return;
+    }
+    try {
+      const response = await fetch('/api/whatsapp/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: 1,
+          whatsapp_phone_number_id: waPhoneId,
+          whatsapp_access_token: waToken
+        })
+      });
+      if (response.ok) {
+        notifySuccess("WhatsApp settings saved successfully.");
+        setWaConnected(true);
+        setShowWaSettings(false);
+      } else {
+        notifyError("Failed to save WhatsApp settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      notifyError("Error saving settings.");
+    }
+  };
+
+  const handleSendWaMessage = async () => {
+    if (!waRecipient) {
+      notifyError("Please provide a recipient phone number.");
+      return;
+    }
+    setIsSendingWa(true);
+    try {
+      const response = await fetch('/api/whatsapp/send-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: 1,
+          recipient_phone: waRecipient,
+          template_name: waTemplateName
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        if (data.status_code === 200) {
+          notifySuccess("WhatsApp template message sent successfully!");
+        } else {
+          notifyError("WhatsApp API Error: " + JSON.stringify(data.response));
+        }
+      } else {
+        notifyError("Failed to send WhatsApp message: " + (data.detail || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      notifyError("Error sending WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
+
   useEffect(() => {
     if (initialCampaign) {
       setPrompt(initialCampaign.prompt || '');
@@ -2267,6 +2358,101 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                       }
                     }}
                   />
+                )}
+              </div>
+
+              {/* WhatsApp Broadcast Option */}
+              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                  <input type="checkbox" checked={publishToWa} onChange={(e) => {
+                    setPublishToWa(e.target.checked);
+                  }} />
+                  Send template broadcast via WhatsApp 💬
+                </label>
+                {publishToWa && (
+                  <div className="fade-in-up" style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {/* Setup Status */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                        Status: {waConnected ? '🟢 Connected' : '🔴 Credentials Missing'}
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowWaSettings(!showWaSettings)}
+                        style={{ fontSize: '11px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+                      >
+                        {showWaSettings ? 'Close Settings' : 'Configure API'}
+                      </button>
+                    </div>
+
+                    {showWaSettings && (
+                      <div style={{ background: 'rgba(5, 8, 6, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>Phone Number ID</span>
+                          <input 
+                            className="input-field" 
+                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }} 
+                            placeholder="e.g. 10452718..." 
+                            value={waPhoneId}
+                            onChange={(e) => setWaPhoneId(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>System Access Token</span>
+                          <input 
+                            type="password"
+                            className="input-field" 
+                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }} 
+                            placeholder="EAAG..." 
+                            value={waToken}
+                            onChange={(e) => setWaToken(e.target.value)}
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn-secondary" 
+                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer' }}
+                          onClick={handleSaveWaSettings}
+                        >
+                          Save Credentials
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Recipient Phone & Template */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Recipient Number</span>
+                        <input 
+                          className="input-field" 
+                          style={{ padding: '8px 12px', fontSize: '13px' }} 
+                          placeholder="e.g., +919988776655" 
+                          value={waRecipient}
+                          onChange={(e) => setWaRecipient(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Template Name</span>
+                        <input 
+                          className="input-field" 
+                          style={{ padding: '8px 12px', fontSize: '13px' }} 
+                          placeholder="hello_world"
+                          value={waTemplateName}
+                          onChange={(e) => setWaTemplateName(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      className="btn-primary" 
+                      style={{ padding: '10px', fontSize: '13px', borderRadius: '8px', width: '100%', opacity: isSendingWa ? 0.7 : 1 }}
+                      disabled={isSendingWa}
+                      onClick={handleSendWaMessage}
+                    >
+                      {isSendingWa ? 'Sending...' : '⚡ Send Test WhatsApp Template'}
+                    </button>
+                  </div>
                 )}
               </div>
 

@@ -32,6 +32,10 @@ class Tenant(Base):
     target_age_max = Column(Integer, default=35)
     persona_tone = Column(String, default="casual")        # casual | formal | elaborate | shorten
 
+    # WhatsApp Integration details
+    whatsapp_phone_number_id = Column(String, nullable=True)
+    whatsapp_access_token = Column(String, nullable=True)
+
     # Relationships
     meta_accounts = relationship("MetaAccount", back_populates="tenant")
     campaigns = relationship("Campaign", back_populates="tenant")

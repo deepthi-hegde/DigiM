@@ -9,6 +9,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from api.meta import router as meta_router
 from api.auth import router as auth_router
+from api.whatsapp import router as whatsapp_router
 import uuid
 import shutil
 
@@ -25,6 +26,7 @@ app.add_middleware(
 
 app.include_router(meta_router, prefix="/api/meta", tags=["Meta API"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+app.include_router(whatsapp_router, prefix="/api/whatsapp", tags=["WhatsApp"])
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
