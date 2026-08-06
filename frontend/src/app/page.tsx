@@ -3725,6 +3725,8 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                 {dayPosts.map((post) => {
                   const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   const isPast = new Date(post.scheduled_time) < new Date() || post.status === 'published' || post.status === 'failed';
+                  const promptText = (post.prompt || post.generated_text || "Campaign").trim();
+                  const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
 
                   return (
                     <div 
@@ -3750,7 +3752,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                         e.currentTarget.style.background = isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)';
                         e.currentTarget.style.transform = 'none';
                       }}
-                      title={`[${postTime}] ${post.generated_text} (${isPast ? 'Past / Scratched' : 'Scheduled'}) - Click to edit`}
+                      title={`[${postTime}] ${post.prompt || post.generated_text} (${isPast ? 'Past / Scratched' : 'Scheduled'}) - Click to edit`}
                     >
                       <div style={{ 
                         fontWeight: 700, 
@@ -3759,7 +3761,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                         whiteSpace: 'nowrap',
                         textDecoration: isPast ? 'line-through' : 'none'
                       }}>
-                        {post.prompt}
+                        {firstTwoWords}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.85, fontSize: '9px', marginTop: '2px' }}>
                         <span>⏰ {postTime}</span>
