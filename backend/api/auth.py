@@ -30,18 +30,28 @@ def login_via_google(
         if not email:
             raise HTTPException(status_code=400, detail="Email not found in token payload")
     
-        # Look for existing tenant
+        # Look for existing tenant by email
         tenant = db.query(Tenant).filter(Tenant.email == email).first()
         
         if not tenant:
-            # Create new tenant
-            tenant = Tenant(
-                email=email,
-                name=name or "Google User",
-                google_sso_id=google_id,
-                is_active=True
-            )
-            db.add(tenant)
+            # If demo tenant 1 exists and is unassigned or demo, claim it for this Google user
+            demo_tenant = db.query(Tenant).filter(Tenant.id == 1).first()
+            if demo_tenant and ("demo" in (demo_tenant.email or "").lower()):
+                tenant = demo_tenant
+                tenant.email = email
+                if name:
+                    tenant.name = name
+                tenant.google_sso_id = google_id
+            else:
+                # Create new tenant
+                tenant = Tenant(
+                    email=email,
+                    name=name or "Google User",
+                    google_sso_id=google_id,
+                    is_active=True
+                )
+                db.add(tenant)
+                
             db.commit()
             db.refresh(tenant)
             

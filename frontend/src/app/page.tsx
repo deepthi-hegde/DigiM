@@ -98,6 +98,9 @@ function Login({ onNext }: { onNext: () => void }) {
                 if (res.ok) {
                   const data = await res.json();
                   console.log("Backend registered tenant successfully!", data);
+                  if (data.tenant_id) {
+                    localStorage.setItem("tenant_id", String(data.tenant_id));
+                  }
                   // Move to the next step
                   onNext();
                 } else {
@@ -232,7 +235,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
     
     const loadProfile = async () => {
       try {
-        const response = await fetch('/api/onboarding/brand-profile?tenant_id=1');
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
+        const response = await fetch(`/api/onboarding/brand-profile?tenant_id=${savedTenantId}`);
         if (response.ok) {
           const data = await response.json();
           if (data.business_name) {
@@ -292,8 +296,9 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
   }, []);
 
   const handleSave = async (shouldAdvance = false) => {
+    const savedTenantId = localStorage.getItem('tenant_id') || '1';
     const payload = {
-      tenant_id: 1,
+      tenant_id: parseInt(savedTenantId, 10),
       business_name: businessName,
       business_description: businessDescription,
       industry,
@@ -1025,7 +1030,8 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const res = await fetch('/api/meta/status?tenant_id=1');
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.connected) {
@@ -1110,11 +1116,12 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
 
     try {
       // Send selected page and its specific page access token to the backend
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const connectRes = await fetch("/api/meta/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenant_id: 1, 
+          tenant_id: parseInt(savedTenantId, 10), 
           page_id: selectedPage.id,
           page_name: selectedPage.name,
           access_token: selectedPage.access_token
@@ -1125,6 +1132,8 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         setIsFbConnected(true);
         setFbPageName(selectedPage.name);
         setShowPageSelector(false);
+        fetchAssets();
+        fetchLibraryAssets();
       } else {
         notifyError("Failed to connect page in backend");
       }
@@ -1320,7 +1329,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   useEffect(() => {
     const checkWaStatus = async () => {
       try {
-        const response = await fetch('/api/whatsapp/status?tenant_id=1');
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
+        const response = await fetch(`/api/whatsapp/status?tenant_id=${savedTenantId}`);
         if (response.ok) {
           const data = await response.json();
           setWaConnected(data.connected);
@@ -1355,11 +1365,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       return;
     }
     try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const response = await fetch('/api/whatsapp/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenant_id: 1,
+          tenant_id: parseInt(savedTenantId, 10),
           whatsapp_phone_number_id: waPhoneId,
           whatsapp_access_token: waToken
         })
@@ -1384,11 +1395,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
     setIsSendingWa(true);
     try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const response = await fetch('/api/whatsapp/send-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenant_id: 1,
+          tenant_id: parseInt(savedTenantId, 10),
           recipient_phone: waRecipient,
           template_name: waTemplateName
         })
@@ -1727,6 +1739,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const response = await fetch('/api/campaign/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1734,7 +1747,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           message: generatedText, 
           image_url: selectedAssetUrl || null,
           publish_to_instagram: publishToIg,
-          tenant_id: 1,
+          tenant_id: parseInt(savedTenantId, 10),
           scheduled_time: scheduledTime || null,
           campaign_id: campaignId
         })
@@ -3574,7 +3587,8 @@ function AnalyticsTab() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/meta/analytics?tenant_id=1')
+    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+    fetch(`/api/meta/analytics?tenant_id=${savedTenantId}`)
       .then(res => res.json())
       .then(resData => {
         setData(resData);
