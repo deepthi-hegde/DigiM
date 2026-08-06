@@ -190,6 +190,33 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
   const [category, setCategory] = useState("Textile Readymade");
   const [brandColorPrimary, setBrandColorPrimary] = useState("#52B788");
   const [brandColorSecondary, setBrandColorSecondary] = useState("#1B4332");
+  const [brandLogoUrl, setBrandLogoUrl] = useState("");
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      notifySuccess("Uploading brand logo...");
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBrandLogoUrl(data.url);
+        localStorage.setItem('brand_logo_url', data.url);
+        notifySuccess("Brand logo uploaded successfully!");
+      } else {
+        notifyError("Failed to upload logo.");
+      }
+    } catch (err) {
+      console.error(err);
+      notifyError("Error uploading logo.");
+    }
+  };
   
   // Scraper status
   const [isScraping, setIsScraping] = useState(false);
@@ -258,6 +285,10 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             setIndustry(data.industry || "Clothing & Apparel");
             setCategory(data.category || "Textile Readymade");
             setBrandUrl(data.brand_url || "");
+            if (data.brand_logo_url) {
+              setBrandLogoUrl(data.brand_logo_url);
+              localStorage.setItem('brand_logo_url', data.brand_logo_url);
+            }
             setBrandColorPrimary(data.brand_color_primary || "#52B788");
             setBrandColorSecondary(data.brand_color_secondary || "#1B4332");
             setTargetGender(data.target_gender || "All");
@@ -288,6 +319,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           if (parsed.brandColorPrimary) setBrandColorPrimary(parsed.brandColorPrimary);
           if (parsed.brandColorSecondary) setBrandColorSecondary(parsed.brandColorSecondary);
           if (parsed.brandUrl) setBrandUrl(parsed.brandUrl);
+          if (parsed.brandLogoUrl) setBrandLogoUrl(parsed.brandLogoUrl);
           if (parsed.timezone) setTimezone(parsed.timezone);
         } catch (e) {
           console.error("Failed to parse business profile", e);
@@ -317,6 +349,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       industry,
       category,
       brand_url: brandUrl,
+      brand_logo_url: brandLogoUrl,
       brand_color_primary: brandColorPrimary,
       brand_color_secondary: brandColorSecondary,
       target_locations: targetLocations.join(","),
@@ -328,6 +361,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
     };
 
     // Save to local storage for backward compatibility
+    localStorage.setItem('brand_logo_url', brandLogoUrl || '');
     localStorage.setItem('businessProfile', JSON.stringify({
       businessName,
       industry,
@@ -335,6 +369,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       brandColorPrimary,
       brandColorSecondary,
       brandUrl,
+      brandLogoUrl,
       timezone
     }));
 
@@ -584,6 +619,34 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
                 onChange={(e) => setBusinessDescription(e.target.value)}
                 style={{ minHeight: '42px', resize: 'vertical', fontFamily: 'inherit' }}
               />
+            </div>
+          </div>
+
+          {/* Brand Logo Upload */}
+          <div style={{ marginBottom: '24px', background: 'rgba(82, 183, 136, 0.05)', padding: '16px 20px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>🏷️ Brand Logo (PNG/JPG)</label>
+              <p style={{ fontSize: '12px', color: 'var(--text-light)', margin: 0 }}>Upload your logo. It will be automatically stamped onto every brand overlay post image.</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {brandLogoUrl && (
+                <img src={brandLogoUrl} alt="Brand Logo Preview" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '4px', border: '1.5px solid var(--primary-color)' }} />
+              )}
+              <input 
+                type="file" 
+                ref={logoFileInputRef} 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={handleLogoFileUpload} 
+              />
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                style={{ fontSize: '13px', padding: '8px 16px' }}
+                onClick={() => logoFileInputRef.current?.click()}
+              >
+                {brandLogoUrl ? 'Change Logo' : '+ Upload Logo'}
+              </button>
             </div>
           </div>
 
@@ -1145,8 +1208,6 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         setIsFbConnected(true);
         setFbPageName(selectedPage.name);
         setShowPageSelector(false);
-        fetchAssets();
-        fetchLibraryAssets();
       } else {
         notifyError("Failed to connect page in backend");
       }
@@ -1326,6 +1387,36 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
   const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
+  
+  // Brand Logo for Post Overlay
+  const [postLogoUrl, setPostLogoUrl] = useState('');
+  const [includeLogo, setIncludeLogo] = useState(true);
+  const postLogoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePostLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      notifySuccess("Uploading logo for post overlay...");
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPostLogoUrl(data.url);
+        localStorage.setItem('brand_logo_url', data.url);
+        notifySuccess("Brand logo updated for overlay!");
+      } else {
+        notifyError("Failed to upload logo.");
+      }
+    } catch (err) {
+      console.error(err);
+      notifyError("Error uploading logo.");
+    }
+  };
 
   // WhatsApp State variables
   const [publishToWa, setPublishToWa] = useState(false);
@@ -1675,15 +1766,51 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           line = testLine;
         }
       }
-      ctx.fillText(line, 40, y);
-      
-      try {
-        const dataUrl = canvas.toDataURL("image/jpeg");
-        setSelectedAssetUrl(dataUrl);
-        notifySuccess("Brand layout applied successfully!");
-      } catch (err) {
-        console.error("Canvas export failed:", err);
-        notifyError("Failed to apply overlay due to cross-origin image policy.");
+      // Draw Brand Logo Badge top-right if enabled & logo exists
+      const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
+
+      const finalizeCanvas = () => {
+        try {
+          const dataUrl = canvas.toDataURL("image/jpeg");
+          setSelectedAssetUrl(dataUrl);
+          notifySuccess("Brand layout with logo applied successfully!");
+        } catch (err) {
+          console.error("Canvas export failed:", err);
+          notifyError("Failed to apply overlay due to cross-origin image policy.");
+        }
+      };
+
+      if (includeLogo && activeLogoUrl) {
+        const logoImg = new Image();
+        logoImg.crossOrigin = "anonymous";
+        logoImg.onload = () => {
+          ctx.save();
+          const lx = 660, ly = 30, lw = 100, lh = 100, lr = 12;
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetY = 4;
+          
+          ctx.beginPath();
+          ctx.moveTo(lx + lr, ly);
+          ctx.arcTo(lx + lw, ly, lx + lw, ly + lh, lr);
+          ctx.arcTo(lx + lw, ly + lh, lx, ly + lh, lr);
+          ctx.arcTo(lx, ly + lh, lx, ly, lr);
+          ctx.arcTo(lx, ly, lx + lw, ly, lr);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.drawImage(logoImg, lx + 10, ly + 10, lw - 20, lh - 20);
+          ctx.restore();
+          finalizeCanvas();
+        };
+        logoImg.onerror = () => {
+          console.error("Logo failed to load for canvas");
+          finalizeCanvas();
+        };
+        logoImg.src = activeLogoUrl;
+      } else {
+        finalizeCanvas();
       }
     };
 
@@ -2291,7 +2418,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   </button>
                   {selectedAssetUrl && (
                     <button
-                      onClick={handleApplyOverlay}
+                      onClick={handleApplyBrandOverlay}
                       title="Apply brand logo, border framing, and slogan banner on top of this image"
                       style={{
                         padding: '10px 12px',
@@ -2328,6 +2455,47 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                       ✏️ Customize
                     </button>
                   )}
+                </div>
+
+                {/* Brand Logo Option Bar */}
+                {selectedAssetUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={includeLogo} 
+                        onChange={(e) => setIncludeLogo(e.target.checked)} 
+                      />
+                      Include Brand Logo Watermark
+                    </label>
+                    
+                    {includeLogo && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
+                          <img 
+                            src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''} 
+                            alt="Logo" 
+                            style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }} 
+                          />
+                        )}
+                        <input 
+                          type="file" 
+                          ref={postLogoFileInputRef} 
+                          accept="image/*" 
+                          style={{ display: 'none' }} 
+                          onChange={handlePostLogoUpload} 
+                        />
+                        <button 
+                          type="button" 
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
+                          onClick={() => postLogoFileInputRef.current?.click()}
+                        >
+                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 </div>
                 {/* Collapsible prompt editor */}
                 {showPromptEditor && visualSuggestion && (

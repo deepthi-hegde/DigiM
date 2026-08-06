@@ -50,6 +50,11 @@ with engine.connect() as conn:
         conn.commit()
     except Exception:
         pass  # Column already exists or table freshly created
+    try:
+        conn.execute(text("ALTER TABLE tenants ADD COLUMN brand_logo_url VARCHAR"))
+        conn.commit()
+    except Exception:
+        pass
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -90,6 +95,7 @@ class BrandProfileRequest(BaseModel):
     industry: Optional[str] = None
     category: Optional[str] = None
     brand_url: Optional[str] = None
+    brand_logo_url: Optional[str] = None
     brand_color_primary: Optional[str] = None
     brand_color_secondary: Optional[str] = None
     target_locations: Optional[str] = None   # comma-separated
@@ -124,6 +130,8 @@ def save_brand_profile(payload: BrandProfileRequest, db: Session = Depends(get_d
         tenant.category = payload.category
     if payload.brand_url is not None:
         tenant.brand_url = payload.brand_url
+    if payload.brand_logo_url is not None:
+        tenant.brand_logo_url = payload.brand_logo_url
     if payload.brand_color_primary is not None:
         tenant.brand_color_primary = payload.brand_color_primary
     if payload.brand_color_secondary is not None:
@@ -164,6 +172,7 @@ def get_brand_profile(tenant_id: int = 1, db: Session = Depends(get_db)):
         "industry": tenant.industry,
         "category": tenant.category,
         "brand_url": tenant.brand_url,
+        "brand_logo_url": tenant.brand_logo_url,
         "brand_color_primary": tenant.brand_color_primary,
         "brand_color_secondary": tenant.brand_color_secondary,
         "target_locations": tenant.target_locations,

@@ -19,6 +19,7 @@ class Tenant(Base):
 
     # Brand identity (captured during onboarding Step 1)
     brand_url = Column(String, nullable=True)              # Optional website/social URL
+    brand_logo_url = Column(String, nullable=True)         # Brand logo image URL / path
     brand_color_primary = Column(String, nullable=True)    # Hex colour e.g. #52B788
     brand_color_secondary = Column(String, nullable=True)  # Hex colour
     business_description = Column(String, nullable=True)   # Free-text tagline / description
