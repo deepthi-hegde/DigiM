@@ -59,6 +59,17 @@ with engine.connect() as conn:
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+TEMP_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "temp_assets")
+os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
+
+@app.get("/api/temp_assets/raw/{filename}")
+def get_temp_asset(filename: str):
+    file_path = os.path.join(TEMP_UPLOAD_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Temp asset not found")
+    from fastapi.responses import FileResponse
+    return FileResponse(file_path)
+
 
 def infer_timezone_from_location(location_str: Optional[str]) -> str:
     """Infer IANA timezone string from location string or default to Asia/Kolkata."""
@@ -354,9 +365,22 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
     fb_res = None
     ig_res = None
     
+def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
+    if not image_url:
+        return image_url
+    if "/api/temp_assets/raw/" in image_url:
+        temp_filename = image_url.split("/api/temp_assets/raw/")[-1]
+        temp_path = os.path.join(TEMP_UPLOAD_DIR, temp_filename)
+        if os.path.exists(temp_path):
+            perm_path = os.path.join(UPLOAD_DIR, temp_filename)
+            import shutil
+            shutil.copy(temp_path, perm_path)
+            return f"/api/assets/raw/{temp_filename}"
+    return image_url
+
     # In local development, if GCS is not configured, image_url starts with "/api/assets/raw/"
     # Meta APIs cannot download images from localhost, so we substitute a high-quality public image for local testing.
-    image_url = payload.image_url
+    image_url = save_permanent_asset_if_needed(payload.image_url)
     if image_url and not image_url.startswith("http"):
         image_url = "https://picsum.photos/id/237/600/600.jpg"
 
@@ -599,41 +623,16 @@ def generate_ai_image(payload: ImageGenRequest):
         import uuid, base64, requests as req
         image_bytes = response.generated_images[0].image.image_bytes
         filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
-        filepath = os.path.join(UPLOAD_DIR, filename)
+        filepath = os.path.join(TEMP_UPLOAD_DIR, filename)
         
         with open(filepath, "wb") as f:
             f.write(image_bytes)
             
         # Try GCS first (production)
-        public_url = upload_to_gcs(filepath, f"ai-gen/{filename}")
+        public_url = upload_to_gcs(filepath, f"temp-ai-gen/{filename}")
         
-        # ============================================================
-        # TODO (GCP DEPLOYMENT): Remove this catbox.moe block entirely.
-        # For production, set GCS_BUCKET_NAME env var in Cloud Run and
-        # grant the Cloud Run service account roles/storage.objectAdmin
-        # on the bucket. The upload_to_gcs() call above will then return
-        # a proper public https://storage.googleapis.com/... URL.
-        # See: image_hosting_architecture.md for full setup instructions.
-        # ============================================================
-        # LOCAL DEV ONLY: upload to catbox.moe for a public URL so Meta
-        # can download the image. Images are temporary and public — do NOT
-        # use in production.
         if not public_url.startswith("http"):
-            import requests as req
-            try:
-                with open(filepath, "rb") as img_file:
-                    catbox_res = req.post(
-                        "https://catbox.moe/user/api.php",
-                        data={"reqtype": "fileupload"},
-                        files={"fileToUpload": (filename, img_file, "image/jpeg")}
-                    )
-                if catbox_res.status_code == 200 and catbox_res.text.startswith("http"):
-                    public_url = catbox_res.text.strip()
-                    print(f"Uploaded to catbox.moe: {public_url}")
-                else:
-                    print(f"catbox.moe upload failed: {catbox_res.text}")
-            except Exception as upload_err:
-                print(f"Public upload failed: {upload_err}")
+            public_url = f"/api/temp_assets/raw/{filename}"
             
         return {"status": "success", "url": public_url}
     except Exception as e:

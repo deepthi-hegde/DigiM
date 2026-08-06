@@ -1659,6 +1659,13 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         setIsLiked(data.is_liked || false);
         setShowPromptEditor(false);  // collapse editor on fresh generation
         setGenerated(true);
+
+        // Default image selection from Media Asset Library
+        if (libraryAssets && libraryAssets.length > 0) {
+          setSelectedAssetUrl(libraryAssets[0].url);
+        } else {
+          setSelectedAssetUrl("https://picsum.photos/id/237/600/600.jpg");
+        }
       } else {
         notifyError("Generation failed: " + (data.message || "Unknown error"));
       }
