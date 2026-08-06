@@ -1703,13 +1703,15 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       return;
     }
     
-    let bizName = businessName || "MarketFlow Silks";
+    let bizName = "MarketFlow Silks";
+    let primaryColor = "#52b788";
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('businessProfile');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed.businessName) bizName = parsed.businessName;
+          if (parsed.brandColorPrimary) primaryColor = parsed.brandColorPrimary;
         } catch(e) {}
       }
     }
@@ -1732,12 +1734,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       ctx.fillRect(0, 580, 800, 220);
       
       // Decorative border frame
-      ctx.strokeStyle = brandColorPrimary || "#52b788";
+      ctx.strokeStyle = primaryColor;
       ctx.lineWidth = 16;
       ctx.strokeRect(0, 0, 800, 800);
       
       // Brand Name tag
-      ctx.fillStyle = brandColorPrimary || "#52b788";
+      ctx.fillStyle = primaryColor;
       ctx.font = "bold 26px sans-serif";
       ctx.fillText(bizName.toUpperCase(), 40, 630);
       
