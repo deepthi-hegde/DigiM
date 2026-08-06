@@ -2496,7 +2496,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                     )}
                   </div>
                 )}
-                </div>
                 {/* Collapsible prompt editor */}
                 {showPromptEditor && visualSuggestion && (
                   <div style={{ animation: 'fadeInUp 0.2s ease-out' }}>
