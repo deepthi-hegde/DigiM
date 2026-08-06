@@ -100,6 +100,7 @@ function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
                   console.log("Backend registered tenant successfully!", data);
                   const activeTId = data.tenant_id ? String(data.tenant_id) : '1';
                   localStorage.setItem("tenant_id", activeTId);
+                  localStorage.setItem("user_logged_in", "true");
                   
                   // Check if tenant already has brand profile setup
                   try {
@@ -3987,7 +3988,18 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
 }
 
 export default function App() {
-  const [step, setStep] = useState(0); // Step 0 is the public Landing Page
+  // Synchronously check if user is already logged in or completed onboarding so refresh doesn't logout
+  const [step, setStep] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTenantId = localStorage.getItem('tenant_id');
+      const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
+      const isLoggedIn = localStorage.getItem('user_logged_in') === 'true';
+      if (isLoggedIn || isCompleted || savedTenantId) {
+        return 4; // Open directly on Main Dashboard
+      }
+    }
+    return 0; // Landing Page only for unauthenticated first-time visitors
+  });
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -4009,17 +4021,17 @@ export default function App() {
   }, [notification]);
 
   useEffect(() => {
-    // Check if user has already completed onboarding or has an active profile
+    // Verify brand profile status on load to sync state
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
-    const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
-
-    if (isCompleted || localStorage.getItem('tenant_id')) {
+    if (localStorage.getItem('tenant_id') || localStorage.getItem('onboarding_completed')) {
+      localStorage.setItem('user_logged_in', 'true');
       fetch(`/api/onboarding/brand-profile?tenant_id=${savedTenantId}`)
         .then(res => res.json())
         .then(data => {
           if (data && data.business_name) {
             localStorage.setItem('onboarding_completed', 'true');
-            setStep(4); // Jump directly to Campaign Dashboard / Calendar Page
+            localStorage.setItem('user_logged_in', 'true');
+            setStep(4);
           }
         })
         .catch(err => console.error(err));
