@@ -1798,7 +1798,26 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       });
       const data = await response.json();
       if (response.ok) {
-        notifySuccess("Published successfully! " + (data.message || ""));
+        if (scheduledTime) {
+          notifySuccess(`Post scheduled successfully for ${new Date(scheduledTime).toLocaleString()}!`);
+          setIsScheduling(false);
+          setScheduledTime('');
+        } else {
+          notifySuccess("Published successfully! " + (data.message || ""));
+        }
+        
+        // Refresh campaign history & calendar
+        try {
+          const campRes = await fetch(`/api/campaigns?tenant_id=${savedTenantId}`);
+          if (campRes.ok) {
+            const campData = await campRes.json();
+            setCampaigns(campData);
+          }
+        } catch (e) {
+          console.error("Failed to refresh campaigns", e);
+        }
+
+        if (onClearEdit) onClearEdit();
       } else {
         const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
         notifyError("Failed to publish: " + errorMsg);
@@ -3415,8 +3434,8 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
     daysGrid.push(d);
   }
 
-  // Filter campaigns with active scheduled time
-  const scheduledCampaigns = campaigns.filter(c => c.scheduled_time && c.status === 'scheduled');
+  // Filter all campaigns with scheduled time (both upcoming and past)
+  const scheduledCampaigns = campaigns.filter(c => c.scheduled_time);
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '32px', borderRadius: '20px' }}>
@@ -3473,9 +3492,31 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                 transition: 'all 0.2s'
               }}
             >
-              <span style={{ fontSize: '12px', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary-color)' : 'var(--text-light)' }}>
-                {day} {isToday && '•'}
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary-color)' : 'var(--text-light)' }}>
+                  {day} {isToday && '•'}
+                </span>
+                {dayPosts.length > 0 && (
+                  <span 
+                    title={`${dayPosts.length} post(s) scheduled on this day`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: '#3b82f6',
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(59, 130, 246, 0.4)'
+                    }}
+                  >
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 6px #3b82f6' }} />
+                    {dayPosts.length}
+                  </span>
+                )}
+              </div>
 
               {/* Calendar Events (Festivals / Holidays) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -3513,36 +3554,52 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
               {/* Scheduled Posts */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
                 {dayPosts.map((post) => {
-                  const postTime = new Date(post.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const isPast = new Date(post.scheduled_time) < new Date() || post.status === 'published' || post.status === 'failed';
+
                   return (
                     <div 
                       key={post.id} 
                       onClick={() => onSelectCampaign?.(post)}
                       style={{
-                        background: 'rgba(82, 183, 136, 0.15)',
-                        border: '1.5px solid var(--primary-color)',
+                        background: isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)',
+                        border: isPast ? '1px dashed rgba(255, 255, 255, 0.2)' : '1.5px solid var(--primary-color)',
                         borderRadius: '6px',
                         padding: '4px 6px',
                         fontSize: '10px',
-                        color: 'var(--text-color)',
+                        color: isPast ? 'rgba(255, 255, 255, 0.5)' : 'var(--text-color)',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        transition: 'all 0.2s'
+                        boxShadow: isPast ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
+                        transition: 'all 0.2s',
+                        opacity: isPast ? 0.75 : 1
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'rgba(82, 183, 136, 0.25)';
+                        e.currentTarget.style.background = isPast ? 'rgba(255, 255, 255, 0.08)' : 'rgba(82, 183, 136, 0.25)';
                         e.currentTarget.style.transform = 'scale(1.02)';
                       }}
                       onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'rgba(82, 183, 136, 0.15)';
+                        e.currentTarget.style.background = isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)';
                         e.currentTarget.style.transform = 'none';
                       }}
-                      title={`[${postTime}] ${post.generated_text} (Click to edit)`}
+                      title={`[${postTime}] ${post.generated_text} (${isPast ? 'Past / Scratched' : 'Scheduled'}) - Click to edit`}
                     >
-                      <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ 
+                        fontWeight: 700, 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap',
+                        textDecoration: isPast ? 'line-through' : 'none'
+                      }}>
                         {post.prompt}
                       </div>
-                      <div style={{ opacity: 0.8 }}>{postTime}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.85, fontSize: '9px', marginTop: '2px' }}>
+                        <span>⏰ {postTime}</span>
+                        {isPast && (
+                          <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, color: post.status === 'failed' ? '#f87171' : '#a3e635' }}>
+                            {post.status === 'failed' ? '× failed' : '✓ done'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
