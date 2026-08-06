@@ -1936,17 +1936,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           notifySuccess("Published successfully! " + (data.message || ""));
         }
         
-        // Refresh campaign history & calendar
-        try {
-          const campRes = await fetch(`/api/campaigns?tenant_id=${savedTenantId}`);
-          if (campRes.ok) {
-            const campData = await campRes.json();
-            setCampaigns(campData);
-          }
-        } catch (e) {
-          console.error("Failed to refresh campaigns", e);
-        }
-
         if (onClearEdit) onClearEdit();
       } else {
         const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
