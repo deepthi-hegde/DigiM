@@ -98,11 +98,24 @@ function Login({ onNext }: { onNext: () => void }) {
                 if (res.ok) {
                   const data = await res.json();
                   console.log("Backend registered tenant successfully!", data);
-                  if (data.tenant_id) {
-                    localStorage.setItem("tenant_id", String(data.tenant_id));
+                  const activeTId = data.tenant_id ? String(data.tenant_id) : '1';
+                  localStorage.setItem("tenant_id", activeTId);
+                  
+                  // Check if tenant already has brand profile setup
+                  try {
+                    const profRes = await fetch(`/api/onboarding/brand-profile?tenant_id=${activeTId}`);
+                    if (profRes.ok) {
+                      const profData = await profRes.json();
+                      if (profData && profData.business_name) {
+                        localStorage.setItem("onboarding_completed", "true");
+                        onNext(true);
+                        return;
+                      }
+                    }
+                  } catch (pErr) {
+                    console.error("Profile check error:", pErr);
                   }
-                  // Move to the next step
-                  onNext();
+                  onNext(false);
                 } else {
                   const errText = await res.text();
                   console.error("Backend auth failed:", errText);
@@ -110,8 +123,7 @@ function Login({ onNext }: { onNext: () => void }) {
                 }
               } catch (err) {
                 console.error("Network error connecting to backend", err);
-                // For testing UI without backend running, we can still proceed
-                onNext();
+                onNext(false);
               }
             }}
             onError={() => {
@@ -1277,7 +1289,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       {!isSettings && (
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(82, 183, 136, 0.1)', paddingTop: '32px' }}>
           {onBack && <button className="btn-secondary" onClick={onBack}>← Back</button>}
-          {onNext && <button className="btn-primary" onClick={onNext}>{(isFbConnected || isIgConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
+          {onNext && <button className="btn-primary" onClick={() => { localStorage.setItem('onboarding_completed', 'true'); onNext(); }}>{(isFbConnected || isIgConnected) ? 'Continue →' : 'Skip & Continue →'}</button>}
         </div>
       )}
     </div>
@@ -1588,15 +1600,18 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
   };
 
-  const handleApplyOverlay = () => {
+  const handleApplyBrandOverlay = async () => {
     if (!selectedAssetUrl) {
-      notifyError("Please generate or select an image asset first.");
+      notifyError("Please select or generate a visual asset first.");
+      return;
+    }
+
+    if (selectedAssetUrl.endsWith('.mp4')) {
+      notifyError("Brand overlay can only be applied to static image assets.");
       return;
     }
     
-    notifySuccess("Applying brand layout overlay...");
-    
-    let bizName = "MarketFlow Silks";
+    let bizName = businessName || "MarketFlow Silks";
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('businessProfile');
       if (saved) {
@@ -1607,12 +1622,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       }
     }
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = selectedAssetUrl;
-    img.onload = () => {
+    const renderOverlayOnImage = (imageElement: HTMLImageElement) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
         notifyError("Canvas 2D context not supported.");
         return;
@@ -1621,19 +1633,19 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       canvas.height = 800;
       
       // Draw image
-      ctx.drawImage(img, 0, 0, 800, 800);
+      ctx.drawImage(imageElement, 0, 0, 800, 800);
       
       // Text Background banner (Overlay bottom 220px)
       ctx.fillStyle = "rgba(10, 15, 12, 0.85)";
       ctx.fillRect(0, 580, 800, 220);
       
       // Decorative border frame
-      ctx.strokeStyle = "#52b788";
+      ctx.strokeStyle = brandColorPrimary || "#52b788";
       ctx.lineWidth = 16;
       ctx.strokeRect(0, 0, 800, 800);
       
       // Brand Name tag
-      ctx.fillStyle = "#52b788";
+      ctx.fillStyle = brandColorPrimary || "#52b788";
       ctx.font = "bold 26px sans-serif";
       ctx.fillText(bizName.toUpperCase(), 40, 630);
       
@@ -1642,7 +1654,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       ctx.font = "22px sans-serif";
       
       // Extract brief sentence/slogan from generatedText for the banner
-      const cleanHeadline = generatedText.split(/[.!?\n]/)[0] || "Exquisite Quality & Comfort";
+      const cleanHeadline = generatedText ? (generatedText.split(/[.!?\n]/)[0] || "Exquisite Quality & Comfort") : "Exquisite Quality & Comfort";
       
       // Wrap text
       const words = cleanHeadline.split(' ');
@@ -1673,9 +1685,41 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         notifyError("Failed to apply overlay due to cross-origin image policy.");
       }
     };
-    img.onerror = () => {
-      notifyError("Failed to load creative image for styling.");
-    };
+
+    // Strategy 1: Load image with crossOrigin = 'anonymous'
+    const loadAnonymous = new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("CORS image load failed"));
+      img.src = selectedAssetUrl;
+    });
+
+    try {
+      const img = await loadAnonymous;
+      renderOverlayOnImage(img);
+    } catch (err) {
+      // Strategy 2: Fetch image as Blob and convert to object URL (bypasses CORS restrictions for canvas export)
+      try {
+        const fetchRes = await fetch(selectedAssetUrl);
+        if (!fetchRes.ok) throw new Error("Fetch image failed");
+        const blob = await fetchRes.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          renderOverlayOnImage(img);
+          URL.revokeObjectURL(blobUrl);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+          notifyError("Failed to load creative image for styling.");
+        };
+        img.src = blobUrl;
+      } catch (blobErr) {
+        console.error("Fallback image blob load failed:", blobErr);
+        notifyError("Failed to load creative image for styling.");
+      }
+    }
   };
 
   const handleDownload = async () => {
@@ -3907,13 +3951,38 @@ export default function App() {
     }
   }, [notification]);
 
+  useEffect(() => {
+    // Check if user has already completed onboarding or has an active profile
+    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+    const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
+
+    if (isCompleted || localStorage.getItem('tenant_id')) {
+      fetch(`/api/onboarding/brand-profile?tenant_id=${savedTenantId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.business_name) {
+            localStorage.setItem('onboarding_completed', 'true');
+            setStep(4); // Jump directly to Campaign Dashboard / Calendar Page
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       {/* Inject the official Facebook JS SDK */}
       <Script src="https://connect.facebook.net/en_US/sdk.js" strategy="lazyOnload" crossOrigin="anonymous" />
       
       {step === 0 ? (
-        <LandingPage onGetStarted={() => setStep(1)} />
+        <LandingPage onGetStarted={() => {
+          const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
+          if (isCompleted) {
+            setStep(4);
+          } else {
+            setStep(1);
+          }
+        }} />
       ) : (
         <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
           {step > 1 && step < 4 && <Stepper currentStep={step} />}
@@ -3925,7 +3994,7 @@ export default function App() {
               >
                 ← Back to Webpage
               </button>
-              <Login onNext={() => setStep(2)} />
+              <Login onNext={(skipOnboarding) => setStep(skipOnboarding ? 4 : 2)} />
             </div>
           )}
           {step === 2 && <Onboarding onBack={() => setStep(1)} onNext={() => setStep(3)} />}
