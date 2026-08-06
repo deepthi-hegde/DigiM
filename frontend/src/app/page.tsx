@@ -135,7 +135,7 @@ function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
           />
           {/* Demo bypass button for testing on live environments without a valid Google Client ID */}
           <button 
-            onClick={onNext} 
+            onClick={() => onNext()} 
             style={{ 
               background: 'transparent', 
               border: '1px dashed rgba(82, 183, 136, 0.3)', 
