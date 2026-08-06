@@ -2646,7 +2646,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 />
               </div>
 
-              {/* Campaign Scheduling Options */}
               <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
                   <input type="checkbox" checked={isScheduling} onChange={(e) => {
@@ -2655,59 +2654,73 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   }} />
                   Schedule post for later date/time
                 </label>
-                {isScheduling && (
-                  <>
-                    <input 
-                      type="datetime-local" 
-                      className="input-field" 
-                      style={{ marginTop: '10px', width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      onClick={(e) => {
-                        try {
-                          (e.target as any).showPicker();
-                        } catch (err) {
-                          console.error("showPicker not supported", err);
-                        }
-                      }}
-                    />
-                    {(() => {
-                      if (!scheduledTime) return null;
-                      const selectedDate = new Date(scheduledTime);
-                      const sYear = selectedDate.getFullYear();
-                      const sMonth = selectedDate.getMonth();
-                      const sDay = selectedDate.getDate();
-                      
-                      const matchingEvents = calendarEvents.filter(e => {
-                        const parts = e.date.split('-');
-                        const eYear = parseInt(parts[0], 10);
-                        const eMonth = parseInt(parts[1], 10) - 1;
-                        const eDay = parseInt(parts[2], 10);
-                        return eYear === sYear && eMonth === sMonth && eDay === sDay;
-                      });
-
-                      if (matchingEvents.length === 0) return null;
-
-                      return (
-                        <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
-                          {matchingEvents.map(event => (
-                            <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                📅 {event.name} ({event.type.replace('_', ' ')})
-                              </span>
-                              <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
-                                {event.description}
-                              </span>
-                              <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
-                                ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </>
+                {isScheduling && !scheduledTime && (
+                  <input 
+                    type="datetime-local" 
+                    className="input-field" 
+                    style={{ marginTop: '10px', width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}
+                    value={scheduledTime}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        setScheduledTime(val);
+                        const d = new Date(val);
+                        const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                        notifySuccess(`⏰ Scheduled for ${label}`);
+                      }
+                    }}
+                    autoFocus
+                  />
                 )}
+                {isScheduling && scheduledTime && (
+                  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                      ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setScheduledTime('')}
+                      style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+                {(() => {
+                  if (!scheduledTime) return null;
+                  const selectedDate = new Date(scheduledTime);
+                  const sYear = selectedDate.getFullYear();
+                  const sMonth = selectedDate.getMonth();
+                  const sDay = selectedDate.getDate();
+                  
+                  const matchingEvents = calendarEvents.filter(e => {
+                    const parts = e.date.split('-');
+                    const eYear = parseInt(parts[0], 10);
+                    const eMonth = parseInt(parts[1], 10) - 1;
+                    const eDay = parseInt(parts[2], 10);
+                    return eYear === sYear && eMonth === sMonth && eDay === sDay;
+                  });
+
+                  if (matchingEvents.length === 0) return null;
+
+                  return (
+                    <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
+                      {matchingEvents.map(event => (
+                        <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            📅 {event.name} ({event.type.replace('_', ' ')})
+                          </span>
+                          <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
+                            {event.description}
+                          </span>
+                          <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                            ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* WhatsApp Broadcast Option */}
