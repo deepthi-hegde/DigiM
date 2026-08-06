@@ -1823,37 +1823,33 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       }
     };
 
-    // Strategy 1: Load image with crossOrigin = 'anonymous'
-    const loadAnonymous = new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("CORS image load failed"));
-      img.src = selectedAssetUrl;
-    });
+    const loadImage = (url: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          img.crossOrigin = "anonymous";
+        }
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = url;
+      });
+    };
 
     try {
-      const img = await loadAnonymous;
+      const img = await loadImage(selectedAssetUrl);
       renderOverlayOnImage(img);
     } catch (err) {
-      // Strategy 2: Fetch image as Blob and convert to object URL (bypasses CORS restrictions for canvas export)
+      console.warn("Direct image load failed, trying blob fetch fallback...", err);
       try {
         const fetchRes = await fetch(selectedAssetUrl);
-        if (!fetchRes.ok) throw new Error("Fetch image failed");
+        if (!fetchRes.ok) throw new Error("Fetch failed");
         const blob = await fetchRes.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          renderOverlayOnImage(img);
-          URL.revokeObjectURL(blobUrl);
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(blobUrl);
-          notifyError("Failed to load creative image for styling.");
-        };
-        img.src = blobUrl;
+        const objectUrl = URL.createObjectURL(blob);
+        const img = await loadImage(objectUrl);
+        renderOverlayOnImage(img);
+        URL.revokeObjectURL(objectUrl);
       } catch (blobErr) {
-        console.error("Fallback image blob load failed:", blobErr);
+        console.error("All image load strategies failed:", blobErr);
         notifyError("Failed to load creative image for styling.");
       }
     }
