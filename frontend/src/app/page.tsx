@@ -70,7 +70,7 @@ function Stepper({ currentStep }: { currentStep: number }) {
   );
 }
 
-function Login({ onNext }: { onNext: () => void }) {
+function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '48px', textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
       <div style={{ marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
