@@ -27,6 +27,7 @@ class Tenant(Base):
 
     # Audience targeting (captured during onboarding Step 2)
     target_locations = Column(String, nullable=True)       # Comma-separated city names
+    timezone = Column(String, default="Asia/Kolkata", nullable=True) # Timezone name e.g. Asia/Kolkata
     target_gender = Column(String, default="All")          # All | Female | Male
     target_age_min = Column(Integer, default=18)
     target_age_max = Column(Integer, default=35)

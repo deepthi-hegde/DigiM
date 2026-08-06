@@ -1,0 +1,182 @@
+[
+  {
+    "date": "2026-01-15",
+    "name": "Makara Sankranti",
+    "type": "public_holiday",
+    "description": "Uttarayana Punyakala, harvest festival of Karnataka."
+  },
+  {
+    "date": "2026-01-26",
+    "name": "Republic Day",
+    "type": "public_holiday",
+    "description": "National holiday celebrating the Constitution of India."
+  },
+  {
+    "date": "2026-02-15",
+    "name": "Maha Shivaratri",
+    "type": "festival",
+    "description": "Hindu festival in honour of Lord Shiva (observed on Sunday)."
+  },
+  {
+    "date": "2026-03-19",
+    "name": "Ugadi Festival",
+    "type": "public_holiday",
+    "description": "Kannada New Year celebration."
+  },
+  {
+    "date": "2026-03-21",
+    "name": "Khutbah-e-Ramzan (Id-Ul-Fitr)",
+    "type": "public_holiday",
+    "description": "Islamic festival marking the end of Ramadan."
+  },
+  {
+    "date": "2026-03-31",
+    "name": "Mahaveera Jayanthi",
+    "type": "public_holiday",
+    "description": "Birth anniversary of Lord Mahavira."
+  },
+  {
+    "date": "2026-04-03",
+    "name": "Good Friday",
+    "type": "public_holiday",
+    "description": "Christian holiday commemorating the crucifixion of Jesus."
+  },
+  {
+    "date": "2026-04-14",
+    "name": "Dr. B.R. Ambedkar Jayanthi",
+    "type": "public_holiday",
+    "description": "Birth anniversary of Dr. B.R. Ambedkar."
+  },
+  {
+    "date": "2026-04-20",
+    "name": "Basava Jayanthi / Akshaya Tritiya",
+    "type": "public_holiday",
+    "description": "Birth anniversary of philosopher Basavanna and auspicious day of Akshaya Tritiya."
+  },
+  {
+    "date": "2026-05-01",
+    "name": "May Day / Labour Day",
+    "type": "public_holiday",
+    "description": "International Workers' Day."
+  },
+  {
+    "date": "2026-05-28",
+    "name": "Bakrid (Id-ul-Zuha)",
+    "type": "public_holiday",
+    "description": "Islamic Festival of Sacrifice."
+  },
+  {
+    "date": "2026-06-26",
+    "name": "Last Day of Moharam",
+    "type": "public_holiday",
+    "description": "Islamic day of remembrance."
+  },
+  {
+    "date": "2026-08-15",
+    "name": "Independence Day",
+    "type": "public_holiday",
+    "description": "National holiday celebrating India's independence."
+  },
+  {
+    "date": "2026-08-26",
+    "name": "Eid-Milad",
+    "type": "public_holiday",
+    "description": "Birth anniversary of the Islamic Prophet Muhammad."
+  },
+  {
+    "date": "2026-09-14",
+    "name": "Ganesh Chaturthi (Varasiddhi Vinayaka Vrata)",
+    "type": "public_holiday",
+    "description": "Festival celebrating the birth of Lord Ganesha."
+  },
+  {
+    "date": "2026-10-02",
+    "name": "Gandhi Jayanthi",
+    "type": "public_holiday",
+    "description": "Birth anniversary of Mahatma Gandhi."
+  },
+  {
+    "date": "2026-10-10",
+    "name": "Mahalaya Amavasye",
+    "type": "festival",
+    "description": "Auspicious day marking the start of the Durga Puja/Dasara season."
+  },
+  {
+    "date": "2026-10-20",
+    "name": "Mahanavami / Ayudhapooja",
+    "type": "public_holiday",
+    "description": "Part of the grand Dasara festival, worship of tools and instruments."
+  },
+  {
+    "date": "2026-10-21",
+    "name": "Vijayadasami (Mysuru Dasara)",
+    "type": "public_holiday",
+    "description": "Culmination of Mysore Dasara, victory of good over evil."
+  },
+  {
+    "date": "2026-10-25",
+    "name": "Maharshi Valmiki Jayanthi",
+    "type": "festival",
+    "description": "Birth anniversary of sage Valmiki."
+  },
+  {
+    "date": "2026-11-01",
+    "name": "Kannada Rajyotsava",
+    "type": "public_holiday",
+    "description": "Karnataka Statehood Day (Karnataka Formation Day)."
+  },
+  {
+    "date": "2026-11-08",
+    "name": "Naraka Chaturdashi (Deepavali)",
+    "type": "festival",
+    "description": "First day of Deepavali, festival of lights."
+  },
+  {
+    "date": "2026-11-10",
+    "name": "Balipadyami (Deepavali)",
+    "type": "public_holiday",
+    "description": "Deepavali holiday in Karnataka."
+  },
+  {
+    "date": "2026-11-27",
+    "name": "Kanakadasa Jayanthi",
+    "type": "public_holiday",
+    "description": "Birth anniversary of saint-poet Kanakadasa."
+  },
+  {
+    "date": "2026-12-25",
+    "name": "Christmas",
+    "type": "public_holiday",
+    "description": "Christian celebration of the birth of Jesus Christ."
+  },
+  {
+    "date": "2026-03-01",
+    "name": "Summer Season Start",
+    "type": "season",
+    "description": "Beginning of the warm summer season."
+  },
+  {
+    "date": "2026-06-01",
+    "name": "Monsoon Season Start",
+    "type": "season",
+    "description": "Start of the heavy rain/monsoon season in Karnataka."
+  },
+  {
+    "date": "2026-10-12",
+    "name": "Dasara Festive Season Start",
+    "type": "season",
+    "description": "Mysore Dasara festive shopping and tourism period starts."
+  },
+  {
+    "date": "2026-11-05",
+    "name": "Deepavali Shopping Season Start",
+    "type": "season",
+    "description": "Pre-Deepavali retail and promotional season starts."
+  },
+  {
+    "date": "2026-12-20",
+    "name": "Year-End Festive Season",
+    "type": "season",
+    "description": "Christmas, winter holiday and New Year promotional season."
+  }
+]

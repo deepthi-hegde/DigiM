@@ -129,3 +129,24 @@ def test_campaign_publish_mock_success(monkeypatch):
     assert "Mock published" in response.json()["message"]
     
     app.dependency_overrides.clear()
+
+def test_calendar_events():
+    response = client.get("/api/calendar/events")
+    assert response.status_code == 200
+    events = response.json()
+    assert isinstance(events, list)
+    assert len(events) > 0
+    # Verify we have Makara Sankranti
+    sankranti = [e for e in events if e["name"] == "Makara Sankranti"]
+    assert len(sankranti) == 1
+    assert sankranti[0]["date"] == "2026-01-15"
+
+def test_timezone_inference():
+    from main import infer_timezone_from_location
+    assert infer_timezone_from_location("Bengaluru, Karnataka, India") == "Asia/Kolkata"
+    assert infer_timezone_from_location("New York City, NY") == "America/New_York"
+    assert infer_timezone_from_location("London, UK") == "Europe/London"
+    assert infer_timezone_from_location("Tokyo, Japan") == "Asia/Tokyo"
+    assert infer_timezone_from_location(None) == "Asia/Kolkata"
+
+

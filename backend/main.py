@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.meta import router as meta_router
 from api.auth import router as auth_router
 from api.whatsapp import router as whatsapp_router
+from api.calendar import router as calendar_router
 import uuid
 import shutil
 
@@ -27,6 +28,7 @@ app.add_middleware(
 app.include_router(meta_router, prefix="/api/meta", tags=["Meta API"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(whatsapp_router, prefix="/api/whatsapp", tags=["WhatsApp"])
+app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -36,11 +38,49 @@ from api.meta import publish_to_facebook, PublishRequest
 from utils.storage import upload_to_gcs
 import datetime
 
+from sqlalchemy import text
+
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
 
+# Auto-migrate missing columns for existing SQLite DB files
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE tenants ADD COLUMN timezone VARCHAR DEFAULT 'Asia/Kolkata'"))
+        conn.commit()
+    except Exception:
+        pass  # Column already exists or table freshly created
+
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def infer_timezone_from_location(location_str: Optional[str]) -> str:
+    """Infer IANA timezone string from location string or default to Asia/Kolkata."""
+    if not location_str:
+        return "Asia/Kolkata"
+    
+    loc = location_str.lower()
+    if any(k in loc for k in ["bangalore", "bengaluru", "karnataka", "india", "mumbai", "delhi", "chennai", "hyderabad", "kolkata"]):
+        return "Asia/Kolkata"
+    elif any(k in loc for k in ["new york", "nyc", "est", "eastern", "boston", "miami"]):
+        return "America/New_York"
+    elif any(k in loc for k in ["los angeles", "la", "california", "pst", "pacific", "seattle"]):
+        return "America/Los_Angeles"
+    elif any(k in loc for k in ["chicago", "cst", "central", "dallas"]):
+        return "America/Chicago"
+    elif any(k in loc for k in ["london", "uk", "england", "gmt", "bst"]):
+        return "Europe/London"
+    elif any(k in loc for k in ["tokyo", "japan", "jst"]):
+        return "Asia/Tokyo"
+    elif any(k in loc for k in ["sydney", "australia"]):
+        return "Australia/Sydney"
+    elif any(k in loc for k in ["dubai", "uae"]):
+        return "Asia/Dubai"
+    elif any(k in loc for k in ["singapore"]):
+        return "Asia/Singapore"
+    
+    return "Asia/Kolkata"
 
 
 class BrandProfileRequest(BaseModel):
@@ -53,6 +93,7 @@ class BrandProfileRequest(BaseModel):
     brand_color_primary: Optional[str] = None
     brand_color_secondary: Optional[str] = None
     target_locations: Optional[str] = None   # comma-separated
+    timezone: Optional[str] = None           # IANA timezone string e.g. Asia/Kolkata
     target_gender: Optional[str] = "All"
     target_age_min: Optional[int] = 18
     target_age_max: Optional[int] = 35
@@ -89,6 +130,13 @@ def save_brand_profile(payload: BrandProfileRequest, db: Session = Depends(get_d
         tenant.brand_color_secondary = payload.brand_color_secondary
     if payload.target_locations is not None:
         tenant.target_locations = payload.target_locations
+    if payload.timezone:
+        tenant.timezone = payload.timezone
+    elif payload.target_locations and not tenant.timezone:
+        tenant.timezone = infer_timezone_from_location(payload.target_locations)
+    elif not tenant.timezone:
+        tenant.timezone = "Asia/Kolkata"
+
     if payload.target_gender is not None:
         tenant.target_gender = payload.target_gender
     if payload.target_age_min is not None:
@@ -100,7 +148,7 @@ def save_brand_profile(payload: BrandProfileRequest, db: Session = Depends(get_d
 
     db.commit()
     db.refresh(tenant)
-    return {"status": "success", "message": "Brand profile saved."}
+    return {"status": "success", "message": "Brand profile saved.", "timezone": tenant.timezone}
 
 
 @app.get("/api/onboarding/brand-profile")
@@ -109,6 +157,7 @@ def get_brand_profile(tenant_id: int = 1, db: Session = Depends(get_db)):
     tenant = db.query(Tenant).filter_by(id=tenant_id).first()
     if not tenant:
         return {}
+    tz = tenant.timezone or infer_timezone_from_location(tenant.target_locations)
     return {
         "business_name": tenant.name,
         "business_description": tenant.business_description,
@@ -118,6 +167,7 @@ def get_brand_profile(tenant_id: int = 1, db: Session = Depends(get_db)):
         "brand_color_primary": tenant.brand_color_primary,
         "brand_color_secondary": tenant.brand_color_secondary,
         "target_locations": tenant.target_locations,
+        "timezone": tz,
         "target_gender": tenant.target_gender,
         "target_age_min": tenant.target_age_min,
         "target_age_max": tenant.target_age_max,
@@ -212,8 +262,28 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
 
     # Handle Scheduling
     if payload.scheduled_time:
+        tenant = db.query(Tenant).filter_by(id=payload.tenant_id).first()
+        tenant_tz_str = tenant.timezone if (tenant and tenant.timezone) else infer_timezone_from_location(tenant.target_locations if tenant else None)
+        
         try:
-            parsed_time = datetime.datetime.fromisoformat(payload.scheduled_time.replace("Z", "+00:00"))
+            raw_time_str = payload.scheduled_time
+            if raw_time_str.endswith("Z"):
+                raw_dt = datetime.datetime.fromisoformat(raw_time_str.replace("Z", "+00:00"))
+                utc_dt = raw_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            else:
+                raw_dt = datetime.datetime.fromisoformat(raw_time_str)
+                if raw_dt.tzinfo is None:
+                    try:
+                        from zoneinfo import ZoneInfo
+                        loc_tz = ZoneInfo(tenant_tz_str)
+                    except Exception:
+                        from zoneinfo import ZoneInfo
+                        loc_tz = ZoneInfo("Asia/Kolkata")
+                    loc_dt = raw_dt.replace(tzinfo=loc_tz)
+                    utc_dt = loc_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+                else:
+                    utc_dt = raw_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            parsed_time = utc_dt
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid scheduled_time format: {e}")
         
@@ -583,8 +653,42 @@ async def upload_asset(file: UploadFile = File(...)):
 
 @app.get("/api/campaigns")
 def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
+    tenant = db.query(Tenant).filter_by(id=tenant_id).first()
+    tz_str = tenant.timezone if (tenant and tenant.timezone) else infer_timezone_from_location(tenant.target_locations if tenant else None)
+    
+    from zoneinfo import ZoneInfo
+    try:
+        loc_tz = ZoneInfo(tz_str)
+    except Exception:
+        loc_tz = ZoneInfo("Asia/Kolkata")
+        
     campaigns = db.query(Campaign).filter_by(tenant_id=tenant_id).order_by(Campaign.id.desc()).all()
-    return campaigns
+    result = []
+    for c in campaigns:
+        c_dict = {
+            "id": c.id,
+            "tenant_id": c.tenant_id,
+            "prompt": c.prompt,
+            "category": c.category,
+            "min_age": c.min_age,
+            "max_age": c.max_age,
+            "gender": c.gender,
+            "generated_text": c.generated_text,
+            "visual_suggestion": c.visual_suggestion,
+            "tone": c.tone,
+            "is_liked": c.is_liked,
+            "status": c.status,
+            "scheduled_time": None,
+            "scheduled_time_local": None,
+            "timezone": tz_str
+        }
+        if c.scheduled_time:
+            utc_dt = c.scheduled_time.replace(tzinfo=datetime.timezone.utc)
+            local_dt = utc_dt.astimezone(loc_tz)
+            c_dict["scheduled_time"] = local_dt.isoformat()
+            c_dict["scheduled_time_local"] = local_dt.strftime("%I:%M %p")
+        result.append(c_dict)
+    return result
 
 @app.get("/api/assets")
 def list_assets():

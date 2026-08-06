@@ -180,6 +180,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
   // Target & Tone state
   const [targetLocations, setTargetLocations] = useState<string[]>([]);
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [locationSearch, setLocationSearch] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [targetGender, setTargetGender] = useState("All");
@@ -246,6 +247,9 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             setTargetAgeMin(data.target_age_min || 18);
             setTargetAgeMax(data.target_age_max || 35);
             setPersonaTone(data.persona_tone || "casual");
+            if (data.timezone) {
+              setTimezone(data.timezone);
+            }
             if (data.target_locations) {
               setTargetLocations(data.target_locations.split(",").map((l: string) => l.trim()).filter(Boolean));
             }
@@ -267,6 +271,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           if (parsed.brandColorPrimary) setBrandColorPrimary(parsed.brandColorPrimary);
           if (parsed.brandColorSecondary) setBrandColorSecondary(parsed.brandColorSecondary);
           if (parsed.brandUrl) setBrandUrl(parsed.brandUrl);
+          if (parsed.timezone) setTimezone(parsed.timezone);
         } catch (e) {
           console.error("Failed to parse business profile", e);
         }
@@ -274,6 +279,16 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
     };
 
     loadProfile();
+
+    const preventGlobalDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', preventGlobalDrop);
+    window.addEventListener('drop', preventGlobalDrop);
+    return () => {
+      window.removeEventListener('dragover', preventGlobalDrop);
+      window.removeEventListener('drop', preventGlobalDrop);
+    };
   }, []);
 
   const handleSave = async (shouldAdvance = false) => {
@@ -287,6 +302,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       brand_color_primary: brandColorPrimary,
       brand_color_secondary: brandColorSecondary,
       target_locations: targetLocations.join(","),
+      timezone,
       target_gender: targetGender,
       target_age_min: targetAgeMin,
       target_age_max: targetAgeMax,
@@ -300,7 +316,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       category,
       brandColorPrimary,
       brandColorSecondary,
-      brandUrl
+      brandUrl,
+      timezone
     }));
 
     try {
@@ -310,6 +327,10 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
         body: JSON.stringify(payload)
       });
       if (response.ok) {
+        const resData = await response.json();
+        if (resData.timezone) {
+          setTimezone(resData.timezone);
+        }
         notifySuccess("Brand identity profile updated successfully!");
         if (shouldAdvance && onNext) {
           onNext();
@@ -389,19 +410,24 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
-      setDragActive(false);
+      if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget as Node)) {
+        setDragActive(false);
+      }
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleFiles(e.dataTransfer.files);
     }
   };
 
@@ -836,19 +862,29 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
                 {assets.map((asset, idx) => (
                   <div 
                     key={idx} 
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'copy';
+                        e.dataTransfer.setData('text/plain', asset.url);
+                        e.dataTransfer.setData('text/uri-list', asset.url);
+                        e.dataTransfer.setData('URL', asset.url);
+                      }
+                    }}
                     style={{ 
                       position: 'relative', 
                       aspectRatio: '1', 
                       borderRadius: '10px', 
                       overflow: 'hidden', 
                       border: '1px solid rgba(255,255,255,0.08)',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.2)' 
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                      cursor: 'grab'
                     }}
                   >
                     {asset.type === 'video' ? (
-                      <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                      <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} muted />
                     ) : (
-                      <img src={asset.url} alt={asset.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={asset.url} alt={asset.filename} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                     )}
                     <button
                       type="button"
@@ -1278,8 +1314,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [waRecipient, setWaRecipient] = useState('');
   const [waTemplateName, setWaTemplateName] = useState('hello_world');
   const [isSendingWa, setIsSendingWa] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
 
-  // Check WhatsApp connection configuration status on mount
+  // Check WhatsApp connection configuration status and load calendar events on mount
   useEffect(() => {
     const checkWaStatus = async () => {
       try {
@@ -1295,7 +1332,21 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         console.error("Failed to fetch WhatsApp status", err);
       }
     };
+    
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch('/api/calendar/events');
+        if (response.ok) {
+          const data = await response.json();
+          setCalendarEvents(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch calendar events", err);
+      }
+    };
+
     checkWaStatus();
+    fetchCalendarEvents();
   }, []);
 
   const handleSaveWaSettings = async () => {
@@ -1786,29 +1837,36 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
             <div 
+              onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.dataTransfer) {
+                  e.dataTransfer.dropEffect = 'copy';
+                }
+                setIsDraggingOverAssetZone(true);
+              }}
               onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (e.dataTransfer) {
+                  e.dataTransfer.dropEffect = 'copy';
+                }
                 setIsDraggingOverAssetZone(true);
               }}
               onDragLeave={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsDraggingOverAssetZone(false);
+                if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsDraggingOverAssetZone(false);
+                }
               }}
               onDrop={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsDraggingOverAssetZone(false);
                 
-                const draggedUrl = e.dataTransfer.getData('text/plain');
-                if (draggedUrl && draggedUrl.startsWith('/api/assets/')) {
-                  setSelectedAssetUrl(draggedUrl);
-                  notifySuccess("Asset selected!");
-                  return;
-                }
-                
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                // 1. Check for files dropped directly from local computer (Finder / Explorer)
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                   const file = e.dataTransfer.files[0];
                   const formData = new FormData();
                   formData.append('file', file);
@@ -1829,6 +1887,17 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                     console.error("Upload error", error);
                     notifyError("Error uploading file");
                   }
+                  return;
+                }
+
+                // 2. Check for dragged asset URLs (from internal tray or web)
+                const draggedUrl = e.dataTransfer.getData('text/plain') || 
+                                   e.dataTransfer.getData('text/uri-list') || 
+                                   e.dataTransfer.getData('URL');
+                if (draggedUrl) {
+                  setSelectedAssetUrl(draggedUrl);
+                  notifySuccess("Asset selected!");
+                  return;
                 }
               }}
               style={{ 
@@ -1911,9 +1980,14 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   {libraryAssets.map((asset) => (
                     <div 
                       key={asset.id}
-                      draggable
+                      draggable={true}
                       onDragStart={(e) => {
-                        e.dataTransfer.setData('text/plain', asset.url);
+                        if (e.dataTransfer) {
+                          e.dataTransfer.effectAllowed = 'copy';
+                          e.dataTransfer.setData('text/plain', asset.url);
+                          e.dataTransfer.setData('text/uri-list', asset.url);
+                          e.dataTransfer.setData('URL', asset.url);
+                        }
                       }}
                       onClick={() => setSelectedAssetUrl(asset.url)}
                       style={{ 
@@ -1930,9 +2004,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                       title="Drag to selection box above or click to select"
                     >
                       {asset.name.toLowerCase().endsWith('.mp4') ? (
-                        <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                        <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} muted />
                       ) : (
-                        <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                       )}
                     </div>
                   ))}
@@ -2344,20 +2418,57 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   Schedule post for later date/time
                 </label>
                 {isScheduling && (
-                  <input 
-                    type="datetime-local" 
-                    className="input-field" 
-                    style={{ marginTop: '10px', width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    onClick={(e) => {
-                      try {
-                        (e.target as any).showPicker();
-                      } catch (err) {
-                        console.error("showPicker not supported", err);
-                      }
-                    }}
-                  />
+                  <>
+                    <input 
+                      type="datetime-local" 
+                      className="input-field" 
+                      style={{ marginTop: '10px', width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          (e.target as any).showPicker();
+                        } catch (err) {
+                          console.error("showPicker not supported", err);
+                        }
+                      }}
+                    />
+                    {(() => {
+                      if (!scheduledTime) return null;
+                      const selectedDate = new Date(scheduledTime);
+                      const sYear = selectedDate.getFullYear();
+                      const sMonth = selectedDate.getMonth();
+                      const sDay = selectedDate.getDate();
+                      
+                      const matchingEvents = calendarEvents.filter(e => {
+                        const parts = e.date.split('-');
+                        const eYear = parseInt(parts[0], 10);
+                        const eMonth = parseInt(parts[1], 10) - 1;
+                        const eDay = parseInt(parts[2], 10);
+                        return eYear === sYear && eMonth === sMonth && eDay === sDay;
+                      });
+
+                      if (matchingEvents.length === 0) return null;
+
+                      return (
+                        <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
+                          {matchingEvents.map(event => (
+                            <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                📅 {event.name} ({event.type.replace('_', ' ')})
+                              </span>
+                              <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
+                                {event.description}
+                              </span>
+                              <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                                ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </>
                 )}
               </div>
 
@@ -3199,17 +3310,21 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
 
 function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) => void }) {
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/campaigns')
-      .then(res => res.json())
-      .then(data => {
-        setCampaigns(data);
+    Promise.all([
+      fetch('/api/campaigns').then(res => res.json()),
+      fetch('/api/calendar/events').then(res => res.json()).catch(() => [])
+    ])
+      .then(([campaignData, calendarData]) => {
+        setCampaigns(campaignData);
+        setCalendarEvents(calendarData);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Failed to load campaigns for calendar", err);
+        console.error("Failed to load calendar or campaigns", err);
         setLoading(false);
       });
   }, []);
@@ -3266,7 +3381,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
         {daysGrid.map((day, idx) => {
           if (day === null) {
-            return <div key={`empty-${idx}`} style={{ minHeight: '100px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid transparent' }} />;
+            return <div key={`empty-${idx}`} style={{ minHeight: '120px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid transparent' }} />;
           }
 
           // Check if there are posts scheduled for this day
@@ -3275,13 +3390,22 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
             return date.getDate() === day && date.getMonth() === month && date.getFullYear() === year;
           });
 
+          // Check for calendar events matching this day
+          const dayEvents = calendarEvents.filter(e => {
+            const parts = e.date.split('-');
+            const eYear = parseInt(parts[0], 10);
+            const eMonth = parseInt(parts[1], 10) - 1;
+            const eDay = parseInt(parts[2], 10);
+            return eYear === year && eMonth === month && eDay === day;
+          });
+
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
           return (
             <div 
               key={`day-${day}`} 
               style={{
-                minHeight: '100px',
+                minHeight: '120px',
                 background: isToday ? 'rgba(82, 183, 136, 0.08)' : 'rgba(255,255,255,0.03)',
                 borderRadius: '12px',
                 border: isToday ? '1.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
@@ -3296,6 +3420,40 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                 {day} {isToday && '•'}
               </span>
 
+              {/* Calendar Events (Festivals / Holidays) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {dayEvents.map(event => {
+                  let emoji = "🎉";
+                  if (event.type === "public_holiday") emoji = "🏢";
+                  if (event.type === "restricted_holiday") emoji = "🏛️";
+                  if (event.type === "season") emoji = "🌤️";
+                  
+                  return (
+                    <div 
+                      key={event.name}
+                      title={`${event.name}: ${event.description}`}
+                      style={{
+                        background: event.type === 'season' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(251, 191, 36, 0.12)',
+                        border: event.type === 'season' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(251, 191, 36, 0.4)',
+                        borderRadius: '4px',
+                        padding: '2px 4px',
+                        fontSize: '9px',
+                        color: 'var(--text-color)',
+                        fontWeight: 600,
+                        lineHeight: '1.2',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        cursor: 'default'
+                      }}
+                    >
+                      {emoji} {event.name}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Scheduled Posts */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
                 {dayPosts.map((post) => {
                   const postTime = new Date(post.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3380,7 +3538,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                     </span>
                     {c.status === 'scheduled' && (
                       <span style={{ fontSize: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        Scheduled: {new Date(c.scheduled_time).toLocaleString()}
+                        Scheduled: {c.scheduled_time_local ? `${new Date(c.scheduled_time).toLocaleDateString()} at ${c.scheduled_time_local}` : new Date(c.scheduled_time).toLocaleString()}
                       </span>
                     )}
                     {c.status === 'published' && (
