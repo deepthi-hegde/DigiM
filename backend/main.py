@@ -122,6 +122,37 @@ def infer_timezone_from_location(location_str: Optional[str]) -> str:
     return "Asia/Kolkata"
 
 
+def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
+    if not image_url:
+        return image_url
+    if image_url.startswith("data:image/"):
+        try:
+            import base64
+            import uuid
+            header, base64_data = image_url.split(",", 1)
+            ext = "png"
+            if "jpeg" in header or "jpg" in header:
+                ext = "jpg"
+            filename = f"overlay_{uuid.uuid4().hex[:10]}.{ext}"
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            with open(file_path, "wb") as f:
+                f.write(base64.b64decode(base64_data))
+            return f"/api/assets/raw/{filename}"
+        except Exception as e:
+            print(f"Error saving base64 asset: {e}")
+            return image_url
+
+    if "/api/temp_assets/raw/" in image_url:
+        temp_filename = image_url.split("/api/temp_assets/raw/")[-1]
+        temp_path = os.path.join(TEMP_UPLOAD_DIR, temp_filename)
+        if os.path.exists(temp_path):
+            perm_path = os.path.join(UPLOAD_DIR, temp_filename)
+            import shutil
+            shutil.copy(temp_path, perm_path)
+            return f"/api/assets/raw/{temp_filename}"
+    return image_url
+
+
 class BrandProfileRequest(BaseModel):
     tenant_id: int = 1
     business_name: Optional[str] = None
@@ -387,25 +418,14 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
     # Actual publish call to Meta
     fb_res = None
     ig_res = None
-    
-def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
-    if not image_url:
-        return image_url
-    if "/api/temp_assets/raw/" in image_url:
-        temp_filename = image_url.split("/api/temp_assets/raw/")[-1]
-        temp_path = os.path.join(TEMP_UPLOAD_DIR, temp_filename)
-        if os.path.exists(temp_path):
-            perm_path = os.path.join(UPLOAD_DIR, temp_filename)
-            import shutil
-            shutil.copy(temp_path, perm_path)
-            return f"/api/assets/raw/{temp_filename}"
-    return image_url
-
-    # In local development, if GCS is not configured, image_url starts with "/api/assets/raw/"
-    # Meta APIs cannot download images from localhost, so we substitute a high-quality public image for local testing.
+    # Convert relative/temp/base64 asset URL to permanent URL
     image_url = save_permanent_asset_if_needed(payload.image_url)
     if image_url and not image_url.startswith("http"):
-        image_url = "https://picsum.photos/id/237/600/600.jpg"
+        public_backend_url = os.environ.get("BACKEND_URL", "https://backend-980545668366.us-central1.run.app")
+        if image_url.startswith("/"):
+            image_url = f"{public_backend_url.rstrip('/')}{image_url}"
+        else:
+            image_url = "https://picsum.photos/id/237/600/600.jpg"
 
     # 1. Post to Facebook
     pub_req = PublishRequest(
@@ -450,6 +470,7 @@ def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
         "fb_response": fb_res,
         "ig_response": ig_res
     }
+
 
 import os
 from dotenv import load_dotenv

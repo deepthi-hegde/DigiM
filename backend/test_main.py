@@ -130,6 +130,44 @@ def test_campaign_publish_mock_success(monkeypatch):
     
     app.dependency_overrides.clear()
 
+def test_campaign_publish_live_flow(monkeypatch):
+    from db.schema import MetaAccount
+    
+    class MockQuery:
+        def filter_by(self, **kwargs):
+            return self
+        def order_by(self, *args, **kwargs):
+            return self
+        def first(self):
+            return MetaAccount(tenant_id=1, page_id="123456789", page_name="Real Page", access_token="token123")
+
+    class MockSession:
+        def query(self, *args, **kwargs):
+            return MockQuery()
+        def add(self, *args, **kwargs):
+            pass
+        def commit(self, *args, **kwargs):
+            pass
+
+    from db.database import get_db
+    app.dependency_overrides[get_db] = lambda: MockSession()
+    
+    # Mock publish_to_facebook
+    monkeypatch.setattr("main.publish_to_facebook", lambda req: {"id": "fb_post_999"})
+
+    payload = {
+        "message": "Test live post",
+        "image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "tenant_id": 1
+    }
+    response = client.post("/api/campaign/publish", json=payload)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "success"
+    assert res_data["fb_response"]["id"] == "fb_post_999"
+    
+    app.dependency_overrides.clear()
+
 def test_calendar_events():
     response = client.get("/api/calendar/events")
     assert response.status_code == 200
