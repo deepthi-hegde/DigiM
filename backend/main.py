@@ -71,6 +71,29 @@ def get_temp_asset(filename: str):
     return FileResponse(file_path)
 
 
+@app.get("/api/proxy-image")
+def proxy_image(url: str):
+    """Server-side image proxy. Downloads an external image and serves it
+    with CORS headers so the browser canvas can draw it without taint."""
+    import requests as req_lib
+    from fastapi.responses import Response
+    try:
+        r = req_lib.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        content_type = r.headers.get("Content-Type", "image/jpeg")
+        return Response(
+            content=r.content,
+            media_type=content_type,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=86400",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to proxy image: {e}")
+
+
+
 def infer_timezone_from_location(location_str: Optional[str]) -> str:
     """Infer IANA timezone string from location string or default to Asia/Kolkata."""
     if not location_str:
@@ -572,6 +595,56 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
             "message": str(e)
         }
 
+class CampaignDraftRequest(BaseModel):
+    id: Optional[int] = None
+    prompt: Optional[str] = ""
+    category: Optional[str] = "Product Showcase"
+    tone: Optional[str] = "casual"
+    generated_text: Optional[str] = ""
+    visual_suggestion: Optional[str] = ""
+    image_url: Optional[str] = None
+    scheduled_time: Optional[str] = None
+    tenant_id: int = 1
+
+@app.post("/api/campaign/draft")
+def save_campaign_draft(payload: CampaignDraftRequest, db: Session = Depends(get_db)):
+    campaign = None
+    if payload.id:
+        campaign = db.query(Campaign).filter_by(id=payload.id, tenant_id=payload.tenant_id).first()
+    
+    if campaign:
+        campaign.prompt = payload.prompt or campaign.prompt
+        campaign.category = payload.category or campaign.category
+        campaign.tone = payload.tone or campaign.tone
+        campaign.generated_text = payload.generated_text
+        if payload.image_url:
+            campaign.visual_suggestion = payload.image_url
+        if payload.scheduled_time:
+            try:
+                raw_dt = datetime.datetime.fromisoformat(payload.scheduled_time.replace("Z", "+00:00"))
+                campaign.scheduled_time = raw_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            except Exception:
+                pass
+        campaign.status = "draft"
+    else:
+        campaign = Campaign(
+            tenant_id=payload.tenant_id,
+            prompt=payload.prompt or "Draft Campaign",
+            category=payload.category or "Product Showcase",
+            min_age=18,
+            max_age=35,
+            gender="All",
+            generated_text=payload.generated_text or "",
+            visual_suggestion=payload.image_url or payload.visual_suggestion or "",
+            tone=payload.tone or "casual",
+            status="draft"
+        )
+        db.add(campaign)
+    
+    db.commit()
+    db.refresh(campaign)
+    return {"status": "success", "id": campaign.id, "message": "Draft saved successfully"}
+
 class LikeRequest(BaseModel):
     is_liked: bool
 
@@ -597,48 +670,103 @@ def toggle_campaign_like(campaign_id: int, payload: LikeRequest, db: Session = D
 
 class ImageGenRequest(BaseModel):
     prompt: str
+    num_images: Optional[int] = 1
+    format_type: Optional[str] = "post" # post (1:1), carousel / story (9:16 vertical)
 
 @app.post("/api/campaign/generate-image")
 def generate_ai_image(payload: ImageGenRequest):
+    """Generate image(s) using Flux 1.1 Pro (fal.ai) with Imagen 4 fallback."""
+    import uuid
+
+    fal_key = os.environ.get("FAL_API_KEY")
+    count = min(max(payload.num_images or 1, 1), 4)
+
+    # ── Strategy 1: Flux 1.1 Pro via fal.ai ─────────────────────────────────
+    if fal_key:
+        try:
+            import fal_client
+            os.environ["FAL_KEY"] = fal_key  # fal_client reads this env var
+
+            img_size = "portrait_16_9" if payload.format_type in ["carousel", "story"] else "square_hd"
+
+            urls = []
+            for _ in range(count):
+                result = fal_client.subscribe(
+                    "fal-ai/flux-pro/v1.1",
+                    arguments={
+                        "prompt": payload.prompt,
+                        "image_size": img_size,
+                        "num_images": 1,
+                        "enable_safety_checker": True,
+                    },
+                )
+
+                image_url = result["images"][0]["url"]
+                import requests as req
+                img_resp = req.get(image_url, timeout=30)
+                img_resp.raise_for_status()
+
+                filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
+                filepath = os.path.join(TEMP_UPLOAD_DIR, filename)
+                with open(filepath, "wb") as f:
+                    f.write(img_resp.content)
+
+                public_url = upload_to_gcs(filepath, f"temp-ai-gen/{filename}")
+                if not public_url.startswith("http"):
+                    public_url = f"/api/temp_assets/raw/{filename}"
+                urls.append(public_url)
+
+            print(f"Flux 1.1 Pro images generated ({count}): {urls}")
+            return {"status": "success", "url": urls[0], "urls": urls, "model": "flux-1.1-pro"}
+
+        except Exception as e:
+            print(f"Flux image gen error (will fallback to Imagen 4): {e}")
+
+    # ── Strategy 2: Imagen 4 fallback ────────────────────────────────────────
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=400, detail="API key missing")
-    
+        raise HTTPException(status_code=400, detail="No image generation API key configured (FAL_API_KEY or GEMINI_API_KEY required)")
+
     try:
         client = genai.Client(api_key=api_key)
-        print(f"Generating image for: {payload.prompt}")
-        
+        print(f"Falling back to Imagen 4 for: {payload.prompt}")
+
+        aspect_ratio = "9:16" if payload.format_type in ["carousel", "story"] else "1:1"
+
         response = client.models.generate_images(
             model='imagen-4.0-generate-001',
             prompt=payload.prompt,
             config=types.GenerateImagesConfig(
-                number_of_images=1,
+                number_of_images=count,
+                aspect_ratio=aspect_ratio,
                 output_mime_type='image/jpeg'
             )
         )
-        
+
         if not response.generated_images:
             raise Exception("No images generated")
-            
-        import uuid, base64, requests as req
-        image_bytes = response.generated_images[0].image.image_bytes
-        filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
-        filepath = os.path.join(TEMP_UPLOAD_DIR, filename)
-        
-        with open(filepath, "wb") as f:
-            f.write(image_bytes)
-            
-        # Try GCS first (production)
-        public_url = upload_to_gcs(filepath, f"temp-ai-gen/{filename}")
-        
-        if not public_url.startswith("http"):
-            public_url = f"/api/temp_assets/raw/{filename}"
-            
-        return {"status": "success", "url": public_url}
+
+        urls = []
+        for gen_img in response.generated_images:
+            image_bytes = gen_img.image.image_bytes
+            filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
+            filepath = os.path.join(TEMP_UPLOAD_DIR, filename)
+
+            with open(filepath, "wb") as f:
+                f.write(image_bytes)
+
+            public_url = upload_to_gcs(filepath, f"temp-ai-gen/{filename}")
+            if not public_url.startswith("http"):
+                public_url = f"/api/temp_assets/raw/{filename}"
+            urls.append(public_url)
+
+        return {"status": "success", "url": urls[0], "urls": urls, "model": "imagen-4"}
     except Exception as e:
-        print(f"Image gen error: {e}")
+        print(f"Imagen 4 error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-import uuid
+
+
+
 
 @app.post("/api/assets/upload")
 async def upload_asset(file: UploadFile = File(...)):

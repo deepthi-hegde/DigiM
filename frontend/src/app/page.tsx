@@ -1276,17 +1276,36 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
               </p>
             </div>
           </div>
-          <button 
-            className="btn-secondary"
-            onClick={() => {
-              setIsFbConnected(false); // Reset to allow re-selection
-              connectFacebook();
-            }}
-            disabled={isConnectingFb}
-            style={isFbConnected ? { padding: '10px 20px', fontSize: '14px', color: 'var(--primary-color)', borderColor: 'var(--primary-color)', background: 'rgba(82, 183, 136, 0.1)' } : { padding: '10px 20px', fontSize: '14px' }}
-          >
-            {isConnectingFb ? 'Connecting...' : (isFbConnected ? '✓ Change Page' : 'Connect')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isFbConnected && (
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  try {
+                    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+                    await fetch(`/api/meta/disconnect?tenant_id=${savedTenantId}&platform=facebook`, { method: 'POST' });
+                  } catch(e) { console.error(e); }
+                  setIsFbConnected(false);
+                  setFbPageName('');
+                  setIsIgConnected(false);
+                }}
+                style={{ padding: '10px 14px', fontSize: '13px', color: '#ef4444', borderColor: '#ef4444', background: 'rgba(239,68,68,0.07)' }}
+              >
+                Disconnect
+              </button>
+            )}
+            <button 
+              className="btn-secondary"
+              onClick={() => {
+                setIsFbConnected(false);
+                connectFacebook();
+              }}
+              disabled={isConnectingFb}
+              style={isFbConnected ? { padding: '10px 20px', fontSize: '14px', color: 'var(--primary-color)', borderColor: 'var(--primary-color)', background: 'rgba(82, 183, 136, 0.1)' } : { padding: '10px 20px', fontSize: '14px' }}
+            >
+              {isConnectingFb ? 'Connecting...' : (isFbConnected ? '✓ Change Page' : 'Connect')}
+            </button>
+          </div>
         </div>
 
         {/* Instagram Connection */}
@@ -1309,22 +1328,40 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
               </p>
             </div>
           </div>
-          <button 
-            className="btn-secondary" 
-            style={{ 
-              padding: '10px 20px', fontSize: '14px', 
-              opacity: (isFbConnected || isIgConnected) ? 1 : 0.5,
-              background: isIgConnected ? 'rgba(82, 183, 136, 0.1)' : 'transparent',
-              color: isIgConnected ? 'var(--primary-color)' : 'var(--text-color)',
-              borderColor: isIgConnected ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.2)',
-              cursor: (isFbConnected || isIgConnected) ? 'pointer' : 'not-allowed'
-            }} 
-            disabled={!isFbConnected || isIgConnected || isConnectingIg}
-            onClick={connectInstagram}
-          >
-            {isConnectingIg ? 'Connecting...' : (isIgConnected ? '✓ Connected' : 'Connect')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isIgConnected && (
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  try {
+                    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+                    await fetch(`/api/meta/disconnect?tenant_id=${savedTenantId}&platform=instagram`, { method: 'POST' });
+                  } catch(e) { console.error(e); }
+                  setIsIgConnected(false);
+                }}
+                style={{ padding: '10px 14px', fontSize: '13px', color: '#ef4444', borderColor: '#ef4444', background: 'rgba(239,68,68,0.07)' }}
+              >
+                Disconnect
+              </button>
+            )}
+            <button 
+              className="btn-secondary" 
+              style={{ 
+                padding: '10px 20px', fontSize: '14px', 
+                opacity: (isFbConnected || isIgConnected) ? 1 : 0.5,
+                background: isIgConnected ? 'rgba(82, 183, 136, 0.1)' : 'transparent',
+                color: isIgConnected ? 'var(--primary-color)' : 'var(--text-color)',
+                borderColor: isIgConnected ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.2)',
+                cursor: (isFbConnected || isIgConnected) ? 'pointer' : 'not-allowed'
+              }} 
+              disabled={!isFbConnected || isIgConnected || isConnectingIg}
+              onClick={connectInstagram}
+            >
+              {isConnectingIg ? 'Connecting...' : (isIgConnected ? '✓ Connected' : 'Connect')}
+            </button>
+          </div>
         </div>
+
       </div>
 
       <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(82, 183, 136, 0.03)', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
@@ -1369,12 +1406,14 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [maxAge, setMaxAge] = useState(35);
   const [prompt, setPrompt] = useState('');
   const [category, setCategory] = useState('Product Showcase');
+  const [formatType, setFormatType] = useState<'post' | 'reel' | 'carousel'>('post');
   const [gender, setGender] = useState('All');
   const [tone, setTone] = useState('casual');
   const [campaignId, setCampaignId] = useState<number | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
+  const [draftScheduledTime, setDraftScheduledTime] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [generatedText, setGeneratedText] = useState('');
   const [visualSuggestion, setVisualSuggestion] = useState('');
@@ -1382,6 +1421,11 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
   const [selectedAssetUrl, setSelectedAssetUrl] = useState<string | null>(null);
+  const [originalAssetUrl, setOriginalAssetUrl] = useState<string | null>(null);
+  const [hasOverlay, setHasOverlay] = useState(false);
+  const [carouselUrls, setCarouselUrls] = useState<string[]>([]);
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const [carouselCount, setCarouselCount] = useState(3);
   const [imageFit, setImageFit] = useState<'cover' | 'contain'>('cover');
   const [showLightbox, setShowLightbox] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
@@ -1681,14 +1725,38 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     if (!visualSuggestion) return;
     setIsGeneratingImage(true);
     try {
+      // If we already have a carousel set and user is clicking Regenerate on a single slide, only request 1 image
+      const isSingleSlideRegen = carouselUrls.length > 1;
+      const countToGen = isSingleSlideRegen ? 1 : (formatType === 'carousel' ? carouselCount : 1);
+
       const res = await fetch('/api/campaign/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: visualSuggestion })
+        body: JSON.stringify({ 
+          prompt: visualSuggestion,
+          num_images: countToGen,
+          format_type: formatType
+        })
       });
       const data = await res.json();
       if (data.status === 'success') {
-        setSelectedAssetUrl(data.url);
+        setHasOverlay(false);
+        setOriginalAssetUrl(null);
+        if (isSingleSlideRegen) {
+          // Replace only the active single slide in the carousel strip
+          const updatedUrls = [...carouselUrls];
+          updatedUrls[activeCarouselIndex] = data.url;
+          setCarouselUrls(updatedUrls);
+          setSelectedAssetUrl(data.url);
+          notifySuccess(`Slide #${activeCarouselIndex + 1} regenerated ✨`);
+        } else if (data.urls && data.urls.length > 1) {
+          setCarouselUrls(data.urls);
+          setSelectedAssetUrl(data.urls[0]);
+          setActiveCarouselIndex(0);
+        } else {
+          setCarouselUrls([]);
+          setSelectedAssetUrl(data.url);
+        }
       } else {
         notifyError("Image generation failed");
       }
@@ -1702,6 +1770,21 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const handleApplyBrandOverlay = async () => {
     if (!selectedAssetUrl) {
       notifyError("Please select or generate a visual asset first.");
+      return;
+    }
+
+    // Toggle off: If overlay is currently applied, remove it and restore clean image
+    if (hasOverlay) {
+      if (originalAssetUrl) {
+        setSelectedAssetUrl(originalAssetUrl);
+        if (carouselUrls.length > 1) {
+          const updatedUrls = [...carouselUrls];
+          updatedUrls[activeCarouselIndex] = originalAssetUrl;
+          setCarouselUrls(updatedUrls);
+        }
+      }
+      setHasOverlay(false);
+      notifySuccess("Brand overlay removed.");
       return;
     }
 
@@ -1723,112 +1806,140 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       }
     }
 
-    const renderOverlayOnImage = (imageElement: HTMLImageElement) => {
+    const renderOverlayOnImage = async (imageElement: HTMLImageElement) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        notifyError("Canvas 2D context not supported.");
-        return;
+      if (!ctx) { notifyError("Canvas 2D context not supported."); return; }
+      canvas.width = 1080;
+      canvas.height = 1080;
+
+      // ── 1. Load Inter font via FontFace API for crisp typography ────────────
+      let fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
+      try {
+        const interBold = new FontFace(
+          'Inter',
+          'url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZBhiI2B.woff2)',
+          { weight: '700', style: 'normal' }
+        );
+        const interReg = new FontFace(
+          'Inter',
+          'url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZBhiI2B.woff2)',
+          { weight: '400', style: 'normal' }
+        );
+        const [fb, fr] = await Promise.all([interBold.load(), interReg.load()]);
+        document.fonts.add(fb);
+        document.fonts.add(fr);
+        fontFamily = 'Inter';
+      } catch (e) {
+        console.warn('Inter font load failed, falling back to system font', e);
       }
-      canvas.width = 800;
-      canvas.height = 800;
-      
-      // Draw image
-      ctx.drawImage(imageElement, 0, 0, 800, 800);
-      
-      // Text Background banner (Overlay bottom 220px)
-      ctx.fillStyle = "rgba(10, 15, 12, 0.85)";
-      ctx.fillRect(0, 580, 800, 220);
-      
-      // Decorative border frame
-      ctx.strokeStyle = primaryColor;
-      ctx.lineWidth = 16;
-      ctx.strokeRect(0, 0, 800, 800);
-      
-      // Brand Name tag
+
+      // ── 2. Draw base image ───────────────────────────────────────────────────
+      ctx.drawImage(imageElement, 0, 0, 1080, 1080);
+
+      // ── 4. Slim gradient footer bar (120px) ──────────────────────────────────
+      const footerH = 120;
+      const footerY = 1080 - footerH;
+      const grad = ctx.createLinearGradient(0, footerY - 40, 0, 1080);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(0.35, 'rgba(8,10,9,0.78)');
+      grad.addColorStop(1, 'rgba(8,10,9,0.96)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, footerY - 40, 1080, footerH + 40);
+
+      // ── 6. Brand name — bold, elegant ───────────────────────────────────────
+      ctx.font = `700 28px '${fontFamily}'`;
+      ctx.letterSpacing = '3px';
       ctx.fillStyle = primaryColor;
-      ctx.font = "bold 26px sans-serif";
-      ctx.fillText(bizName.toUpperCase(), 40, 630);
-      
-      // Draw subtitle slogan/headline
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "22px sans-serif";
-      
-      // Extract brief sentence/slogan from generatedText for the banner
-      const cleanHeadline = generatedText ? (generatedText.split(/[.!?\n]/)[0] || "Exquisite Quality & Comfort") : "Exquisite Quality & Comfort";
-      
-      // Wrap text
-      const words = cleanHeadline.split(' ');
-      let line = '';
-      let y = 675;
-      const maxWidth = 720;
-      const lineHeight = 32;
-      
-      for (let n = 0; n < words.length; n++) {
-        let testLine = line + words[n] + ' ';
-        let metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, 40, y);
-          line = words[n] + ' ';
-          y += lineHeight;
-        } else {
-          line = testLine;
+      ctx.textBaseline = 'alphabetic';
+      // Measure and draw brand name
+      const brandLabel = bizName.toUpperCase();
+      ctx.fillText(brandLabel, 32, footerY + 52);
+
+      // ── 7. One-line tagline (first sentence of post text) ────────────────────
+      const rawSlogan = generatedText
+        ? (generatedText.replace(/[*#_`]/g, '').split(/[.!?\n]/)[0] || '').trim()
+        : '';
+      if (rawSlogan) {
+        ctx.font = `400 17px '${fontFamily}'`;
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        // Clamp to max 700px width
+        let slogan = rawSlogan;
+        while (ctx.measureText(slogan).width > 700 && slogan.length > 10) {
+          slogan = slogan.slice(0, -4) + '…';
         }
+        ctx.fillText(slogan, 32, footerY + 82);
       }
-      // Draw Brand Logo Badge top-right if enabled & logo exists
+
+      // ── 8. Logo badge — top-right, compact 72×72 ────────────────────────────
       const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
 
       const finalizeCanvas = () => {
         try {
-          const dataUrl = canvas.toDataURL("image/jpeg");
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+          if (!hasOverlay) {
+            setOriginalAssetUrl(selectedAssetUrl);
+          }
           setSelectedAssetUrl(dataUrl);
-          notifySuccess("Brand layout with logo applied successfully!");
+          setHasOverlay(true);
+          notifySuccess('Brand overlay applied ✨');
         } catch (err) {
-          console.error("Canvas export failed:", err);
-          notifyError("Failed to apply overlay due to cross-origin image policy.");
+          console.error('Canvas export failed:', err);
+          notifyError('Failed to apply overlay due to cross-origin image policy.');
         }
       };
 
       if (includeLogo && activeLogoUrl) {
         const logoImg = new Image();
-        logoImg.crossOrigin = "anonymous";
         logoImg.onload = () => {
           ctx.save();
-          const lx = 660, ly = 30, lw = 100, lh = 100, lr = 12;
-          ctx.fillStyle = "#ffffff";
-          ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-          ctx.shadowBlur = 10;
-          ctx.shadowOffsetY = 4;
-          
-          ctx.beginPath();
-          ctx.moveTo(lx + lr, ly);
-          ctx.arcTo(lx + lw, ly, lx + lw, ly + lh, lr);
-          ctx.arcTo(lx + lw, ly + lh, lx, ly + lh, lr);
-          ctx.arcTo(lx, ly + lh, lx, ly, lr);
-          ctx.arcTo(lx, ly, lx + lw, ly, lr);
-          ctx.closePath();
-          ctx.fill();
+          const lSize = 72, lPad = 8, lR = 10;
+          const lx = 1080 - lSize - 20;
+          const ly = 20;
 
-          ctx.drawImage(logoImg, lx + 10, ly + 10, lw - 20, lh - 20);
+          // White rounded badge with shadow
+          ctx.shadowColor = 'rgba(0,0,0,0.35)';
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetY = 4;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(lx, ly, lSize, lSize, lR);
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
+
+          // Thin brand-color ring around badge
+          ctx.strokeStyle = primaryColor;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(lx, ly, lSize, lSize, lR);
+          ctx.stroke();
+
+          // Logo image inside badge with padding
+          ctx.drawImage(logoImg, lx + lPad, ly + lPad, lSize - lPad * 2, lSize - lPad * 2);
           ctx.restore();
           finalizeCanvas();
         };
-        logoImg.onerror = () => {
-          console.error("Logo failed to load for canvas");
-          finalizeCanvas();
-        };
-        logoImg.src = activeLogoUrl;
+        logoImg.onerror = () => { finalizeCanvas(); };
+        logoImg.src = (window as any).__proxiedLogoUrl || activeLogoUrl;
       } else {
         finalizeCanvas();
       }
     };
 
+
+
+    // Helper: resolve any URL through server-side proxy to avoid canvas CORS taint.
+    // data: URLs are used as-is; local /api/ paths are same-origin (safe);
+    // everything else goes through the proxy so the browser never sees a foreign origin.
+    const toProxiedUrl = (url: string): string => {
+      if (url.startsWith('data:')) return url;
+      if (url.startsWith('/api/') || url.startsWith('/assets/')) return url;
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    };
+
     const loadImage = (url: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-          img.crossOrigin = "anonymous";
-        }
         img.onload = () => resolve(img);
         img.onerror = (err) => reject(err);
         img.src = url;
@@ -1836,24 +1947,20 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     };
 
     try {
-      const img = await loadImage(selectedAssetUrl);
-      renderOverlayOnImage(img);
-    } catch (err) {
-      console.warn("Direct image load failed, trying blob fetch fallback...", err);
-      try {
-        const fetchRes = await fetch(selectedAssetUrl);
-        if (!fetchRes.ok) throw new Error("Fetch failed");
-        const blob = await fetchRes.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        const img = await loadImage(objectUrl);
-        renderOverlayOnImage(img);
-        URL.revokeObjectURL(objectUrl);
-      } catch (blobErr) {
-        console.error("All image load strategies failed:", blobErr);
-        notifyError("Failed to load creative image for styling.");
+      const proxiedUrl = toProxiedUrl(selectedAssetUrl);
+      const img = await loadImage(proxiedUrl);
+      // Patch logo loading to also go through proxy
+      const origLogoSrc = includeLogo && (postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '');
+      if (origLogoSrc) {
+        (window as any).__proxiedLogoUrl = toProxiedUrl(origLogoSrc);
       }
+      await renderOverlayOnImage(img);
+    } catch (err) {
+      console.error("Image load failed even with proxy:", err);
+      notifyError("Failed to load creative image for styling. Please try re-selecting the image.");
     }
   };
+
 
   const handleDownload = async () => {
     if (!selectedAssetUrl) return;
@@ -1910,6 +2017,48 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       notifyError("Failed to save style feedback");
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  const handleSaveDraft = async (silent: boolean = false) => {
+    if (!prompt && !generatedText) {
+      if (!silent) notifyError("Please enter a prompt or text before saving draft.");
+      return;
+    }
+    setIsSavingDraft(true);
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch('/api/campaign/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: campaignId,
+          prompt,
+          category,
+          tone,
+          generated_text: generatedText,
+          visual_suggestion: visualSuggestion,
+          image_url: selectedAssetUrl || null,
+          scheduled_time: scheduledTime || null,
+          tenant_id: parseInt(savedTenantId, 10)
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.id && !campaignId) {
+          setCampaignId(data.id);
+        }
+        if (!silent) notifySuccess("Draft saved successfully! You can resume anytime.");
+      } else {
+        if (!silent) notifyError("Failed to save draft.");
+      }
+    } catch (err) {
+      console.error(err);
+      if (!silent) notifyError("Error saving draft.");
+    } finally {
+      setIsSavingDraft(false);
     }
   };
 
@@ -1985,9 +2134,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         )}
       </div>
       
-      <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
         {/* Left Column: Controls */}
-        <div style={{ flex: '1 1 400px' }}>
+        <div style={{ flex: '1 1 420px', minWidth: '300px', boxSizing: 'border-box' }}>
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Campaign Goal & Prompt</label>
             <textarea className="input-field" placeholder="e.g., Promote our new summer silk collection..." rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)}></textarea>
@@ -2029,6 +2178,66 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   {template.label}
                 </button>
               ))}
+            </div>
+
+            {/* Content Format Selection */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-light)' }}>
+                Content Format Type:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+                {[
+                  { id: 'post', label: '🖼️ Post', desc: 'Square 1:1' },
+                  { id: 'reel', label: '🎬 Reel', desc: 'Video 9:16' },
+                  { id: 'carousel', label: '📱 Story / Carousel', desc: 'Slides 9:16' }
+                ].map(fmt => (
+                  <label
+                    key={fmt.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      padding: '8px 10px',
+                      borderRadius: '10px',
+                      border: formatType === fmt.id ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+                      background: formatType === fmt.id ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.02)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxSizing: 'border-box',
+                      minWidth: 0
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: formatType === fmt.id ? 'var(--primary-color)' : 'var(--text-color)' }}>
+                      <input
+                        type="radio"
+                        name="contentFormat"
+                        checked={formatType === fmt.id}
+                        onChange={() => setFormatType(fmt.id as any)}
+                        style={{ accentColor: 'var(--primary-color)', flexShrink: 0 }}
+                      />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmt.label}</span>
+                    </div>
+                    <span style={{ fontSize: '9px', color: 'var(--text-light)', paddingLeft: '18px', whiteSpace: 'nowrap' }}>{fmt.desc}</span>
+                  </label>
+                ))}
+              </div>
+              {formatType === 'carousel' && (
+                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary-color)' }}>
+                    📱 Number of Carousel Slides to Generate:
+                  </span>
+                  <select
+                    className="input-field"
+                    style={{ width: '80px', padding: '4px 8px', fontSize: '12px', fontWeight: 700 }}
+                    value={carouselCount}
+                    onChange={(e) => setCarouselCount(parseInt(e.target.value, 10))}
+                  >
+                    <option value={2}>2 Slides</option>
+                    <option value={3}>3 Slides</option>
+                    <option value={4}>4 Slides</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -2282,17 +2491,30 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         </div>
 
         {/* Right Column: AI Preview */}
-        <div style={{ flex: '1 1 400px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '24px', border: '2px dashed rgba(82, 183, 136, 0.25)', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
+        <div style={{ flex: '1 1 360px', minWidth: '300px', boxSizing: 'border-box', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '24px', border: '2px dashed rgba(82, 183, 136, 0.25)', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
           <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeInUp 0.5s ease-out' }}>
 
-            {/* Image Preview */}
-            <div style={{ background: 'rgba(5, 8, 6, 0.6)', borderRadius: '16px', height: '240px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.4)', overflow: 'hidden', position: 'relative' }}>
+            {/* Image Preview Container */}
+            <div style={{
+              background: 'rgba(5, 8, 6, 0.6)',
+              borderRadius: '16px',
+              height: formatType === 'carousel' ? '360px' : '260px',
+              maxHeight: '400px',
+              maxWidth: '100%',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.4)',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
                 {selectedAssetUrl ? (
                   <>
                     {selectedAssetUrl.endsWith('.mp4') ? (
-                      <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay loop muted />
+                      <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} autoPlay loop muted />
                     ) : (
-                      <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: imageFit }} />
+                      <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: formatType === 'carousel' ? 'contain' : imageFit }} />
                     )}
                     
                     {/* Size and Zoom Control buttons on top */}
@@ -2361,7 +2583,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                           fontWeight: 600,
                           backdropFilter: 'blur(4px)',
                           cursor: 'pointer',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
                           transition: 'all 0.2s ease',
                         }}
                       >
@@ -2383,6 +2605,48 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   </div>
                 )}
               </div>
+
+              {/* Multi-Image Carousel Selector Strip */}
+              {carouselUrls.length > 1 && (
+                <div style={{ marginBottom: '14px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                      📱 Multi-Slide Carousel ({carouselUrls.length} Slides)
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                      Slide {activeCarouselIndex + 1} of {carouselUrls.length}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {carouselUrls.map((url, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setSelectedAssetUrl(url);
+                          setActiveCarouselIndex(idx);
+                        }}
+                        style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: activeCarouselIndex === idx ? '2.5px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.15)',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          opacity: activeCarouselIndex === idx ? 1 : 0.6,
+                          transition: 'all 0.2s ease',
+                          position: 'relative'
+                        }}
+                      >
+                        <img src={url} alt={`Slide ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <span style={{ position: 'absolute', bottom: '2px', right: '4px', fontSize: '9px', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                          #{idx + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Image Actions: Generate / Regenerate + optional prompt editor */}
               <div style={{ marginBottom: '12px' }}>
@@ -2413,20 +2677,20 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   {selectedAssetUrl && (
                     <button
                       onClick={handleApplyBrandOverlay}
-                      title="Apply brand logo, border framing, and slogan banner on top of this image"
+                      title={hasOverlay ? "Remove brand overlay and restore clean original image" : "Apply brand logo and slogan banner on top of this image"}
                       style={{
                         padding: '10px 12px',
                         borderRadius: '10px',
-                        border: '1.5px solid var(--primary-color)',
-                        background: 'rgba(82, 183, 136, 0.1)',
-                        color: 'var(--primary-color)',
+                        border: hasOverlay ? '1.5px solid #ef4444' : '1.5px solid var(--primary-color)',
+                        background: hasOverlay ? 'rgba(239, 68, 68, 0.12)' : 'rgba(82, 183, 136, 0.1)',
+                        color: hasOverlay ? '#ef4444' : 'var(--primary-color)',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                       }}
                     >
-                      🎨 Brand Overlay
+                      {hasOverlay ? '✕ Remove Overlay' : '🎨 Brand Overlay'}
                     </button>
                   )}
                   {visualSuggestion && (
@@ -2655,22 +2919,40 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   Schedule post for later date/time
                 </label>
                 {isScheduling && !scheduledTime && (
-                  <input 
-                    type="datetime-local" 
-                    className="input-field" 
-                    style={{ marginTop: '10px', width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}
-                    value={scheduledTime}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val) {
-                        setScheduledTime(val);
-                        const d = new Date(val);
-                        const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-                        notifySuccess(`⏰ Scheduled for ${label}`);
-                      }
-                    }}
-                    autoFocus
-                  />
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input 
+                      type="datetime-local" 
+                      className="input-field" 
+                      style={{ width: '100%', boxSizing: 'border-box', cursor: 'pointer', padding: '10px 14px', fontSize: '14px', borderRadius: '10px' }}
+                      value={draftScheduledTime}
+                      onClick={(e) => {
+                        try { (e.target as any).showPicker(); } catch (err) {}
+                      }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDraftScheduledTime(val);
+                        // Only commit automatically if user selected complete YYYY-MM-DDTHH:MM (length >= 16)
+                        if (val && val.length >= 16) {
+                          setScheduledTime(val);
+                          const d = new Date(val);
+                          const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                          notifySuccess(`⏰ Scheduled for ${label}`);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (draftScheduledTime && draftScheduledTime.length >= 16) {
+                          setScheduledTime(draftScheduledTime);
+                          const d = new Date(draftScheduledTime);
+                          const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                          notifySuccess(`⏰ Scheduled for ${label}`);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)', opacity: 0.7 }}>
+                      💡 Click to open calendar popup. Select date, hour, minute & AM/PM.
+                    </span>
+                  </div>
                 )}
                 {isScheduling && scheduledTime && (
                   <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
@@ -2819,6 +3101,16 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+                  onClick={() => handleSaveDraft(false)}
+                  disabled={isSavingDraft}
+                >
+                  💾 {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                </button>
+
                 <button 
                   className="btn-primary" 
                   style={{ flexGrow: 1, background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
@@ -2989,7 +3281,10 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
 function AssetsLibrary() {
   const [assets, setAssets] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAssets = async () => {
@@ -3001,6 +3296,8 @@ function AssetsLibrary() {
       }
     } catch (error) {
       console.error("Failed to fetch assets", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -3008,117 +3305,174 @@ function AssetsLibrary() {
     fetchAssets();
   }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const uploadFile = async (file: File) => {
     if (!file) return;
-
     setIsUploading(true);
+    setUploadProgress(`Uploading ${file.name}…`);
     const formData = new FormData();
     formData.append('file', file);
-
     try {
       const response = await fetch('/api/assets/upload', {
         method: 'POST',
         body: formData,
       });
       if (response.ok) {
+        setUploadProgress('');
         await fetchAssets();
       } else {
-        notifyError("Upload failed");
+        const errText = await response.text();
+        console.error("Upload failed:", errText);
+        setUploadProgress('');
+        alert("Upload failed. Please try again.");
       }
     } catch (error) {
       console.error("Upload error", error);
-      notifyError("Error uploading file");
+      setUploadProgress('');
+      alert("Error uploading file. Is the backend running?");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+  };
+
   const handleDeleteAsset = async (filename: string) => {
-    if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+    if (!confirm(`Delete ${filename}?`)) return;
     try {
-      const response = await fetch(`/api/assets/${filename}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`/api/assets/${filename}`, { method: 'DELETE' });
       if (response.ok) {
         await fetchAssets();
-        notifySuccess("Asset deleted successfully.");
       } else {
-        notifyError("Failed to delete asset.");
+        alert("Failed to delete asset.");
       }
     } catch (error) {
       console.error(error);
-      notifyError("Error deleting asset.");
+      alert("Error deleting asset.");
     }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h2 style={{ fontSize: '28px', fontWeight: 700 }}>Asset Library</h2>
-        <button 
-          className="btn-primary" 
+        <button
+          className="btn-primary"
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
           style={{ padding: '10px 20px' }}
         >
-          {isUploading ? 'Uploading...' : '+ Upload Asset'}
+          {isUploading ? (uploadProgress || 'Uploading…') : '+ Upload Asset'}
         </button>
       </div>
       <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>
         Manage your product images, videos, and brand assets for the AI to use.
       </p>
-      
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        style={{ display: 'none' }} 
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
         accept="image/*,video/*"
       />
 
-      {assets.length === 0 ? (
-        <div 
-          style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '48px', textAlign: 'center', background: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.2s' }}
-          onClick={() => fileInputRef.current?.click()}
+      {/* Upload progress banner */}
+      {isUploading && (
+        <div style={{ marginBottom: '20px', padding: '14px 20px', borderRadius: '10px', background: 'rgba(82, 183, 136, 0.12)', border: '1px solid var(--primary-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '18px', height: '18px', border: '3px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--primary-color)' }}>{uploadProgress || 'Uploading…'}</span>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+          <p>Loading assets…</p>
+        </div>
+      ) : assets.length === 0 ? (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          style={{
+            border: `2px dashed ${isDragging ? 'var(--primary-color)' : '#cbd5e1'}`,
+            borderRadius: '16px', padding: '64px 48px', textAlign: 'center',
+            background: isDragging ? 'rgba(82, 183, 136, 0.07)' : 'rgba(255,255,255,0.02)',
+            transition: 'all 0.2s'
+          }}
         >
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ color: '#64748b', marginBottom: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-          </div>
-          <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '8px', fontSize: '16px' }}>Drag & drop new assets here</p>
-          <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '24px' }}>PNG, JPG, MP4 up to 50MB</p>
-          <button className="btn-secondary" style={{ padding: '10px 24px' }}>Browse Files</button>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>☁️</div>
+          <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '8px', fontSize: '16px' }}>
+            Drag & drop assets here
+          </p>
+          <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '24px' }}>
+            PNG, JPG, MP4 up to 50MB
+          </p>
+          <button
+            className="btn-secondary"
+            style={{ padding: '10px 24px' }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            Browse Files
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
-          {assets.map((asset) => (
-            <div key={asset.id} className="asset-card" style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-              <div style={{ height: '150px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {asset.name.toLowerCase().endsWith('.mp4') ? (
-                  <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
-                ) : (
-                  <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
-              </div>
-              <div style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }} title={asset.name}>
-                  {asset.name}
-                </span>
-                <button 
-                  onClick={() => handleDeleteAsset(asset.id)}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                >
-                  Delete
-                </button>
-              </div>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '10px', border: '2px dashed var(--primary-color)', background: 'rgba(82, 183, 136, 0.07)', textAlign: 'center', color: 'var(--primary-color)', fontWeight: 600 }}>
+              Drop to upload
             </div>
-          ))}
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+            {assets.map((asset) => (
+              <div
+                key={asset.id}
+                className="asset-card"
+                style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(82,183,136,0.15)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', transition: 'transform 0.2s' }}
+              >
+                <div style={{ height: '150px', background: '#0a0f0c', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {asset.name.toLowerCase().endsWith('.mp4') ? (
+                    <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                  ) : (
+                    <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </div>
+                <div style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px', color: 'var(--text-color)' }} title={asset.name}>
+                    {asset.name}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteAsset(asset.id)}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 
 function FacebookSetupGuide() {
   const [open, setOpen] = React.useState(false);
@@ -4164,19 +4518,22 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
 }
 
 export default function App() {
-  // Synchronously check if user is already logged in or completed onboarding so refresh doesn't logout
-  const [step, setStep] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTenantId = localStorage.getItem('tenant_id');
-      const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
-      const isLoggedIn = localStorage.getItem('user_logged_in') === 'true';
-      if (isLoggedIn || isCompleted || savedTenantId) {
-        return 4; // Open directly on Main Dashboard
-      }
-    }
-    return 0; // Landing Page only for unauthenticated first-time visitors
-  });
+  // Start at -1 (not yet mounted) so server and client render the same HTML.
+  // A useEffect sets the real step after hydration by reading localStorage.
+  const [step, setStep] = useState(-1);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Determine initial step after mount — runs only on the client
+  useEffect(() => {
+    const savedTenantId = localStorage.getItem('tenant_id');
+    const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
+    const isLoggedIn = localStorage.getItem('user_logged_in') === 'true';
+    if (isLoggedIn || isCompleted || savedTenantId) {
+      setStep(4);
+    } else {
+      setStep(0);
+    }
+  }, []);
 
   useEffect(() => {
     window.showNotification = (message: string, type: 'success' | 'error') => {
@@ -4214,6 +4571,10 @@ export default function App() {
     }
   }, []);
 
+  // Render nothing until we've checked localStorage on the client.
+  // This prevents any SSR/CSR mismatch.
+  if (step === -1) return null;
+
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       {/* Inject the official Facebook JS SDK */}
@@ -4248,13 +4609,14 @@ export default function App() {
         </div>
       )}
 
-      {notification && (
+      {/* Success Notification (Toast top-right) */}
+      {notification && notification.type === 'success' && (
         <div 
           style={{
             position: 'fixed',
             top: '24px',
             right: '24px',
-            background: notification.type === 'success' ? '#2E7D58' : '#ef4444',
+            background: '#2E7D58',
             color: 'white',
             padding: '16px 24px',
             borderRadius: '12px',
@@ -4268,12 +4630,10 @@ export default function App() {
             animation: 'slideIn 0.3s ease-out'
           }}
         >
-          <span style={{ fontSize: '20px' }}>
-            {notification.type === 'success' ? '✅' : '❌'}
-          </span>
+          <span style={{ fontSize: '20px' }}>✅</span>
           <div style={{ flexGrow: 1 }}>
             <div style={{ fontWeight: 700, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
-              {notification.type === 'success' ? 'Success' : 'Error'}
+              Success
             </div>
             <div style={{ fontSize: '13px', opacity: 0.9 }}>{notification.message}</div>
           </div>
@@ -4283,6 +4643,82 @@ export default function App() {
           >
             ×
           </button>
+        </div>
+      )}
+
+      {/* User-Friendly Actionable Error Modal with OK button */}
+      {notification && notification.type === 'error' && (
+        <div
+          onClick={() => setNotification(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel"
+            style={{
+              width: '90%',
+              maxWidth: '460px',
+              padding: '32px',
+              borderRadius: '24px',
+              background: 'var(--glass-bg)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px',
+              border: '1px solid rgba(82, 183, 136, 0.2)'
+            }}
+          >
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px'
+            }}>
+              💡
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-color)' }}>
+                Action Required
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0 }}>
+                {notification.message}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setNotification(null)}
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px 24px',
+                marginTop: '8px',
+                fontSize: '14px',
+                fontWeight: 700,
+                borderRadius: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              OK, Got it
+            </button>
+          </div>
         </div>
       )}
     </GoogleOAuthProvider>
