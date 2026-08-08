@@ -498,8 +498,6 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         public_backend_url = os.environ.get("BACKEND_URL", "https://backend-980545668366.us-central1.run.app")
         if image_url.startswith("/"):
             image_url = f"{public_backend_url.rstrip('/')}{image_url}"
-        else:
-            image_url = "https://picsum.photos/id/237/600/600.jpg"
 
     # 1. Post to Facebook
     pub_req = PublishRequest(
@@ -738,6 +736,46 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         import traceback
         error_msg = f"AI Error: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
+        raise HTTPException(status_code=500, detail=f"Failed to generate campaign: {str(e)}")
+
+class RefineTextRequest(BaseModel):
+    text: str
+    action: str = "shorten" # shorten, elaborate, formal, casual
+
+@app.post("/api/campaign/refine-text")
+def refine_campaign_text(payload: RefineTextRequest):
+    client = get_genai_client()
+    if not client:
+        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+
+    system_instruction = (
+        "You are an expert social media copywriter. Refine the user's provided caption according to the requested action. "
+        "Return ONLY the refined caption text with emojis and hashtags intact. Do not add intro/outro quotes or meta commentary."
+    )
+
+    if payload.action == "shorten":
+        prompt = f"Make this caption punchy, concise, and significantly shorter while retaining core call to action:\n\n{payload.text}"
+    elif payload.action == "elaborate":
+        prompt = f"Elaborate on this caption with engaging storytelling and detail:\n\n{payload.text}"
+    elif payload.action == "formal":
+        prompt = f"Rewrite this caption in a professional, formal business tone:\n\n{payload.text}"
+    else:
+        prompt = f"Rewrite this caption in a friendly, casual conversational tone:\n\n{payload.text}"
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.7,
+            )
+        )
+        refined = response.text.strip()
+        return {"status": "success", "refined_text": refined}
+    except Exception as e:
+        print(f"Refine text error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
         return {
             "status": "error",
             "message": str(e)

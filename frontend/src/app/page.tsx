@@ -184,7 +184,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
   // Brand state
   const [brandUrl, setBrandUrl] = useState("");
-  const [businessName, setBusinessName] = useState("MarketFlow Silks");
+  const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
   const [industry, setIndustry] = useState("Clothing & Apparel");
   const [category, setCategory] = useState("Textile Readymade");
@@ -1740,8 +1740,212 @@ function MetaPostScheduler({
             transition: 'all 0.15s ease'
           }}
         >
-          Schedule for later
+          Confirm Schedule
         </button>
+      </div>
+    </div>
+  );
+}
+
+function SocialFeedPreviewModal({
+  isOpen,
+  onClose,
+  imageUrl,
+  caption,
+  businessName = "",
+  logoUrl = ""
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  imageUrl?: string | null;
+  caption: string;
+  businessName?: string;
+  logoUrl?: string;
+}) {
+  const [platform, setPlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showFullCaption, setShowFullCaption] = useState(false);
+
+  if (!isOpen) return null;
+
+  const displayName = businessName || "Your Business Name";
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: '#18191a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '10px' }}>
+            <button 
+              onClick={() => setPlatform('facebook')}
+              style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: platform === 'facebook' ? '#1877f2' : 'transparent', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              📘 Facebook Feed
+            </button>
+            <button 
+              onClick={() => setPlatform('instagram')}
+              style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: platform === 'instagram' ? 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)' : 'transparent', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              📸 Instagram Feed
+            </button>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#e4e6eb', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '20px' }}>
+          <div style={{ background: platform === 'facebook' ? '#242526' : '#000000', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', color: '#e4e6eb' }}>
+            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }} />
+                ) : (
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #52b788 0%, #1b4332 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', color: '#fff' }}>
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#f0f2f5' }}>{displayName}</div>
+                  <div style={{ fontSize: '11px', color: '#b0b3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Sponsored • 🌐
+                  </div>
+                </div>
+              </div>
+              <span style={{ fontSize: '18px', color: '#b0b3b8', cursor: 'pointer' }}>•••</span>
+            </div>
+
+            {imageUrl ? (
+              <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <img src={imageUrl} alt="Post creative" style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }} />
+              </div>
+            ) : (
+              <div style={{ height: '240px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b3b8', gap: '8px' }}>
+                <span style={{ fontSize: '32px' }}>🖼️</span>
+                <span style={{ fontSize: '13px' }}>Creative asset image will appear here</span>
+              </div>
+            )}
+
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', fontWeight: 600, color: '#b0b3b8' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button onClick={() => setLiked(!liked)} style={{ background: 'none', border: 'none', color: liked ? '#1877f2' : '#b0b3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}>
+                  {liked ? '👍 Liked' : '👍 Like'}
+                </button>
+                <button style={{ background: 'none', border: 'none', color: '#b0b3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}>
+                  💬 Comment
+                </button>
+                <button style={{ background: 'none', border: 'none', color: '#b0b3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}>
+                  ↗️ Share
+                </button>
+              </div>
+              <button onClick={() => setSaved(!saved)} style={{ background: 'none', border: 'none', color: saved ? '#f59e0b' : '#b0b3b8', cursor: 'pointer', fontSize: '13px' }}>
+                {saved ? '🔖 Saved' : '🔖 Save'}
+              </button>
+            </div>
+
+            <div style={{ padding: '12px 16px 16px', fontSize: '13px', lineHeight: '1.6', color: '#e4e6eb' }}>
+              <span style={{ fontWeight: 700, marginRight: '8px' }}>{displayName}</span>
+              {caption.length > 180 && !showFullCaption ? (
+                <>
+                  {caption.slice(0, 180)}...
+                  <button onClick={() => setShowFullCaption(true)} style={{ background: 'none', border: 'none', color: '#b0b3b8', cursor: 'pointer', fontWeight: 600, paddingLeft: '4px' }}>
+                    See more
+                  </button>
+                </>
+              ) : (
+                <span>{caption}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduledPostInspectorModal({
+  campaign,
+  onClose,
+  onEditInDashboard
+}: {
+  campaign: any;
+  onClose: () => void;
+  onEditInDashboard: (c: any) => void;
+}) {
+  if (!campaign) return null;
+
+  const dateStr = campaign.scheduled_time 
+    ? new Date(campaign.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Draft / Unscheduled';
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: '#18191a', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.25)', width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Scheduled Post Draft Inspector
+            </div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff', marginTop: '2px' }}>
+              📅 {dateStr}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#e4e6eb', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '20px' }}>
+          {/* Draft Post Card Preview */}
+          <div style={{ background: '#242526', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', color: '#e4e6eb', marginBottom: '20px' }}>
+            {campaign.image_url ? (
+              <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={campaign.image_url} alt="Scheduled post visual" style={{ width: '100%', maxHeight: '340px', objectFit: 'contain' }} />
+              </div>
+            ) : (
+              <div style={{ height: '180px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0b3b8' }}>
+                No image attached
+              </div>
+            )}
+            <div style={{ padding: '14px 16px', fontSize: '13px', lineHeight: '1.6' }}>
+              {campaign.generated_text || campaign.prompt}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => {
+                onEditInDashboard(campaign);
+                onClose();
+              }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px var(--primary-glow)'
+              }}
+            >
+              ✏️ Edit Post Content
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '12px 20px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1782,6 +1986,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [carouselCount, setCarouselCount] = useState(3);
   const [imageFit, setImageFit] = useState<'cover' | 'contain'>('cover');
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showFeedPreview, setShowFeedPreview] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
   const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
@@ -1987,7 +2192,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     setIsGenerating(true);
     setGenerated(false);
 
-    let bizName = "MarketFlow Silks";
+    let bizName = "";
     let phone = "";
     let ind = "Clothing & Apparel";
     
@@ -2046,7 +2251,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         } else if (libraryAssets && libraryAssets.length > 0) {
           setSelectedAssetUrl(libraryAssets[0].url);
         } else {
-          setSelectedAssetUrl("https://picsum.photos/id/237/600/600.jpg");
+          setSelectedAssetUrl(null);
         }
       } else {
         notifyError("Generation failed: " + (data.message || "Unknown error"));
@@ -2056,6 +2261,35 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       notifyError("Error generating campaign content");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const [isRefiningText, setIsRefiningText] = useState(false);
+
+  const handleRefineText = async (action: string) => {
+    if (!generatedText) {
+      notifyError("No caption text available to refine.");
+      return;
+    }
+    setIsRefiningText(true);
+    try {
+      const response = await fetch('/api/campaign/refine-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: generatedText, action }),
+      });
+      const data = await response.json();
+      if (response.ok && data.refined_text) {
+        setGeneratedText(data.refined_text);
+        notifySuccess(`Caption refined (${action}) ✨`);
+      } else {
+        notifyError("Failed to refine caption text.");
+      }
+    } catch (err) {
+      console.error("Refine text failed", err);
+      notifyError("Error refining caption text.");
+    } finally {
+      setIsRefiningText(false);
     }
   };
 
@@ -3257,8 +3491,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                         type="button"
                         onClick={() => {
                           setTone(t.key);
-                          handleGenerate(t.key, category);
+                          handleRefineText(t.key);
                         }}
+                        disabled={isRefiningText}
                         style={{
                           background: tone === t.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
                           border: tone === t.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -3292,27 +3527,57 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Generated Post Copy</span>
-                {campaignId && (
-                  <button 
-                    onClick={handleToggleLike}
-                    disabled={isLiking}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowFeedPreview(true)}
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      color: isLiked ? '#52b788' : '#94a3b8',
+                      background: 'rgba(82, 183, 136, 0.12)',
+                      border: '1px solid var(--primary-color)',
+                      color: 'var(--primary-color)',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
                       cursor: 'pointer',
-                      fontSize: '12px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      fontWeight: 600,
-                      transition: 'all 0.2s'
+                      gap: '4px'
                     }}
                   >
-                    {isLiked ? '❤️ Style Saved' : '🖤 Save Style (Train AI)'}
+                    👁️ Feed Preview (FB / IG)
                   </button>
-                )}
+                  {campaignId && (
+                    <button 
+                      onClick={handleToggleLike}
+                      disabled={isLiking}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: isLiked ? '#52b788' : '#94a3b8',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 600,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {isLiked ? '❤️ Style Saved' : '🖤 Save Style (Train AI)'}
+                    </button>
+                  )}
+                </div>
               </div>
+
+              <SocialFeedPreviewModal
+                isOpen={showFeedPreview}
+                onClose={() => setShowFeedPreview(false)}
+                imageUrl={selectedAssetUrl}
+                caption={generatedText}
+                businessName={typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName || '') : ''}
+                logoUrl={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
+              />
 
               <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.15)', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', minHeight: '300px' }}>
                 <textarea 
@@ -4804,9 +5069,20 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
   const [activeTab, setActiveTab] = useState('campaigns');
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedCampaignForEdit, setSelectedCampaignForEdit] = useState<any>(null);
+  const [inspectCampaign, setInspectCampaign] = useState<any>(null);
 
   return (
     <div className="fade-in-up" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+      {inspectCampaign && (
+        <ScheduledPostInspectorModal
+          campaign={inspectCampaign}
+          onClose={() => setInspectCampaign(null)}
+          onEditInDashboard={(c) => {
+            setSelectedCampaignForEdit(c);
+            setActiveTab('campaigns');
+          }}
+        />
+      )}
       {/* Sidebar */}
       <div className="glass-panel" style={{ width: '250px', padding: '24px', position: 'sticky', top: '40px' }}>
         <div 
@@ -4894,10 +5170,7 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
         )}
         {activeTab === 'calendar' && (
           <CalendarTab 
-            onSelectCampaign={(c) => {
-              setSelectedCampaignForEdit(c);
-              setActiveTab('campaigns');
-            }} 
+            onSelectCampaign={(c) => setInspectCampaign(c)} 
           />
         )}
         {activeTab === 'analytics' && <AnalyticsTab />}
