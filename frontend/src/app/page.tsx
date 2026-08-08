@@ -5215,7 +5215,7 @@ export default function App() {
     if (notification) {
       const timer = setTimeout(() => {
         setNotification(null);
-      }, 5000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
