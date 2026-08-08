@@ -1106,13 +1106,16 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   useEffect(() => {
     const checkConnection = async () => {
       try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
+        const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.connected) {
             setIsFbConnected(true);
             setFbPageName(data.page_name);
+          }
+          if (data.has_instagram || (typeof window !== 'undefined' && localStorage.getItem('ig_connected') === 'true')) {
+            setIsIgConnected(true);
           }
         }
       } catch (e) {
@@ -1219,11 +1222,26 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
 
   const connectInstagram = async () => {
     setIsConnectingIg(true);
-    // Simulate fetching Instagram accounts connected to the FB page
-    setTimeout(() => {
-      setIsIgConnected(true);
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch('/api/meta/connect-instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: parseInt(savedTenantId, 10) })
+      });
+      if (res.ok) {
+        setIsIgConnected(true);
+        if (typeof window !== 'undefined') localStorage.setItem('ig_connected', 'true');
+        notifySuccess("Instagram Business account connected! 🎉");
+      } else {
+        notifyError("Failed to connect Instagram account");
+      }
+    } catch (err) {
+      console.error("Instagram connect error", err);
+      notifyError("Error connecting Instagram account");
+    } finally {
       setIsConnectingIg(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -1395,6 +1413,340 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   );
 }
 
+function MetaPostScheduler({ 
+  onSchedule, 
+  onCancel, 
+  initialValue 
+}: { 
+  onSchedule: (isoString: string) => void; 
+  onCancel?: () => void; 
+  initialValue?: string; 
+}) {
+  const now = new Date();
+  const defaultDt = initialValue ? new Date(initialValue) : new Date(now.getTime() + 24 * 3600 * 1000);
+  if (isNaN(defaultDt.getTime())) {
+    defaultDt.setTime(now.getTime() + 24 * 3600 * 1000);
+  }
+
+  const [selectedDate, setSelectedDate] = useState<Date>(defaultDt);
+  const [hour, setHour] = useState<number>(defaultDt.getHours());
+  const [minute, setMinute] = useState<number>(Math.floor(defaultDt.getMinutes() / 5) * 5);
+  const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
+
+  const [calMonth, setCalMonth] = useState<number>(defaultDt.getMonth());
+  const [calYear, setCalYear] = useState<number>(defaultDt.getFullYear());
+
+  const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNamesFull = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const dateLabel = `${selectedDate.getDate()} ${monthNamesShort[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+  const timeLabel = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+  const handlePrevMonth = () => {
+    if (calMonth === 0) {
+      setCalMonth(11);
+      setCalYear(calYear - 1);
+    } else {
+      setCalMonth(calMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (calMonth === 11) {
+      setCalMonth(0);
+      setCalYear(calYear + 1);
+    } else {
+      setCalMonth(calMonth + 1);
+    }
+  };
+
+  const firstDayIndex = new Date(calYear, calMonth, 1).getDay();
+  const totalDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const handleSelectDay = (dayNum: number) => {
+    const d = new Date(calYear, calMonth, dayNum, hour, minute);
+    setSelectedDate(d);
+    setActivePicker(null);
+  };
+
+  const isDaySelected = (dayNum: number) => {
+    return (
+      selectedDate.getDate() === dayNum &&
+      selectedDate.getMonth() === calMonth &&
+      selectedDate.getFullYear() === calYear
+    );
+  };
+
+  const isDayDisabled = (dayNum: number) => {
+    const d = new Date(calYear, calMonth, dayNum, 23, 59, 59);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return d < todayStart;
+  };
+
+  const handleConfirm = () => {
+    const finalDt = new Date(selectedDate);
+    finalDt.setHours(hour, minute, 0, 0);
+    const yr = finalDt.getFullYear();
+    const mo = String(finalDt.getMonth() + 1).padStart(2, '0');
+    const da = String(finalDt.getDate()).padStart(2, '0');
+    const ho = String(finalDt.getHours()).padStart(2, '0');
+    const mi = String(finalDt.getMinutes()).padStart(2, '0');
+    const isoString = `${yr}-${mo}-${da}T${ho}:${mi}`;
+    onSchedule(isoString);
+  };
+
+  return (
+    <div style={{
+      background: '#1c1e21',
+      border: '1px solid rgba(255, 255, 255, 0.15)',
+      borderRadius: '16px',
+      padding: '20px',
+      marginTop: '12px',
+      color: '#e4e6eb',
+      boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+      animation: 'fadeInUp 0.2s ease-out'
+    }}>
+      <div style={{ fontSize: '13px', color: '#e4e6eb', marginBottom: '16px', lineHeight: '1.4', fontWeight: 500 }}>
+        Choose a date and time in the future when you want your post to be published.
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {/* Date Box */}
+        <div 
+          onClick={() => setActivePicker(activePicker === 'date' ? null : 'date')}
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: activePicker === 'date' ? '2px solid #1877f2' : '1px solid rgba(255, 255, 255, 0.18)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ fontSize: '20px', color: '#1877f2' }}>📅</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', color: '#b0b3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Date</span>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>{dateLabel}</span>
+          </div>
+        </div>
+
+        {/* Time Box */}
+        <div 
+          onClick={() => setActivePicker(activePicker === 'time' ? null : 'time')}
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: activePicker === 'time' ? '2px solid #1877f2' : '1px solid rgba(255, 255, 255, 0.18)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ fontSize: '20px', color: '#1877f2' }}>🕒</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', color: '#b0b3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Time</span>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>{timeLabel}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Popover 1: Date Calendar Picker */}
+      {activePicker === 'date' && (
+        <div style={{
+          marginTop: '14px',
+          background: '#242526',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '12px',
+          padding: '16px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          animation: 'fadeIn 0.15s ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <button 
+              type="button" 
+              onClick={handlePrevMonth}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', borderRadius: '6px', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ‹
+            </button>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>
+              {monthNamesFull[calMonth]} {calYear}
+            </span>
+            <button 
+              type="button" 
+              onClick={handleNextMonth}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', borderRadius: '6px', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ›
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+              <span key={d} style={{ fontSize: '11px', fontWeight: 700, color: '#b0b3b8' }}>{d}</span>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+            {Array.from({ length: firstDayIndex }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: totalDaysInMonth }).map((_, idx) => {
+              const dayNum = idx + 1;
+              const disabled = isDayDisabled(dayNum);
+              const selected = isDaySelected(dayNum);
+              return (
+                <button
+                  key={`day-${dayNum}`}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => handleSelectDay(dayNum)}
+                  style={{
+                    padding: '8px 0',
+                    fontSize: '13px',
+                    fontWeight: selected ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: selected ? '#1877f2' : 'transparent',
+                    color: selected ? '#ffffff' : (disabled ? 'rgba(255,255,255,0.2)' : '#e4e6eb'),
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {dayNum}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Popover 2: Time Picker */}
+      {activePicker === 'time' && (
+        <div style={{
+          marginTop: '14px',
+          background: '#242526',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '12px',
+          padding: '16px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          animation: 'fadeIn 0.15s ease-out'
+        }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#b0b3b8', display: 'block', marginBottom: '6px' }}>Hour (00 - 23)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
+                {Array.from({ length: 24 }).map((_, h) => (
+                  <button
+                    key={`h-${h}`}
+                    type="button"
+                    onClick={() => { setHour(h); }}
+                    style={{
+                      padding: '6px 0',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      border: hour === h ? '1.5px solid #1877f2' : '1px solid rgba(255,255,255,0.1)',
+                      background: hour === h ? 'rgba(24, 119, 242, 0.25)' : 'rgba(0,0,0,0.2)',
+                      color: hour === h ? '#ffffff' : '#b0b3b8',
+                      fontWeight: hour === h ? 700 : 400,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {String(h).padStart(2, '0')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#b0b3b8', display: 'block', marginBottom: '6px' }}>Minute</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                  <button
+                    key={`m-${m}`}
+                    type="button"
+                    onClick={() => { setMinute(m); }}
+                    style={{
+                      padding: '6px 0',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      border: minute === m ? '1.5px solid #1877f2' : '1px solid rgba(255,255,255,0.1)',
+                      background: minute === m ? 'rgba(24, 119, 242, 0.25)' : 'rgba(0,0,0,0.2)',
+                      color: minute === m ? '#ffffff' : '#b0b3b8',
+                      fontWeight: minute === m ? 700 : 400,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {String(m).padStart(2, '0')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            type="button"
+            onClick={() => setActivePicker(null)}
+            style={{ marginTop: '14px', width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Done selecting time
+          </button>
+        </div>
+      )}
+
+      <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              padding: '12px 18px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={handleConfirm}
+          style={{
+            flex: 1,
+            padding: '12px',
+            borderRadius: '10px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #1877f2 0%, #0064e0 100%)',
+            color: '#ffffff',
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(24, 119, 242, 0.4)',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          Schedule for later
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCampaign?: any, onClearEdit?: () => void }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -1431,36 +1783,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
   const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
-  
-  // Brand Logo for Post Overlay
-  const [postLogoUrl, setPostLogoUrl] = useState('');
-  const [includeLogo, setIncludeLogo] = useState(true);
-  const postLogoFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePostLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      notifySuccess("Uploading logo for post overlay...");
-      const response = await fetch('/api/assets/upload', {
-        method: 'POST',
-        body: formData
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPostLogoUrl(data.url);
-        localStorage.setItem('brand_logo_url', data.url);
-        notifySuccess("Brand logo updated for overlay!");
-      } else {
-        notifyError("Failed to upload logo.");
-      }
-    } catch (err) {
-      console.error(err);
-      notifyError("Error uploading logo.");
-    }
-  };
 
   // WhatsApp State variables
   const [publishToWa, setPublishToWa] = useState(false);
@@ -1749,16 +2072,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           setCarouselUrls(updatedUrls);
           setSelectedAssetUrl(data.url);
           notifySuccess(`Slide #${activeCarouselIndex + 1} regenerated ✨`);
-        } else if (data.urls && data.urls.length > 1) {
-          setCarouselUrls(data.urls);
-          setSelectedAssetUrl(data.urls[0]);
-          setActiveCarouselIndex(0);
-        } else {
+        } else if (data.url) {
           setCarouselUrls([]);
           setSelectedAssetUrl(data.url);
+        } else {
+          notifyError("Image generation failed");
         }
-      } else {
-        notifyError("Image generation failed");
       }
     } catch (error) {
       console.error("Image gen error", error);
@@ -1767,14 +2086,43 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
   };
 
-  const handleApplyBrandOverlay = async () => {
+  // Brand Logo for Post Overlay
+  const [postLogoUrl, setPostLogoUrl] = useState('');
+  const [includeLogo, setIncludeLogo] = useState(true);
+  const [logoPosition, setLogoPosition] = useState<'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center'>('top-right');
+  const postLogoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePostLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      notifySuccess("Uploading logo for post overlay...");
+      const res = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setPostLogoUrl(data.url);
+        if (typeof window !== 'undefined') localStorage.setItem('brand_logo_url', data.url);
+        notifySuccess("Brand logo updated for overlay!");
+      }
+    } catch (err) {
+      notifyError("Failed to upload logo.");
+    }
+  };
+
+  const handleApplyBrandOverlay = async (overridePos?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center') => {
+    const targetPos = overridePos || logoPosition;
     if (!selectedAssetUrl) {
       notifyError("Please select or generate a visual asset first.");
       return;
     }
 
-    // Toggle off: If overlay is currently applied, remove it and restore clean image
-    if (hasOverlay) {
+    // Toggle off: If overlay is currently applied and user clicked remove without specifying position override
+    if (hasOverlay && !overridePos) {
       if (originalAssetUrl) {
         setSelectedAssetUrl(originalAssetUrl);
         if (carouselUrls.length > 1) {
@@ -1793,14 +2141,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       return;
     }
     
-    let bizName = "MarketFlow Silks";
     let primaryColor = "#52b788";
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('businessProfile');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed.businessName) bizName = parsed.businessName;
           if (parsed.brandColorPrimary) primaryColor = parsed.brandColorPrimary;
         } catch(e) {}
       }
@@ -1813,65 +2159,10 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       canvas.width = 1080;
       canvas.height = 1080;
 
-      // ── 1. Load Inter font via FontFace API for crisp typography ────────────
-      let fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
-      try {
-        const interBold = new FontFace(
-          'Inter',
-          'url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZBhiI2B.woff2)',
-          { weight: '700', style: 'normal' }
-        );
-        const interReg = new FontFace(
-          'Inter',
-          'url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZBhiI2B.woff2)',
-          { weight: '400', style: 'normal' }
-        );
-        const [fb, fr] = await Promise.all([interBold.load(), interReg.load()]);
-        document.fonts.add(fb);
-        document.fonts.add(fr);
-        fontFamily = 'Inter';
-      } catch (e) {
-        console.warn('Inter font load failed, falling back to system font', e);
-      }
-
-      // ── 2. Draw base image ───────────────────────────────────────────────────
+      // ── 1. Draw base image cleanly (no text/tagline/gradient footer) ───────────
       ctx.drawImage(imageElement, 0, 0, 1080, 1080);
 
-      // ── 4. Slim gradient footer bar (120px) ──────────────────────────────────
-      const footerH = 120;
-      const footerY = 1080 - footerH;
-      const grad = ctx.createLinearGradient(0, footerY - 40, 0, 1080);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(0.35, 'rgba(8,10,9,0.78)');
-      grad.addColorStop(1, 'rgba(8,10,9,0.96)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, footerY - 40, 1080, footerH + 40);
-
-      // ── 6. Brand name — bold, elegant ───────────────────────────────────────
-      ctx.font = `700 28px '${fontFamily}'`;
-      ctx.letterSpacing = '3px';
-      ctx.fillStyle = primaryColor;
-      ctx.textBaseline = 'alphabetic';
-      // Measure and draw brand name
-      const brandLabel = bizName.toUpperCase();
-      ctx.fillText(brandLabel, 32, footerY + 52);
-
-      // ── 7. One-line tagline (first sentence of post text) ────────────────────
-      const rawSlogan = generatedText
-        ? (generatedText.replace(/[*#_`]/g, '').split(/[.!?\n]/)[0] || '').trim()
-        : '';
-      if (rawSlogan) {
-        ctx.font = `400 17px '${fontFamily}'`;
-        ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        // Clamp to max 700px width
-        let slogan = rawSlogan;
-        while (ctx.measureText(slogan).width > 700 && slogan.length > 10) {
-          slogan = slogan.slice(0, -4) + '…';
-        }
-        ctx.fillText(slogan, 32, footerY + 82);
-      }
-
-      // ── 8. Logo badge — top-right, compact 72×72 ────────────────────────────
+      // ── 2. Brand Logo Only Badge with 5 Position Options ───────────────────────
       const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
 
       const finalizeCanvas = () => {
@@ -1882,7 +2173,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           }
           setSelectedAssetUrl(dataUrl);
           setHasOverlay(true);
-          notifySuccess('Brand overlay applied ✨');
+          notifySuccess(`Brand logo overlay applied (${targetPos}) ✨`);
         } catch (err) {
           console.error('Canvas export failed:', err);
           notifyError('Failed to apply overlay due to cross-origin image policy.');
@@ -1893,13 +2184,30 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         const logoImg = new Image();
         logoImg.onload = () => {
           ctx.save();
-          const lSize = 72, lPad = 8, lR = 10;
-          const lx = 1080 - lSize - 20;
-          const ly = 20;
+          const lSize = 90, lPad = 10, lR = 14, margin = 28;
+          let lx = 1080 - lSize - margin;
+          let ly = margin;
+
+          if (targetPos === 'top-left') {
+            lx = margin;
+            ly = margin;
+          } else if (targetPos === 'top-right') {
+            lx = 1080 - lSize - margin;
+            ly = margin;
+          } else if (targetPos === 'bottom-left') {
+            lx = margin;
+            ly = 1080 - lSize - margin;
+          } else if (targetPos === 'bottom-right') {
+            lx = 1080 - lSize - margin;
+            ly = 1080 - lSize - margin;
+          } else if (targetPos === 'bottom-center') {
+            lx = (1080 - lSize) / 2;
+            ly = 1080 - lSize - margin;
+          }
 
           // White rounded badge with shadow
-          ctx.shadowColor = 'rgba(0,0,0,0.35)';
-          ctx.shadowBlur = 12;
+          ctx.shadowColor = 'rgba(0,0,0,0.4)';
+          ctx.shadowBlur = 16;
           ctx.shadowOffsetY = 4;
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
@@ -1909,7 +2217,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
           // Thin brand-color ring around badge
           ctx.strokeStyle = primaryColor;
-          ctx.lineWidth = 2.5;
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.roundRect(lx, ly, lSize, lSize, lR);
           ctx.stroke();
@@ -2676,7 +2984,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   </button>
                   {selectedAssetUrl && (
                     <button
-                      onClick={handleApplyBrandOverlay}
+                      onClick={() => handleApplyBrandOverlay()}
                       title={hasOverlay ? "Remove brand overlay and restore clean original image" : "Apply brand logo and slogan banner on top of this image"}
                       style={{
                         padding: '10px 12px',
@@ -2715,41 +3023,84 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   )}
                 </div>
 
-                {/* Brand Logo Option Bar */}
+                {/* Brand Logo Option Bar & Position Selector */}
                 {selectedAssetUrl && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={includeLogo} 
-                        onChange={(e) => setIncludeLogo(e.target.checked)} 
-                      />
-                      Include Brand Logo Watermark
-                    </label>
-                    
-                    {includeLogo && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
-                          <img 
-                            src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''} 
-                            alt="Logo" 
-                            style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }} 
-                          />
-                        )}
+                  <div style={{ marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '12px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                         <input 
-                          type="file" 
-                          ref={postLogoFileInputRef} 
-                          accept="image/*" 
-                          style={{ display: 'none' }} 
-                          onChange={handlePostLogoUpload} 
+                          type="checkbox" 
+                          checked={includeLogo} 
+                          onChange={(e) => setIncludeLogo(e.target.checked)} 
                         />
-                        <button 
-                          type="button" 
-                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
-                          onClick={() => postLogoFileInputRef.current?.click()}
-                        >
-                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
-                        </button>
+                        Include Brand Logo Watermark
+                      </label>
+                      
+                      {includeLogo && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
+                            <img 
+                              src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''} 
+                              alt="Logo" 
+                              style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }} 
+                            />
+                          )}
+                          <input 
+                            type="file" 
+                            ref={postLogoFileInputRef} 
+                            accept="image/*" 
+                            style={{ display: 'none' }} 
+                            onChange={handlePostLogoUpload} 
+                          />
+                          <button 
+                            type="button" 
+                            style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
+                            onClick={() => postLogoFileInputRef.current?.click()}
+                          >
+                            {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {includeLogo && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '6px', borderTop: '1px dashed rgba(82, 183, 136, 0.15)' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600, marginRight: '4px' }}>Logo Position:</span>
+                        {[
+                          { id: 'top-left', label: '↖ Top Left' },
+                          { id: 'top-right', label: '↗ Top Right' },
+                          { id: 'bottom-left', label: '↙ Bottom Left' },
+                          { id: 'bottom-right', label: '↘ Bottom Right' },
+                          { id: 'bottom-center', label: '⬇ Bottom' },
+                        ].map((pos) => {
+                          const isActive = logoPosition === pos.id;
+                          return (
+                            <button
+                              key={pos.id}
+                              type="button"
+                              onClick={() => {
+                                const p = pos.id as any;
+                                setLogoPosition(p);
+                                if (hasOverlay) {
+                                  handleApplyBrandOverlay(p);
+                                }
+                              }}
+                              style={{
+                                fontSize: '11px',
+                                padding: '4px 9px',
+                                borderRadius: '6px',
+                                border: isActive ? '1.5px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.12)',
+                                background: isActive ? 'rgba(82, 183, 136, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                                color: isActive ? 'var(--primary-color)' : 'var(--text-light)',
+                                fontWeight: isActive ? 700 : 500,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {pos.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -2919,40 +3270,20 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   Schedule post for later date/time
                 </label>
                 {isScheduling && !scheduledTime && (
-                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input 
-                      type="datetime-local" 
-                      className="input-field" 
-                      style={{ width: '100%', boxSizing: 'border-box', cursor: 'pointer', padding: '10px 14px', fontSize: '14px', borderRadius: '10px' }}
-                      value={draftScheduledTime}
-                      onClick={(e) => {
-                        try { (e.target as any).showPicker(); } catch (err) {}
-                      }}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDraftScheduledTime(val);
-                        // Only commit automatically if user selected complete YYYY-MM-DDTHH:MM (length >= 16)
-                        if (val && val.length >= 16) {
-                          setScheduledTime(val);
-                          const d = new Date(val);
-                          const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-                          notifySuccess(`⏰ Scheduled for ${label}`);
-                        }
-                      }}
-                      onBlur={() => {
-                        if (draftScheduledTime && draftScheduledTime.length >= 16) {
-                          setScheduledTime(draftScheduledTime);
-                          const d = new Date(draftScheduledTime);
-                          const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-                          notifySuccess(`⏰ Scheduled for ${label}`);
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <span style={{ fontSize: '11px', color: 'var(--text-light)', opacity: 0.7 }}>
-                      💡 Click to open calendar popup. Select date, hour, minute & AM/PM.
-                    </span>
-                  </div>
+                  <MetaPostScheduler
+                    initialValue={draftScheduledTime}
+                    onSchedule={(isoString) => {
+                      setScheduledTime(isoString);
+                      setDraftScheduledTime(isoString);
+                      const d = new Date(isoString);
+                      const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                      notifySuccess(`⏰ Scheduled for ${label}`);
+                    }}
+                    onCancel={() => {
+                      setIsScheduling(false);
+                      setScheduledTime('');
+                    }}
+                  />
                 )}
                 {isScheduling && scheduledTime && (
                   <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>

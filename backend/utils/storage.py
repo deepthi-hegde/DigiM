@@ -6,7 +6,9 @@ def upload_to_gcs(file_path: str, destination_blob_name: str = None) -> str:
     """
     Uploads a file to GCP Cloud Storage and returns the public URL.
     """
-    bucket_name = os.environ.get("GCS_BUCKET_NAME")
+    bucket_name = os.environ.get("GCS_BUCKET_NAME") or (
+        "marketflow-assets-digim-496018" if os.environ.get("K_SERVICE") or os.environ.get("GAE_ENV") else None
+    )
     if not bucket_name:
         # Fallback to local serving if bucket is not configured
         # This keeps the app working in dev

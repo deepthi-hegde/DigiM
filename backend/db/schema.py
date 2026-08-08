@@ -115,6 +115,16 @@ class Campaign(Base):
     tenant = relationship("Tenant", back_populates="campaigns")
 
 
-# Example of how to initialize the engine for SQLite for local dev
-# engine = create_engine("sqlite:///./marketflow.db", connect_args={"check_same_thread": False})
-# Base.metadata.create_all(bind=engine)
+class MediaAsset(Base):
+    """
+    Stores uploaded media assets for multi-tenant persistence across container re-deployments.
+    """
+    __tablename__ = "media_assets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, default=1)
+    filename = Column(String, index=True)
+    url = Column(String)
+    file_type = Column(String, default="image")  # image or video
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

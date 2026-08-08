@@ -33,7 +33,7 @@ app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from db.database import get_db, engine
-from db.schema import Base, MetaAccount, Campaign, User, AuditLog, Tenant
+from db.schema import Base, MetaAccount, Campaign, User, AuditLog, Tenant, MediaAsset
 from api.meta import publish_to_facebook, PublishRequest
 from utils.storage import upload_to_gcs
 import datetime
@@ -790,7 +790,7 @@ def generate_ai_image(payload: ImageGenRequest):
 
 
 @app.post("/api/assets/upload")
-async def upload_asset(file: UploadFile = File(...)):
+async def upload_asset(file: UploadFile = File(...), tenant_id: int = 1, db: Session = Depends(get_db)):
     file_extension = os.path.splitext(file.filename)[1]
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -800,12 +800,25 @@ async def upload_asset(file: UploadFile = File(...)):
     
     # Upload to GCS
     public_url = upload_to_gcs(file_path, f"uploads/{unique_filename}")
+    file_type = "video" if file.content_type.startswith("video") else "image"
+    
+    # Save to database for persistence across redeployments
+    media_entry = MediaAsset(
+        tenant_id=tenant_id,
+        filename=file.filename,
+        url=public_url,
+        file_type=file_type
+    )
+    db.add(media_entry)
+    db.commit()
+    db.refresh(media_entry)
         
     return {
         "status": "success",
+        "id": media_entry.id,
         "url": public_url,
         "filename": file.filename,
-        "type": "video" if file.content_type.startswith("video") else "image"
+        "type": file_type
     }
 
 @app.get("/api/campaigns")
@@ -848,31 +861,51 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
     return result
 
 @app.get("/api/assets")
-def list_assets():
-    if not os.path.exists(UPLOAD_DIR):
-        return []
-    
+def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
     assets = []
-    for filename in os.listdir(UPLOAD_DIR):
-        if filename == ".gitignore": continue
-        file_path = os.path.join(UPLOAD_DIR, filename)
-        if os.path.isfile(file_path):
-            assets.append({
-                "id": filename,
-                "url": f"/api/assets/raw/{filename}",
-                "name": filename
-            })
+    seen_urls = set()
+    
+    # 1. Fetch from Database (Primary source of truth across re-deployments)
+    db_assets = db.query(MediaAsset).filter_by(tenant_id=tenant_id).order_by(MediaAsset.id.desc()).all()
+    for item in db_assets:
+        seen_urls.add(item.url)
+        seen_urls.add(item.filename)
+        assets.append({
+            "id": str(item.id),
+            "url": item.url,
+            "name": item.filename,
+            "type": item.file_type
+        })
+        
+    # 2. Merge local filesystem assets (Dev fallback)
+    if os.path.exists(UPLOAD_DIR):
+        for filename in os.listdir(UPLOAD_DIR):
+            if filename == ".gitignore": continue
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            local_url = f"/api/assets/raw/{filename}"
+            if os.path.isfile(file_path) and local_url not in seen_urls and filename not in seen_urls:
+                assets.append({
+                    "id": filename,
+                    "url": local_url,
+                    "name": filename
+                })
     return assets
 
 from fastapi.responses import FileResponse
 
 @app.delete("/api/assets/{filename}")
-def delete_asset(filename: str):
+def delete_asset(filename: str, tenant_id: int = 1, db: Session = Depends(get_db)):
+    # Remove from database if present
+    db.query(MediaAsset).filter(
+        (MediaAsset.filename == filename) | (MediaAsset.url.contains(filename))
+    ).delete(synchronize_session=False)
+    db.commit()
+    
+    # Remove from local filesystem if present
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
-        return {"status": "success", "message": f"Deleted {filename}"}
-    raise HTTPException(status_code=404, detail="File not found")
+    return {"status": "success", "message": f"Deleted {filename}"}
 
 @app.get("/api/assets/raw/{filename}")
 def get_asset_file(filename: str):

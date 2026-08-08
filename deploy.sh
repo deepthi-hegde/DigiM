@@ -28,6 +28,7 @@ gcloud run deploy backend \
   --image "$BACKEND_IMAGE" \
   --region "$REGION" \
   --project "$PROJECT_ID" \
+  --set-env-vars GCS_BUCKET_NAME="marketflow-assets-digim-496018" \
   --allow-unauthenticated
 
 # Retrieve the backend URL dynamically to bake it into the frontend
