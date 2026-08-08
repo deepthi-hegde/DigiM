@@ -5362,10 +5362,10 @@ export default function App() {
             </div>
 
             <div>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.04em', opacity: 0.85 }}>
                 {notification.type === 'error' ? 'Action Required' : 'Notification'}
               </h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
                 {notification.message}
               </p>
             </div>
