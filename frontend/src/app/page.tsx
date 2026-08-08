@@ -1763,6 +1763,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [tone, setTone] = useState('casual');
   const [campaignId, setCampaignId] = useState<number | null>(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [matchRationale, setMatchRationale] = useState('');
+  const [recommendAiGen, setRecommendAiGen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
   const [draftScheduledTime, setDraftScheduledTime] = useState('');
@@ -2027,8 +2029,21 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         setShowPromptEditor(false);  // collapse editor on fresh generation
         setGenerated(true);
 
-        // Default image selection from Media Asset Library
-        if (libraryAssets && libraryAssets.length > 0) {
+        setMatchRationale(data.match_rationale || '');
+        setRecommendAiGen(Boolean(data.recommend_ai_gen));
+
+        // Smart Media Selection: Pre-select best matched asset from uploaded library
+        if (data.matched_asset_url) {
+          setSelectedAssetUrl(data.matched_asset_url);
+          notifySuccess("✨ Auto-matched best image from your uploaded library!");
+        } else if (data.recommend_ai_gen) {
+          if (libraryAssets && libraryAssets.length > 0) {
+            setSelectedAssetUrl(libraryAssets[0].url);
+          } else {
+            setSelectedAssetUrl(null);
+          }
+          notifySuccess("⚠️ No matching photo found in uploaded library. AI image recommended!");
+        } else if (libraryAssets && libraryAssets.length > 0) {
           setSelectedAssetUrl(libraryAssets[0].url);
         } else {
           setSelectedAssetUrl("https://picsum.photos/id/237/600/600.jpg");
@@ -2551,6 +2566,44 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
+            
+            {/* AI Smart Match Rationale & Recommendation Banners */}
+            {matchRationale && !recommendAiGen && (
+              <div style={{ marginBottom: '12px', background: 'rgba(82, 183, 136, 0.12)', border: '1px solid var(--primary-color)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', color: 'var(--primary-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>✨</span>
+                <span><strong>Matched from your media library:</strong> {matchRationale}</span>
+              </div>
+            )}
+            {recommendAiGen && (
+              <div style={{ marginBottom: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid #f59e0b', padding: '12px 14px', borderRadius: '12px', fontSize: '12px', color: '#fbbf24', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>⚠️ No Matching Photo in Uploaded Library</span>
+                </div>
+                <div style={{ opacity: 0.9, lineHeight: '1.4' }}>
+                  {matchRationale || "No asset in your uploaded media library matches this campaign concept. Click below to generate a custom AI creative."}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateAiImage}
+                  disabled={isGeneratingImage || !visualSuggestion}
+                  style={{
+                    alignSelf: 'flex-start',
+                    marginTop: '2px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+                  }}
+                >
+                  {isGeneratingImage ? '🎨 Generating AI Image...' : '✨ Generate AI Creative with Flux / Imagen'}
+                </button>
+              </div>
+            )}
             <div 
               onDragEnter={(e) => {
                 e.preventDefault();

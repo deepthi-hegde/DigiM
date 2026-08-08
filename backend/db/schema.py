@@ -126,5 +126,7 @@ class MediaAsset(Base):
     filename = Column(String, index=True)
     url = Column(String)
     file_type = Column(String, default="image")  # image or video
+    ai_tags = Column(String, nullable=True)      # Comma-separated AI generated tags e.g. "saree, red, silk"
+    ai_description = Column(String, nullable=True) # Detailed AI visual summary
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

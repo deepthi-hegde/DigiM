@@ -55,6 +55,16 @@ with engine.connect() as conn:
         conn.commit()
     except Exception:
         pass
+    try:
+        conn.execute(text("ALTER TABLE media_assets ADD COLUMN ai_tags VARCHAR"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE media_assets ADD COLUMN ai_description VARCHAR"))
+        conn.commit()
+    except Exception:
+        pass
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -120,6 +130,70 @@ def infer_timezone_from_location(location_str: Optional[str]) -> str:
         return "Asia/Singapore"
     
     return "Asia/Kolkata"
+
+
+def auto_tag_media_asset(file_path: str, file_type: str = "image") -> dict:
+    """
+    Uses Gemini 2.5 Flash Vision to analyze an uploaded image/video asset
+    and automatically extract semantic tags and visual description.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key or not os.path.exists(file_path) or file_type == "video":
+        filename = os.path.basename(file_path)
+        clean_name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
+        return {
+            "ai_tags": f"uploaded, media, {clean_name}",
+            "ai_description": f"Uploaded asset: {clean_name}"
+        }
+
+    try:
+        from google import genai
+        from google.genai import types
+        import json
+
+        client = genai.Client(api_key=api_key)
+        
+        with open(file_path, "rb") as f:
+            image_bytes = f.read()
+
+        mime_type = "image/jpeg"
+        if file_path.lower().endswith(".png"):
+            mime_type = "image/png"
+        elif file_path.lower().endswith(".webp"):
+            mime_type = "image/webp"
+
+        prompt = (
+            "Analyze this product/brand marketing photo. Extract:\n"
+            "1. 'ai_tags': 6 to 10 relevant comma-separated keywords describing product, clothing, style, color, occasion, or scene.\n"
+            "2. 'ai_description': 1-2 sentence detailed summary of what is visually shown and who it targets.\n"
+            "Return ONLY valid JSON with keys 'ai_tags' and 'ai_description'."
+        )
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                prompt
+            ]
+        )
+
+        text_out = response.text.strip()
+        if text_out.startswith("```"):
+            text_out = text_out.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        
+        parsed = json.loads(text_out)
+        return {
+            "ai_tags": parsed.get("ai_tags", "uploaded, product, creative"),
+            "ai_description": parsed.get("ai_description", "Uploaded brand marketing creative")
+        }
+    except Exception as e:
+        print(f"Auto-tagging vision error: {e}")
+        filename = os.path.basename(file_path)
+        clean_name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
+        return {
+            "ai_tags": f"uploaded, {clean_name}",
+            "ai_description": f"Uploaded marketing media: {clean_name}"
+        }
 
 
 def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
@@ -524,6 +598,18 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
     try:
         client = genai.Client(api_key=api_key)
         
+        # Retrieve uploaded media assets for smart matching
+        user_assets = db.query(MediaAsset).filter_by(tenant_id=1).all()
+        asset_inventory_text = ""
+        if user_assets:
+            asset_inventory_text = "\nAVAILABLE UPLOADED MEDIA ASSETS IN USER'S LIBRARY:\n"
+            for a in user_assets:
+                tags = a.ai_tags or "none"
+                desc = a.ai_description or a.filename
+                asset_inventory_text += f"- ASSET_ID: {a.id} | URL: {a.url} | Tags: {tags} | Description: {desc}\n"
+        else:
+            asset_inventory_text = "\nAVAILABLE UPLOADED MEDIA ASSETS: None uploaded yet.\n"
+
         category_instruction = ""
         if payload.category == "Knowledge Info":
             category_instruction = "Style: Educational. Provide comparisons or facts."
@@ -534,6 +620,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
 
         prompt_text = f"""
         You are an expert digital marketing copywriter. {few_shot_context}
+        {asset_inventory_text}
         
         Create an engaging social media post for:
         Topic: {payload.prompt}
@@ -548,6 +635,9 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
            - Do not mention links unless a specific URL is provided.
         2. TONE & STYLE: Adhere strictly to the requested tone '{payload.tone}'. If shorten, keep it extremely brief. If elaborate, write a rich post.
         3. CALL TO ACTION: Make it a clear, direct, and realistic call to action.
+        4. MEDIA ASSET MATCHING: Evaluate the AVAILABLE UPLOADED MEDIA ASSETS above against this campaign topic.
+           - If an uploaded asset matches the topic & audience (relevance >= 60%), select it.
+           - If NO uploaded asset fits this specific campaign topic (e.g. topic is space/cars and only silk saree assets are uploaded), set MATCHED_ID to NONE and RECOMMEND_AI_GEN to TRUE.
         
         OUTPUT FORMAT:
         [CAPTION]
@@ -555,6 +645,15 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         
         [VISUAL_SUGGESTION]
         Brief description of an image/infographic to pair with this.
+
+        [MATCHED_URL]
+        <Asset URL string from available inventory if relevant match exists, otherwise NONE>
+
+        [MATCH_RATIONALE]
+        <1 concise sentence explaining why this uploaded asset was selected, or why no uploaded asset in the library matches this campaign theme>
+
+        [RECOMMEND_AI_GEN]
+        <TRUE if no uploaded asset matches or if user should generate custom AI image, otherwise FALSE>
         """
         
         response = client.models.generate_content(
@@ -563,13 +662,38 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         )
         
         full_text = response.text
-        # Parse text
         caption = ""
         suggestion = ""
-        if "[CAPTION]" in full_text and "[VISUAL_SUGGESTION]" in full_text:
+        matched_url = None
+        rationale = ""
+        recommend_ai_gen = False
+
+        if "[CAPTION]" in full_text:
             parts = full_text.split("[VISUAL_SUGGESTION]")
             caption = parts[0].replace("[CAPTION]", "").strip()
-            suggestion = parts[1].strip()
+            rem = parts[1] if len(parts) > 1 else ""
+
+            if "[MATCHED_URL]" in rem:
+                sugg_part, match_part = rem.split("[MATCHED_URL]", 1)
+                suggestion = sugg_part.strip()
+                
+                m_url_val = "NONE"
+                if "[MATCH_RATIONALE]" in match_part:
+                    url_p, rat_p = match_part.split("[MATCH_RATIONALE]", 1)
+                    m_url_val = url_p.strip()
+                    if "[RECOMMEND_AI_GEN]" in rat_p:
+                        rat_val, rec_val = rat_p.split("[RECOMMEND_AI_GEN]", 1)
+                        rationale = rat_val.strip()
+                        recommend_ai_gen = "TRUE" in rec_val.upper()
+                    else:
+                        rationale = rat_p.strip()
+                else:
+                    m_url_val = match_part.strip()
+                
+                if m_url_val and m_url_val != "NONE" and m_url_val.startswith("http"):
+                    matched_url = m_url_val
+            else:
+                suggestion = rem.strip()
         else:
             caption = full_text.strip()
             suggestion = "A professional lifestyle photo related to the product."
@@ -604,6 +728,9 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
             "id": new_campaign.id,
             "generated_text": caption,
             "visual_suggestion": suggestion,
+            "matched_asset_url": matched_url,
+            "match_rationale": rationale,
+            "recommend_ai_gen": recommend_ai_gen,
             "is_liked": False,
             "cached": False
         }
@@ -802,12 +929,17 @@ async def upload_asset(file: UploadFile = File(...), tenant_id: int = 1, db: Ses
     public_url = upload_to_gcs(file_path, f"uploads/{unique_filename}")
     file_type = "video" if file.content_type.startswith("video") else "image"
     
+    # Perform multimodal AI vision auto-tagging
+    tag_info = auto_tag_media_asset(file_path, file_type)
+    
     # Save to database for persistence across redeployments
     media_entry = MediaAsset(
         tenant_id=tenant_id,
         filename=file.filename,
         url=public_url,
-        file_type=file_type
+        file_type=file_type,
+        ai_tags=tag_info.get("ai_tags"),
+        ai_description=tag_info.get("ai_description")
     )
     db.add(media_entry)
     db.commit()
@@ -818,7 +950,9 @@ async def upload_asset(file: UploadFile = File(...), tenant_id: int = 1, db: Ses
         "id": media_entry.id,
         "url": public_url,
         "filename": file.filename,
-        "type": file_type
+        "type": file_type,
+        "ai_tags": media_entry.ai_tags,
+        "ai_description": media_entry.ai_description
     }
 
 @app.get("/api/campaigns")
@@ -874,7 +1008,9 @@ def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
             "id": str(item.id),
             "url": item.url,
             "name": item.filename,
-            "type": item.file_type
+            "type": item.file_type,
+            "ai_tags": item.ai_tags or "",
+            "ai_description": item.ai_description or ""
         })
         
     # 2. Merge local filesystem assets (Dev fallback)
@@ -887,9 +1023,37 @@ def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
                 assets.append({
                     "id": filename,
                     "url": local_url,
-                    "name": filename
+                    "name": filename,
+                    "ai_tags": "uploaded, media",
+                    "ai_description": f"Local media asset: {filename}"
                 })
     return assets
+
+class AssetTagUpdateRequest(BaseModel):
+    ai_tags: Optional[str] = None
+    ai_description: Optional[str] = None
+
+@app.put("/api/assets/{asset_id}/tags")
+def update_asset_tags(asset_id: str, payload: AssetTagUpdateRequest, tenant_id: int = 1, db: Session = Depends(get_db)):
+    asset = None
+    if asset_id.isdigit():
+        asset = db.query(MediaAsset).filter_by(id=int(asset_id), tenant_id=tenant_id).first()
+    if not asset:
+        asset = db.query(MediaAsset).filter(
+            (MediaAsset.filename == asset_id) | (MediaAsset.url.contains(asset_id))
+        ).first()
+    
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+        
+    if payload.ai_tags is not None:
+        asset.ai_tags = payload.ai_tags
+    if payload.ai_description is not None:
+        asset.ai_description = payload.ai_description
+        
+    db.commit()
+    db.refresh(asset)
+    return {"status": "success", "id": asset.id, "ai_tags": asset.ai_tags, "ai_description": asset.ai_description}
 
 from fastapi.responses import FileResponse
 
