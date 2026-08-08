@@ -2513,7 +2513,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     };
 
     try {
-      const proxiedUrl = toProxiedUrl(selectedAssetUrl);
+      const sourceUrl = (hasOverlay && originalAssetUrl) ? originalAssetUrl : selectedAssetUrl;
+      const proxiedUrl = toProxiedUrl(sourceUrl);
       const img = await loadImage(proxiedUrl);
       // Patch logo loading to also go through proxy
       const origLogoSrc = includeLogo && (postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '');
