@@ -1864,17 +1864,40 @@ function SocialFeedPreviewModal({
 function ScheduledPostInspectorModal({
   campaign,
   onClose,
-  onEditInDashboard
+  onEditInDashboard,
+  onDelete
 }: {
   campaign: any;
   onClose: () => void;
   onEditInDashboard: (c: any) => void;
+  onDelete: (id: number) => void;
 }) {
+  const [isDeleting, setIsDeleting] = useState(false);
   if (!campaign) return null;
 
   const dateStr = campaign.scheduled_time 
     ? new Date(campaign.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
     : 'Draft / Unscheduled';
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this scheduled post?")) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/campaigns/${campaign.id}`, { method: 'DELETE' });
+      if (response.ok) {
+        window.showNotification?.("Scheduled post deleted successfully", "success");
+        onDelete(campaign.id);
+        onClose();
+      } else {
+        window.showNotification?.("Failed to delete post", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      window.showNotification?.("Error deleting post", "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -1929,10 +1952,28 @@ function ScheduledPostInspectorModal({
             >
               ✏️ Edit Post Content
             </button>
+
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              style={{
+                padding: '12px 18px',
+                borderRadius: '10px',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#ef4444',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: isDeleting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              🗑️ Delete Post
+            </button>
+
             <button
               onClick={onClose}
               style={{
-                padding: '12px 20px',
+                padding: '12px 16px',
                 borderRadius: '10px',
                 border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.05)',
@@ -5081,6 +5122,10 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
           onEditInDashboard={(c) => {
             setSelectedCampaignForEdit(c);
             setActiveTab('campaigns');
+          }}
+          onDelete={(deletedId) => {
+            // Trigger calendar refresh by toggling tab or reload
+            if (typeof window !== 'undefined') window.location.reload();
           }}
         />
       )}

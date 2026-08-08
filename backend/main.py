@@ -1109,6 +1109,27 @@ def delete_asset(filename: str, tenant_id: int = 1, db: Session = Depends(get_db
         os.remove(file_path)
     return {"status": "success", "message": f"Deleted {filename}"}
 
+@app.delete("/api/campaigns/{campaign_id}")
+def delete_campaign(campaign_id: int, tenant_id: int = 1, db: Session = Depends(get_db)):
+    campaign = db.query(Campaign).filter_by(id=campaign_id, tenant_id=tenant_id).first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign post not found")
+    
+    db.delete(campaign)
+    db.commit()
+
+    # Log the deletion
+    log = AuditLog(
+        tenant_id=tenant_id,
+        user_email="admin@digim.com",
+        action="Delete Campaign",
+        details=f"Deleted scheduled/draft campaign {campaign_id}"
+    )
+    db.add(log)
+    db.commit()
+
+    return {"status": "success", "message": f"Successfully deleted campaign {campaign_id}"}
+
 @app.get("/api/assets/raw/{filename}")
 def get_asset_file(filename: str):
     file_path = os.path.join(UPLOAD_DIR, filename)
