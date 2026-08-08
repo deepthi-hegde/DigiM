@@ -2171,11 +2171,14 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) { notifyError("Canvas 2D context not supported."); return; }
-      canvas.width = 1080;
-      canvas.height = 1080;
+      
+      const cw = imageElement.naturalWidth || 1080;
+      const ch = imageElement.naturalHeight || 1080;
+      canvas.width = cw;
+      canvas.height = ch;
 
-      // ── 1. Draw base image cleanly (no text/tagline/gradient footer) ───────────
-      ctx.drawImage(imageElement, 0, 0, 1080, 1080);
+      // ── 1. Draw base image cleanly (preserving exact natural aspect ratio) ───────────
+      ctx.drawImage(imageElement, 0, 0, cw, ch);
 
       // ── 2. Brand Logo Only Badge with 5 Position Options ───────────────────────
       const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
@@ -2199,31 +2202,37 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         const logoImg = new Image();
         logoImg.onload = () => {
           ctx.save();
-          const lSize = 90, lPad = 10, lR = 14, margin = 28;
-          let lx = 1080 - lSize - margin;
+          const minDim = Math.min(cw, ch);
+          const scale = Math.max(0.5, minDim / 1080);
+          const lSize = Math.round(90 * scale);
+          const lPad = Math.round(10 * scale);
+          const lR = Math.round(14 * scale);
+          const margin = Math.round(28 * scale);
+
+          let lx = cw - lSize - margin;
           let ly = margin;
 
           if (targetPos === 'top-left') {
             lx = margin;
             ly = margin;
           } else if (targetPos === 'top-right') {
-            lx = 1080 - lSize - margin;
+            lx = cw - lSize - margin;
             ly = margin;
           } else if (targetPos === 'bottom-left') {
             lx = margin;
-            ly = 1080 - lSize - margin;
+            ly = ch - lSize - margin;
           } else if (targetPos === 'bottom-right') {
-            lx = 1080 - lSize - margin;
-            ly = 1080 - lSize - margin;
+            lx = cw - lSize - margin;
+            ly = ch - lSize - margin;
           } else if (targetPos === 'bottom-center') {
-            lx = (1080 - lSize) / 2;
-            ly = 1080 - lSize - margin;
+            lx = (cw - lSize) / 2;
+            ly = ch - lSize - margin;
           }
 
           // White rounded badge with shadow
           ctx.shadowColor = 'rgba(0,0,0,0.4)';
-          ctx.shadowBlur = 16;
-          ctx.shadowOffsetY = 4;
+          ctx.shadowBlur = Math.round(16 * scale);
+          ctx.shadowOffsetY = Math.round(4 * scale);
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.roundRect(lx, ly, lSize, lSize, lR);
@@ -2232,7 +2241,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
           // Thin brand-color ring around badge
           ctx.strokeStyle = primaryColor;
-          ctx.lineWidth = 3;
+          ctx.lineWidth = Math.max(2, Math.round(3 * scale));
           ctx.beginPath();
           ctx.roundRect(lx, ly, lSize, lSize, lR);
           ctx.stroke();
