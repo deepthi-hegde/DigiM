@@ -5334,38 +5334,38 @@ export default function App() {
             className="glass-panel"
             style={{
               width: '90%',
-              maxWidth: '460px',
-              padding: '32px',
-              borderRadius: '24px',
+              maxWidth: '380px',
+              padding: '24px',
+              borderRadius: '20px',
               background: 'var(--glass-bg)',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '16px',
-              border: '1px solid rgba(82, 183, 136, 0.2)'
+              gap: '14px',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
             }}
           >
             <div style={{
-              width: '56px',
-              height: '56px',
+              width: '48px',
+              height: '48px',
               borderRadius: '50%',
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: notification.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(82, 183, 136, 0.15)',
+              border: notification.type === 'error' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--primary-color)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '28px'
+              fontSize: '22px'
             }}>
-              💡
+              {notification.type === 'error' ? '⚠️' : '✨'}
             </div>
 
             <div>
-              <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-color)' }}>
-                Action Required
+              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>
+                {notification.type === 'error' ? 'Action Required' : 'Notification'}
               </h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0 }}>
                 {notification.message}
               </p>
             </div>
@@ -5375,11 +5375,11 @@ export default function App() {
               className="btn-primary"
               style={{
                 width: '100%',
-                padding: '12px 24px',
-                marginTop: '8px',
-                fontSize: '14px',
+                padding: '10px 18px',
+                marginTop: '4px',
+                fontSize: '13px',
                 fontWeight: 700,
-                borderRadius: '12px',
+                borderRadius: '10px',
                 cursor: 'pointer'
               }}
             >
