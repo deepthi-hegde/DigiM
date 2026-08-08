@@ -1229,8 +1229,154 @@ def process_scheduled_campaigns():
         finally:
             db.close()
 
+from db.schema import ArchivedCampaign
+from utils.storage import get_gcs_bucket_size_bytes
+
+def process_post_archival_and_pruning():
+    """
+    Background worker that runs periodically:
+    1. Archives published posts >90 days old to archived_campaigns table.
+    2. Prunes GCS media files >180 days old if GCS usage exceeds 5.0 GB limit.
+    """
+    while True:
+        try:
+            time.sleep(3600) # Check hourly
+            db = SessionLocal()
+            now = datetime.datetime.utcnow()
+            ninety_days_ago = now - datetime.timedelta(days=90)
+            one_eighty_days_ago = now - datetime.timedelta(days=180)
+
+            # ── 1. DB Archival (>90 days old published posts) ──────────────────
+            old_published = db.query(Campaign).filter(
+                Campaign.status == "published",
+                Campaign.scheduled_time <= ninety_days_ago
+            ).all()
+
+            for post in old_published:
+                archived = ArchivedCampaign(
+                    original_campaign_id=post.id,
+                    tenant_id=post.tenant_id,
+                    prompt=post.prompt,
+                    category=post.category,
+                    min_age=post.min_age,
+                    max_age=post.max_age,
+                    gender=post.gender,
+                    generated_text=post.generated_text,
+                    visual_suggestion=post.visual_suggestion,
+                    tone=post.tone,
+                    is_liked=post.is_liked,
+                    scheduled_time=post.scheduled_time,
+                    status="archived",
+                    archived_at=now
+                )
+                db.add(archived)
+                db.delete(post)
+                db.add(AuditLog(
+                    tenant_id=post.tenant_id,
+                    user_email="system@digim.com",
+                    action="Archive Campaign",
+                    details=f"Auto-archived post {post.id} (published >90d ago)"
+                ))
+            db.commit()
+
+            # ── 2. GCS Storage Quota Pruning (>180d old & GCS > 5GB limit) ────
+            FIVE_GB_BYTES = 5 * 1024 * 1024 * 1024
+            gcs_bytes = get_gcs_bucket_size_bytes()
+
+            if gcs_bytes > FIVE_GB_BYTES:
+                old_archived = db.query(ArchivedCampaign).filter(
+                    ArchivedCampaign.scheduled_time <= one_eighty_days_ago,
+                    ArchivedCampaign.media_pruned == False
+                ).all()
+
+                for arch in old_archived:
+                    arch.media_pruned = True
+                    arch.visual_suggestion = None  # Clear heavy media reference
+                    db.add(AuditLog(
+                        tenant_id=arch.tenant_id,
+                        user_email="system@digim.com",
+                        action="Prune GCS Media Blob",
+                        details=f"Pruned GCS media blob for archived post {arch.id} (>180d & GCS quota > 5GB)"
+                    ))
+                db.commit()
+
+            db.close()
+        except Exception as e:
+            print(f"Error in archival processor thread: {e}")
+
+@app.get("/api/storage/status")
+def get_storage_status():
+    size_bytes = get_gcs_bucket_size_bytes()
+    limit_bytes = 5 * 1024 * 1024 * 1024  # 5GB Always Free limit
+    used_gb = round(size_bytes / (1024 ** 3), 2)
+    percentage = round((size_bytes / limit_bytes) * 100, 1) if limit_bytes > 0 else 0
+    return {
+        "used_bytes": size_bytes,
+        "used_gb": used_gb,
+        "limit_gb": 5.0,
+        "percentage": percentage,
+        "warning_threshold_exceeded": percentage > 90.0
+    }
+
+@app.get("/api/campaigns/archived")
+def list_archived_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
+    archived = db.query(ArchivedCampaign).filter_by(tenant_id=tenant_id).order_by(ArchivedCampaign.archived_at.desc()).all()
+    return archived
+
+@app.get("/api/campaigns/archival-warnings")
+def get_archival_warnings(tenant_id: int = 1, db: Session = Depends(get_db)):
+    now = datetime.datetime.utcnow()
+    eighty_three_days_ago = now - datetime.timedelta(days=83)
+    ninety_days_ago = now - datetime.timedelta(days=90)
+    
+    # Posts published between 83 and 90 days ago (will archive in next 7 days)
+    warning_posts = db.query(Campaign).filter(
+        Campaign.tenant_id == tenant_id,
+        Campaign.status == "published",
+        Campaign.scheduled_time <= eighty_three_days_ago,
+        Campaign.scheduled_time > ninety_days_ago
+    ).all()
+    
+    result = []
+    for p in warning_posts:
+        days_until = 90 - (now - p.scheduled_time).days
+        result.append({
+            "id": p.id,
+            "prompt": p.prompt,
+            "generated_text": p.generated_text,
+            "scheduled_time": p.scheduled_time,
+            "days_until_archival": max(1, days_until)
+        })
+    return result
+
+@app.post("/api/campaigns/archived/{archived_id}/unarchive")
+def unarchive_campaign(archived_id: int, tenant_id: int = 1, db: Session = Depends(get_db)):
+    archived = db.query(ArchivedCampaign).filter_by(id=archived_id, tenant_id=tenant_id).first()
+    if not archived:
+        raise HTTPException(status_code=404, detail="Archived campaign not found")
+
+    restored = Campaign(
+        tenant_id=archived.tenant_id,
+        prompt=archived.prompt,
+        category=archived.category,
+        min_age=archived.min_age,
+        max_age=archived.max_age,
+        gender=archived.gender,
+        generated_text=archived.generated_text,
+        visual_suggestion=archived.visual_suggestion,
+        tone=archived.tone,
+        is_liked=archived.is_liked,
+        scheduled_time=archived.scheduled_time,
+        status="published"
+    )
+    db.add(restored)
+    db.delete(archived)
+    db.commit()
+    return {"status": "success", "message": "Restored archived post to active history"}
+
 @app.on_event("startup")
 def start_scheduler():
     print("Starting scheduled post background worker thread...")
     threading.Thread(target=process_scheduled_campaigns, daemon=True).start()
+    threading.Thread(target=process_post_archival_and_pruning, daemon=True).start()
 

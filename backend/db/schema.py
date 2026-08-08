@@ -130,3 +130,27 @@ class MediaAsset(Base):
     ai_description = Column(String, nullable=True) # Detailed AI visual summary
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+
+class ArchivedCampaign(Base):
+    """
+    Stores archived campaigns moved after 90 days for clean history & memory optimization.
+    """
+    __tablename__ = "archived_campaigns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    original_campaign_id = Column(Integer, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, default=1)
+    prompt = Column(String)
+    category = Column(String)
+    min_age = Column(Integer)
+    max_age = Column(Integer)
+    gender = Column(String)
+    generated_text = Column(String)
+    visual_suggestion = Column(String, nullable=True)
+    tone = Column(String, default="casual")
+    is_liked = Column(Boolean, default=False)
+    scheduled_time = Column(DateTime, nullable=True)
+    status = Column(String, default="archived")
+    media_pruned = Column(Boolean, default=False) # True if GCS media blob was pruned >180d
+    archived_at = Column(DateTime, default=datetime.datetime.utcnow)
+

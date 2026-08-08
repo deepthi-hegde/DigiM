@@ -36,3 +36,24 @@ def upload_to_gcs(file_path: str, destination_blob_name: str = None) -> str:
         # Fallback to local
         filename = os.path.basename(file_path)
         return f"/api/assets/raw/{filename}"
+
+def get_gcs_bucket_size_bytes() -> int:
+    """
+    Calculates total size of all blobs stored in GCS bucket in bytes.
+    Returns 0 if bucket isn't configured or inaccessible.
+    """
+    bucket_name = os.environ.get("GCS_BUCKET_NAME") or (
+        "marketflow-assets-digim-496018" if os.environ.get("K_SERVICE") or os.environ.get("GAE_ENV") else None
+    )
+    if not bucket_name:
+        return 0
+
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blobs = storage_client.list_blobs(bucket)
+        total_size = sum(blob.size for blob in blobs if blob.size)
+        return total_size
+    except Exception as e:
+        print(f"Error calculating GCS bucket size: {e}")
+        return 0
