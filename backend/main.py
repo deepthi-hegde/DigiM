@@ -744,8 +744,8 @@ class RefineTextRequest(BaseModel):
 
 @app.post("/api/campaign/refine-text")
 def refine_campaign_text(payload: RefineTextRequest):
-    client = get_genai_client()
-    if not client:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
         raise HTTPException(status_code=500, detail="Gemini API Key not configured")
 
     system_instruction = (
@@ -763,6 +763,9 @@ def refine_campaign_text(payload: RefineTextRequest):
         prompt = f"Rewrite this caption in a friendly, casual conversational tone:\n\n{payload.text}"
 
     try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
