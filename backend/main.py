@@ -368,15 +368,16 @@ def scrape_brand_url(payload: ScrapeUrlRequest):
 
 class CampaignRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
-    minAge: int = Field(..., ge=13, le=100)
-    maxAge: int = Field(..., ge=13, le=100)
-    gender: str = Field(..., min_length=1)
-    freq: str = Field(..., min_length=1)
-    category: str = Field(..., min_length=1)
+    minAge: Optional[int] = Field(18, ge=13, le=100)
+    maxAge: Optional[int] = Field(65, ge=13, le=100)
+    gender: Optional[str] = Field("All", min_length=1)
+    freq: Optional[str] = Field("Daily", min_length=1)
+    category: Optional[str] = Field("General", min_length=1)
     businessName: Optional[str] = None
     phoneNumber: Optional[str] = None
     industry: Optional[str] = None
     tone: Optional[str] = "casual"
+    tenant_id: Optional[int] = 1
 
 
 class CampaignPublishRequest(BaseModel):
@@ -596,8 +597,9 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
     try:
         client = genai.Client(api_key=api_key)
         
-        # Retrieve uploaded media assets for smart matching
-        user_assets = db.query(MediaAsset).filter_by(tenant_id=1).all()
+        # Retrieve uploaded media assets for smart matching scoped to current tenant
+        target_tenant_id = payload.tenant_id if payload.tenant_id is not None else 1
+        user_assets = db.query(MediaAsset).filter_by(tenant_id=target_tenant_id).all()
         asset_inventory_text = ""
         if user_assets:
             asset_inventory_text = "\nAVAILABLE UPLOADED MEDIA ASSETS IN USER'S LIBRARY:\n"
@@ -1038,13 +1040,10 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
 @app.get("/api/assets")
 def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
     assets = []
-    seen_urls = set()
     
-    # 1. Fetch from Database (Primary source of truth across re-deployments)
+    # Fetch from Database for this specific tenant ONLY
     db_assets = db.query(MediaAsset).filter_by(tenant_id=tenant_id).order_by(MediaAsset.id.desc()).all()
     for item in db_assets:
-        seen_urls.add(item.url)
-        seen_urls.add(item.filename)
         assets.append({
             "id": str(item.id),
             "url": item.url,
@@ -1053,21 +1052,6 @@ def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
             "ai_tags": item.ai_tags or "",
             "ai_description": item.ai_description or ""
         })
-        
-    # 2. Merge local filesystem assets (Dev fallback)
-    if os.path.exists(UPLOAD_DIR):
-        for filename in os.listdir(UPLOAD_DIR):
-            if filename == ".gitignore": continue
-            file_path = os.path.join(UPLOAD_DIR, filename)
-            local_url = f"/api/assets/raw/{filename}"
-            if os.path.isfile(file_path) and local_url not in seen_urls and filename not in seen_urls:
-                assets.append({
-                    "id": filename,
-                    "url": local_url,
-                    "name": filename,
-                    "ai_tags": "uploaded, media",
-                    "ai_description": f"Local media asset: {filename}"
-                })
     return assets
 
 class AssetTagUpdateRequest(BaseModel):
@@ -1080,7 +1064,7 @@ def update_asset_tags(asset_id: str, payload: AssetTagUpdateRequest, tenant_id: 
     if asset_id.isdigit():
         asset = db.query(MediaAsset).filter_by(id=int(asset_id), tenant_id=tenant_id).first()
     if not asset:
-        asset = db.query(MediaAsset).filter(
+        asset = db.query(MediaAsset).filter_by(tenant_id=tenant_id).filter(
             (MediaAsset.filename == asset_id) | (MediaAsset.url.contains(asset_id))
         ).first()
     
@@ -1100,16 +1084,18 @@ from fastapi.responses import FileResponse
 
 @app.delete("/api/assets/{filename}")
 def delete_asset(filename: str, tenant_id: int = 1, db: Session = Depends(get_db)):
-    # Remove from database if present
-    db.query(MediaAsset).filter(
+    # Remove from database if present for this tenant
+    db.query(MediaAsset).filter_by(tenant_id=tenant_id).filter(
         (MediaAsset.filename == filename) | (MediaAsset.url.contains(filename))
     ).delete(synchronize_session=False)
     db.commit()
     
-    # Remove from local filesystem if present
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    # Remove from local filesystem if no other tenant references it
+    other_refs = db.query(MediaAsset).filter_by(filename=filename).first()
+    if not other_refs:
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
     return {"status": "success", "message": f"Deleted {filename}"}
 
 @app.delete("/api/campaigns/{campaign_id}")
@@ -1244,6 +1230,7 @@ def process_post_archival_and_pruning():
     while True:
         try:
             time.sleep(3600) # Check hourly
+            from db.database import SessionLocal
             db = SessionLocal()
             now = datetime.datetime.utcnow()
             thirty_days_ago = now - datetime.timedelta(days=30)
