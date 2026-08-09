@@ -3528,7 +3528,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                         type="button"
                         onClick={() => {
                           setTone(t.key);
-                          handleRefineText(t.key);
+                          if (generated && generatedText) {
+                            handleRefineText(t.key);
+                          }
                         }}
                         disabled={isRefiningText}
                         style={{
