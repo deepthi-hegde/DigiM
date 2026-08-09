@@ -3315,25 +3315,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   >
                     {isGeneratingImage ? '🎨 Generating...' : selectedAssetUrl ? '🔄 Regenerate' : '✨ Generate Image'}
                   </button>
-                  {selectedAssetUrl && (
-                    <button
-                      onClick={() => handleApplyBrandOverlay()}
-                      title={hasOverlay ? "Remove brand overlay and restore clean original image" : "Apply brand logo and slogan banner on top of this image"}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: '10px',
-                        border: hasOverlay ? '1.5px solid #ef4444' : '1.5px solid var(--primary-color)',
-                        background: hasOverlay ? 'rgba(239, 68, 68, 0.12)' : 'rgba(82, 183, 136, 0.1)',
-                        color: hasOverlay ? '#ef4444' : 'var(--primary-color)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      {hasOverlay ? '✕ Remove Overlay' : '🎨 Brand Overlay'}
-                    </button>
-                  )}
                   {visualSuggestion && (
                     <button
                       onClick={() => setShowPromptEditor(prev => !prev)}
@@ -3364,7 +3345,19 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                         <input 
                           type="checkbox" 
                           checked={includeLogo} 
-                          onChange={(e) => setIncludeLogo(e.target.checked)} 
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setIncludeLogo(isChecked);
+                            if (isChecked) {
+                              handleApplyBrandOverlay();
+                            } else {
+                              if (originalAssetUrl) {
+                                setSelectedAssetUrl(originalAssetUrl);
+                              }
+                              setHasOverlay(false);
+                              notifySuccess("Brand logo watermark removed.");
+                            }
+                          }} 
                         />
                         Include Brand Logo Watermark
                       </label>
