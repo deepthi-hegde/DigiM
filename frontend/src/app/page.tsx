@@ -242,7 +242,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
   const fetchAssets = async () => {
     try {
-      const response = await fetch('/api/assets');
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
       if (response.ok) {
         const data = await response.json();
         setAssets(data);
@@ -254,7 +255,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
   const deleteAsset = async (filename: string) => {
     try {
-      const response = await fetch(`/api/assets/${filename}`, {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets/${filename}?tenant_id=${savedTenantId}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -264,7 +266,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
         notifyError("Failed to delete asset.");
       }
     } catch (error) {
-      console.error("Failed to delete asset", error);
+      console.error(error);
       notifyError("Error deleting asset.");
     }
   };
@@ -437,7 +439,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       const formData = new FormData();
       formData.append('file', file);
       try {
-        const response = await fetch('/api/assets/upload', {
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
+        const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
           method: 'POST',
           body: formData,
         });
@@ -2181,7 +2184,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
   const fetchLibraryAssets = async () => {
     try {
-      const response = await fetch('/api/assets');
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
       if (response.ok) {
         const data = await response.json();
         setLibraryAssets(data);
@@ -2211,7 +2215,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/assets/upload', {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
         method: 'POST',
         body: formData,
       });
@@ -2250,10 +2255,12 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
 
     try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const response = await fetch('/api/campaign/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10),
           prompt,
           minAge,
           maxAge,
@@ -2383,7 +2390,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     formData.append('file', file);
     try {
       notifySuccess("Uploading logo for post overlay...");
-      const res = await fetch('/api/assets/upload', {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
         method: 'POST',
         body: formData,
       });
@@ -2919,7 +2927,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   const formData = new FormData();
                   formData.append('file', file);
                   try {
-                    const response = await fetch('/api/assets/upload', {
+                    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+                    const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
                       method: 'POST',
                       body: formData,
                     });
@@ -3979,7 +3988,8 @@ function AssetsLibrary() {
 
   const fetchAssets = async () => {
     try {
-      const response = await fetch('/api/assets');
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
       if (response.ok) {
         const data = await response.json();
         setAssets(data);
@@ -4002,7 +4012,8 @@ function AssetsLibrary() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await fetch('/api/assets/upload', {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
         method: 'POST',
         body: formData,
       });
@@ -4033,7 +4044,8 @@ function AssetsLibrary() {
   const handleDeleteAsset = async (filename: string) => {
     if (!confirm(`Delete ${filename}?`)) return;
     try {
-      const response = await fetch(`/api/assets/${filename}`, { method: 'DELETE' });
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets/${filename}?tenant_id=${savedTenantId}`, { method: 'DELETE' });
       if (response.ok) {
         await fetchAssets();
       } else {
@@ -4653,8 +4665,9 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
     daysGrid.push(d);
   }
 
-  // Filter all campaigns with scheduled time (both upcoming and past)
+  // Filter campaigns into scheduled calendar items vs unscheduled drafts
   const scheduledCampaigns = campaigns.filter(c => c.scheduled_time);
+  const unscheduledDrafts = campaigns.filter(c => !c.scheduled_time && c.status === 'draft');
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '32px', borderRadius: '20px' }}>
@@ -4662,10 +4675,68 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Campaign Queue & Calendar</h2>
           <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>
-            Manage and monitor your scheduled posts for {monthNames[month]} {year}. Click any item to edit.
+            Manage and monitor your saved drafts & scheduled posts for {monthNames[month]} {year}. Click any item to inspect/edit.
           </p>
         </div>
       </div>
+
+      {/* Unscheduled Saved Drafts Section */}
+      {unscheduledDrafts.length > 0 && (
+        <div style={{ marginBottom: '24px', background: 'rgba(82, 183, 136, 0.05)', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              💾 Saved Drafts ({unscheduledDrafts.length})
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+              Click any draft to edit or schedule
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+            {unscheduledDrafts.map((draft) => (
+              <div
+                key={draft.id}
+                onClick={() => onSelectCampaign?.(draft)}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-color)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.transform = 'none';
+                }}
+              >
+                {draft.visual_suggestion ? (
+                  <img src={draft.visual_suggestion} alt="Draft" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
+                    📝
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {draft.prompt || draft.generated_text || "Saved Draft"}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: '4px' }}>{draft.category}</span>
+                    <span>• {draft.tone}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Weekday headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 600, fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>

@@ -290,8 +290,8 @@ def get_analytics(tenant_id: int = 1, db: Session = Depends(get_db)):
     
     # Defaults (when not connected)
     fb_followers = 1240
-    fb_reach = 15400
-    fb_impressions = 28900
+    fb_reach = 2480
+    fb_impressions = 4960
     fb_engagement = 4.8
     fb_posts = [
         {"id": "fb_1", "text": "Super excited to launch our summer catalog! 🌞👗 Check it out at MarketFlow Silks.", "likes": 42, "comments": 8, "shares": 3, "date": "May 28"},
@@ -300,8 +300,8 @@ def get_analytics(tenant_id: int = 1, db: Session = Depends(get_db)):
     ]
 
     ig_followers = 1920
-    ig_reach = 14500
-    ig_impressions = 29100
+    ig_reach = 3840
+    ig_impressions = 7680
     ig_engagement = 4.9
 
     # Attempt live integration if page connection is configured
@@ -375,7 +375,27 @@ def get_analytics(tenant_id: int = 1, db: Session = Depends(get_db)):
                 if ig_res.status_code == 200:
                     ig_data_json = ig_res.json()
                     ig_followers = ig_data_json.get("followers_count", 0)
-                    # Generate dynamic realistic impressions/reach metrics for Instagram
+
+                # Attempt live Instagram insights query if permission granted
+                ig_insights_res = requests.get(
+                    f"{META_GRAPH_URL}/{account.ig_user_id}/insights",
+                    params={
+                        "metric": "reach,impressions",
+                        "period": "day",
+                        "access_token": account.access_token
+                    }
+                )
+                if ig_insights_res.status_code == 200:
+                    idata = ig_insights_res.json().get("data", [])
+                    for metric in idata:
+                        if metric["name"] == "impressions" and metric.get("values"):
+                            ig_impressions = sum(v["value"] for v in metric["values"][-7:])
+                        elif metric["name"] == "reach" and metric.get("values"):
+                            ig_reach = sum(v["value"] for v in metric["values"][-7:])
+                    if ig_impressions > 0:
+                        ig_engagement = round((ig_reach / ig_impressions) * 100, 1)
+                else:
+                    # Fallback multiplier if instagram_manage_insights permission is omitted in app token
                     ig_impressions = ig_followers * 6
                     ig_reach = ig_followers * 3
                     ig_engagement = 6.2 if ig_followers > 0 else 0.0
