@@ -135,7 +135,7 @@ def disconnect_platform(tenant_id: int = 1, platform: str = "all", db: Session =
             page_id=payload.page_id,
             page_name=payload.page_name,
             access_token=page_access_token,
-            ig_user_id=ig_id or "17841400000000000"
+            ig_user_id=ig_id
         )
         db.add(account)
     else:
@@ -143,8 +143,8 @@ def disconnect_platform(tenant_id: int = 1, platform: str = "all", db: Session =
         account.page_name = payload.page_name
         if ig_id:
             account.ig_user_id = ig_id
-        elif not account.ig_user_id:
-            account.ig_user_id = "17841400000000000"
+        else:
+            account.ig_user_id = None
     
     db.commit()
     return {

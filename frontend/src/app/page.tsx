@@ -2378,7 +2378,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
   // Brand Logo for Post Overlay
   const [postLogoUrl, setPostLogoUrl] = useState('');
-  const [includeLogo, setIncludeLogo] = useState(true);
+  const [includeLogo, setIncludeLogo] = useState(false);
   const [logoPosition, setLogoPosition] = useState<'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center'>('top-right');
   const postLogoFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -2693,7 +2693,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           setIsScheduling(false);
           setScheduledTime('');
         } else {
-          notifySuccess("Published successfully! " + (data.message || ""));
+          let targetPlatforms = publishToIg ? "Facebook & Instagram" : "Facebook";
+          notifySuccess(`Published successfully to ${targetPlatforms}! ✨`);
         }
         
         if (onClearEdit) onClearEdit();
