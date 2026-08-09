@@ -1246,8 +1246,20 @@ def process_post_archival_and_pruning():
             time.sleep(3600) # Check hourly
             db = SessionLocal()
             now = datetime.datetime.utcnow()
+            thirty_days_ago = now - datetime.timedelta(days=30)
             ninety_days_ago = now - datetime.timedelta(days=90)
             one_eighty_days_ago = now - datetime.timedelta(days=180)
+
+            # ── 0. Auto-Prune Abandoned Drafts (>30 days old & unliked) ────────
+            abandoned_drafts = db.query(Campaign).filter(
+                Campaign.status == "draft",
+                Campaign.is_liked == False,
+                Campaign.scheduled_time == None
+            ).all()
+
+            for draft in abandoned_drafts:
+                db.delete(draft)
+            db.commit()
 
             # ── 1. DB Archival (>90 days old published posts) ──────────────────
             old_published = db.query(Campaign).filter(
