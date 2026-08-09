@@ -2282,17 +2282,11 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         if (data.matched_asset_url) {
           setSelectedAssetUrl(data.matched_asset_url);
           notifySuccess("✨ Auto-matched best image from your uploaded library!");
-        } else if (data.recommend_ai_gen) {
-          if (libraryAssets && libraryAssets.length > 0) {
-            setSelectedAssetUrl(libraryAssets[0].url);
-          } else {
-            setSelectedAssetUrl(null);
-          }
-          notifySuccess("⚠️ No matching photo found in uploaded library. AI image recommended!");
-        } else if (libraryAssets && libraryAssets.length > 0) {
-          setSelectedAssetUrl(libraryAssets[0].url);
         } else {
           setSelectedAssetUrl(null);
+          if (data.recommend_ai_gen) {
+            notifySuccess("⚠️ No matching photo found in uploaded library. You can generate an AI image or pick from library.");
+          }
         }
       } else {
         notifyError("Generation failed: " + (data.message || "Unknown error"));
