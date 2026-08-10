@@ -1044,6 +1044,34 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
         result.append(c_dict)
     return result
 
+class SaveToLibraryRequest(BaseModel):
+    tenant_id: int = 1
+    image_url: str
+
+@app.post("/api/assets/save-to-library")
+def save_asset_to_library(payload: SaveToLibraryRequest, db: Session = Depends(get_db)):
+    """
+    Saves an AI-generated image (temp path or GCS URL) permanently to the media library database.
+    """
+    if not payload.image_url:
+        raise HTTPException(status_code=400, detail="Image URL is required")
+        
+    perm_url = save_permanent_asset_if_needed(payload.image_url)
+    
+    media_entry = MediaAsset(
+        tenant_id=payload.tenant_id,
+        filename=os.path.basename(perm_url) if perm_url else "ai_gen_asset.jpg",
+        url=perm_url,
+        file_type="image",
+        ai_tags="ai_generated, saved",
+        ai_description="Saved AI-generated marketing visual"
+    )
+    db.add(media_entry)
+    db.commit()
+    db.refresh(media_entry)
+    
+    return {"status": "success", "url": perm_url, "message": "Asset added to library successfully!"}
+
 @app.get("/api/assets")
 def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
     assets = []

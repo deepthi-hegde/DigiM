@@ -1913,7 +1913,8 @@ function ScheduledPostInspectorModal({
     if (!window.confirm("Are you sure you want to delete this scheduled post?")) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/campaigns/${campaign.id}`, { method: 'DELETE' });
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/campaigns/${campaign.id}?tenant_id=${savedTenantId}`, { method: 'DELETE' });
       if (response.ok) {
         window.showNotification?.("Scheduled post deleted successfully", "success");
         onDelete(campaign.id);
@@ -2060,6 +2061,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
   const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
+  const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [isSavedToLibrary, setIsSavedToLibrary] = useState(false);
+  const assetPickerFileInputRef = useRef<HTMLInputElement>(null);
 
 
   // WhatsApp State variables
@@ -2382,6 +2386,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       if (data.status === 'success') {
         setHasOverlay(false);
         setOriginalAssetUrl(null);
+        setIsSavedToLibrary(false);
         if (isSingleSlideRegen) {
           // Replace only the active single slide in the carousel strip
           const updatedUrls = [...carouselUrls];
@@ -2400,6 +2405,65 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       console.error("Image gen error", error);
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleSaveToLibrary = async () => {
+    if (!selectedAssetUrl) return;
+    setIsSavingToLibrary(true);
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch('/api/assets/save-to-library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10),
+          image_url: selectedAssetUrl
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedAssetUrl(data.url);
+        fetchLibraryAssets();
+        setIsSavedToLibrary(true);
+        notifySuccess("Asset saved to library! 🎉");
+      } else {
+        notifyError("Failed to save asset to library");
+      }
+    } catch (err) {
+      console.error("Save to library error", err);
+      notifyError("Error saving asset to library");
+    } finally {
+      setIsSavingToLibrary(false);
+    }
+  };
+
+  const handleAssetPickerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      notifySuccess("Uploading asset...");
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedAssetUrl(data.url);
+        fetchLibraryAssets();
+        setShowAssetPicker(false);
+        notifySuccess("Asset uploaded and selected successfully! 🎉");
+      } else {
+        notifyError("Failed to upload asset");
+      }
+    } catch (error) {
+      console.error("Upload error", error);
+      notifyError("Error uploading asset");
     }
   };
 
@@ -3038,12 +3102,14 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 </>
               ) : (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', padding: '8px 0' }}>
-                  <div
+                  <button
+                    type="button"
                     onClick={() => dashboardFileInputRef.current?.click()}
-                    style={{ cursor: 'pointer', fontSize: '13px', color: 'var(--text-light)', fontWeight: 500 }}
+                    className="btn-primary"
+                    style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
                     📸 Upload Image or Video
-                  </div>
+                  </button>
                   <div style={{ fontSize: '12px', color: '#94a3b8', userSelect: 'none' }}>or</div>
                   <button
                     type="button"
@@ -3211,8 +3277,46 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                     </div>
                   )}
 
-                  {/* Overlay: Regenerate + Download */}
+                  {/* Overlay: Regenerate + Save + Download */}
                   <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', gap: '8px', zIndex: 5 }}>
+                    {selectedAssetUrl && (selectedAssetUrl.startsWith('data:') || selectedAssetUrl.includes('temp_assets') || selectedAssetUrl.includes('temp-ai-gen')) && !isSavedToLibrary && (
+                      <button
+                        type="button"
+                        onClick={handleSaveToLibrary}
+                        disabled={isSavingToLibrary}
+                        style={{
+                          background: 'rgba(82, 183, 136, 0.85)',
+                          color: 'white',
+                          padding: '6px 12px',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          backdropFilter: 'blur(4px)',
+                          cursor: isSavingToLibrary ? 'not-allowed' : 'pointer',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {isSavingToLibrary ? '📥 Saving...' : '📥 Save to Library'}
+                      </button>
+                    )}
+                    {isSavedToLibrary && (
+                      <span style={{
+                        background: 'rgba(82, 183, 136, 0.95)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        ✓ Saved
+                      </span>
+                    )}
                     <button
                       onClick={handleGenerateAiImage}
                       disabled={isGeneratingImage}
@@ -3903,7 +4007,18 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 ×
               </button>
             </div>
-            <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '24px' }}>Choose an existing image or video asset for your campaign.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
+              <p style={{ color: 'var(--text-light)', fontSize: '14px', margin: 0 }}>Choose an existing image or video asset for your campaign.</p>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => assetPickerFileInputRef.current?.click()}
+                style={{ padding: '8px 14px', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+              >
+                📤 Upload New Asset
+              </button>
+            </div>
+            <input type="file" ref={assetPickerFileInputRef} onChange={handleAssetPickerUpload} style={{ display: 'none' }} accept="image/*,video/*" />
 
             <div style={{
               flexGrow: 1,
@@ -4645,8 +4760,9 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const savedTenantId = localStorage.getItem('tenant_id') || '1';
     Promise.all([
-      fetch('/api/campaigns').then(res => res.json()),
+      fetch(`/api/campaigns?tenant_id=${savedTenantId}`).then(res => res.json()),
       fetch('/api/calendar/events').then(res => res.json()).catch(() => [])
     ])
       .then(([campaignData, calendarData]) => {
@@ -5198,7 +5314,8 @@ function ArchivedPostsTab() {
 
   const fetchArchived = async () => {
     try {
-      const res = await fetch('/api/campaigns/archived');
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaigns/archived?tenant_id=${savedTenantId}`);
       if (res.ok) {
         const data = await res.json();
         setArchived(data);
@@ -5216,7 +5333,8 @@ function ArchivedPostsTab() {
 
   const handleUnarchive = async (id: number) => {
     try {
-      const res = await fetch(`/api/campaigns/archived/${id}/unarchive`, { method: 'POST' });
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaigns/archived/${id}/unarchive?tenant_id=${savedTenantId}`, { method: 'POST' });
       if (res.ok) {
         window.showNotification?.("Post unarchived and restored to active campaigns!", "success");
         fetchArchived();
@@ -5309,8 +5427,9 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   useEffect(() => {
     const fetchWarnings = async () => {
       try {
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
         const [wRes, sRes] = await Promise.all([
-          fetch('/api/campaigns/archival-warnings'),
+          fetch(`/api/campaigns/archival-warnings?tenant_id=${savedTenantId}`),
           fetch('/api/storage/status')
         ]);
         if (wRes.ok) {
