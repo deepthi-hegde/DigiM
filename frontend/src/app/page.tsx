@@ -2431,15 +2431,19 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     }
   };
 
-  const handleApplyBrandOverlay = async (overridePos?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center') => {
+  const handleApplyBrandOverlay = async (
+    overridePos?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center',
+    forceIncludeLogo?: boolean
+  ) => {
     const targetPos = overridePos || logoPosition;
+    const targetIncludeLogo = forceIncludeLogo !== undefined ? forceIncludeLogo : includeLogo;
     if (!selectedAssetUrl) {
       notifyError("Please select or generate a visual asset first.");
       return;
     }
 
     // Toggle off: If overlay is currently applied and user clicked remove without specifying position override
-    if (hasOverlay && !overridePos) {
+    if (hasOverlay && !overridePos && !targetIncludeLogo) {
       if (originalAssetUrl) {
         setSelectedAssetUrl(originalAssetUrl);
         if (carouselUrls.length > 1) {
@@ -2500,7 +2504,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         }
       };
 
-      if (includeLogo && activeLogoUrl) {
+      if (targetIncludeLogo && activeLogoUrl) {
         const logoImg = new Image();
         logoImg.onload = () => {
           ctx.save();
@@ -2585,7 +2589,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       const proxiedUrl = toProxiedUrl(sourceUrl);
       const img = await loadImage(proxiedUrl);
       // Patch logo loading to also go through proxy
-      const origLogoSrc = includeLogo && (postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '');
+      const origLogoSrc = targetIncludeLogo && (postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '');
       if (origLogoSrc) {
         (window as any).__proxiedLogoUrl = toProxiedUrl(origLogoSrc);
       }
@@ -2888,7 +2892,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 <span><strong>Matched from your media library:</strong> {matchRationale}</span>
               </div>
             )}
-            {recommendAiGen && (
+            {recommendAiGen && !selectedAssetUrl && (
               <div style={{ marginBottom: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid #f59e0b', padding: '12px 14px', borderRadius: '12px', fontSize: '12px', color: '#fbbf24', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>⚠️ No Matching Photo in Uploaded Library</span>
@@ -3365,7 +3369,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                           const isChecked = e.target.checked;
                           setIncludeLogo(isChecked);
                           if (isChecked) {
-                            handleApplyBrandOverlay();
+                            setLogoPosition('top-right');
+                            handleApplyBrandOverlay('top-right', true);
                           } else {
                             if (originalAssetUrl) {
                               setSelectedAssetUrl(originalAssetUrl);
@@ -3424,7 +3429,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                               const p = pos.id as any;
                               setLogoPosition(p);
                               if (hasOverlay) {
-                                handleApplyBrandOverlay(p);
+                                handleApplyBrandOverlay(p, true);
                               }
                             }}
                             style={{
