@@ -1769,7 +1769,7 @@ function MetaPostScheduler({
             transition: 'all 0.15s ease'
           }}
         >
-          Confirm Schedule
+          Confirm
         </button>
       </div>
     </div>
