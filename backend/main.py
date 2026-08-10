@@ -1012,6 +1012,10 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
     campaigns = db.query(Campaign).filter_by(tenant_id=tenant_id).order_by(Campaign.id.desc()).all()
     result = []
     for c in campaigns:
+        img_url = None
+        if c.visual_suggestion and (c.visual_suggestion.startswith('/') or c.visual_suggestion.startswith('http://') or c.visual_suggestion.startswith('https://')):
+            img_url = c.visual_suggestion
+            
         c_dict = {
             "id": c.id,
             "tenant_id": c.tenant_id,
@@ -1022,6 +1026,7 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
             "gender": c.gender,
             "generated_text": c.generated_text,
             "visual_suggestion": c.visual_suggestion,
+            "image_url": img_url,
             "tone": c.tone,
             "is_liked": c.is_liked,
             "status": c.status,
@@ -1121,9 +1126,17 @@ def delete_campaign(campaign_id: int, tenant_id: int = 1, db: Session = Depends(
 
 @app.get("/api/assets/raw/{filename}")
 def get_asset_file(filename: str):
+    # Try assets directory first
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         return FileResponse(file_path)
+        
+    # Fallback to uploads directory
+    uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+    fallback_path = os.path.join(uploads_dir, filename)
+    if os.path.exists(fallback_path):
+        return FileResponse(fallback_path)
+        
     raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/api/admin/logs")

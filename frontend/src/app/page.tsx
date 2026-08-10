@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { GoogleOAuthProvider, GoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "436151523456-testclientid.apps.googleusercontent.com";
 
@@ -40,9 +40,9 @@ function Stepper({ currentStep }: { currentStep: number }) {
         const isCompleted = currentStep > stepNum;
         return (
           <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
-            <div 
+            <div
               style={{
-                width: '32px', height: '32px', borderRadius: '50%', 
+                width: '32px', height: '32px', borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: isActive ? 'var(--primary-color)' : isCompleted ? 'var(--secondary-color)' : 'white',
                 border: (!isActive && !isCompleted) ? '2px solid #e2e8f0' : 'none',
@@ -54,7 +54,7 @@ function Stepper({ currentStep }: { currentStep: number }) {
             >
               {isCompleted ? '✓' : stepNum}
             </div>
-            <span style={{ 
+            <span style={{
               marginLeft: '8px', fontSize: '14px', fontWeight: isActive ? 600 : 500,
               color: isActive ? 'var(--text-color)' : '#94a3b8'
             }}>
@@ -71,6 +71,56 @@ function Stepper({ currentStep }: { currentStep: number }) {
 }
 
 function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
+  const handleCredential = async (credentialResponse: any) => {
+    console.log("Login Success:", credentialResponse);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${credentialResponse.credential}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Backend registered tenant successfully!", data);
+        const activeTId = data.tenant_id ? String(data.tenant_id) : '1';
+        localStorage.setItem("tenant_id", activeTId);
+        localStorage.setItem("user_logged_in", "true");
+
+        // Check if tenant already has brand profile setup
+        try {
+          const profRes = await fetch(`/api/onboarding/brand-profile?tenant_id=${activeTId}`);
+          if (profRes.ok) {
+            const profData = await profRes.json();
+            if (profData && profData.business_name) {
+              localStorage.setItem("onboarding_completed", "true");
+              onNext(true);
+              return;
+            }
+          }
+        } catch (pErr) {
+          console.error("Profile check error:", pErr);
+        }
+        onNext(false);
+      } else {
+        const errText = await res.text();
+        console.error("Backend auth failed:", errText);
+        notifyError("Failed to authenticate with backend: " + errText);
+      }
+    } catch (err) {
+      console.error("Network error connecting to backend", err);
+      onNext(false);
+    }
+  };
+
+  // Automatically show the One Tap floating prompt
+  useGoogleOneTapLogin({
+    onSuccess: handleCredential,
+    onError: () => console.log('One Tap login failed'),
+    cancel_on_tap_outside: false,
+  });
+
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '48px', textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
       <div style={{ marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -81,88 +131,50 @@ function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
         <p style={{ color: 'var(--text-light)', fontSize: '16px' }}>Grow your local business on autopilot.</p>
       </div>
 
-      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '32px' }}>Welcome Back</h2>
+      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Welcome Back</h2>
+      <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '32px' }}>
+        A Google sign-in prompt will appear on screen. If you don't see it, click the button below.
+      </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
-         <GoogleLogin
-            onSuccess={async credentialResponse => {
-              console.log("Login Success:", credentialResponse);
-              try {
-                const res = await fetch("/api/auth/login", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${credentialResponse.credential}`
-                  }
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  console.log("Backend registered tenant successfully!", data);
-                  const activeTId = data.tenant_id ? String(data.tenant_id) : '1';
-                  localStorage.setItem("tenant_id", activeTId);
-                  localStorage.setItem("user_logged_in", "true");
-                  
-                  // Check if tenant already has brand profile setup
-                  try {
-                    const profRes = await fetch(`/api/onboarding/brand-profile?tenant_id=${activeTId}`);
-                    if (profRes.ok) {
-                      const profData = await profRes.json();
-                      if (profData && profData.business_name) {
-                        localStorage.setItem("onboarding_completed", "true");
-                        onNext(true);
-                        return;
-                      }
-                    }
-                  } catch (pErr) {
-                    console.error("Profile check error:", pErr);
-                  }
-                  onNext(false);
-                } else {
-                  const errText = await res.text();
-                  console.error("Backend auth failed:", errText);
-                  notifyError("Failed to authenticate with backend: " + errText);
-                }
-              } catch (err) {
-                console.error("Network error connecting to backend", err);
-                onNext(false);
-              }
-            }}
-            onError={() => {
-              console.log('Login Failed. Check your Client ID configuration.');
-            }}
-            shape="pill"
-            size="large"
-            width="320"
-          />
-          {/* Demo bypass button for testing on live environments without a valid Google Client ID */}
-          <button 
-            onClick={() => onNext()} 
-            style={{ 
-              background: 'transparent', 
-              border: '1px dashed rgba(82, 183, 136, 0.3)', 
-              color: 'var(--text-light)', 
-              padding: '10px 20px', 
-              borderRadius: '24px', 
-              fontSize: '12px',
-              cursor: 'pointer',
-              marginTop: '16px',
-              transition: 'all 0.2s'
-            }}
-          >
-            Demo Mode (Bypass Google SSO) 
-          </button>
+        {/* Standard button as fallback if One Tap is dismissed */}
+        <GoogleLogin
+          onSuccess={handleCredential}
+          onError={() => console.log('Login Failed. Check your Client ID configuration.')}
+          shape="pill"
+          size="large"
+          width="320"
+          text="signin_with"
+        />
+        {/* Demo bypass button */}
+        <button
+          onClick={() => onNext()}
+          style={{
+            background: 'transparent',
+            border: '1px dashed rgba(82, 183, 136, 0.3)',
+            color: 'var(--text-light)',
+            padding: '10px 20px',
+            borderRadius: '24px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            marginTop: '8px',
+            transition: 'all 0.2s'
+          }}
+        >
+          Demo Mode (Bypass Google SSO)
+        </button>
       </div>
     </div>
   );
 }
 
 const INDIAN_CITIES = [
-  "Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur", 
-  "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", "Pimpri-Chinchwad", "Patna", 
-  "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Kalyan-Dombivli", 
-  "Vasai-Virar", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Navi Mumbai", "Allahabad", 
-  "Howrah", "Ranchi", "Gwalior", "Jabalpur", "Coimbatore", "Vijayawada", "Jodhpur", "Madurai", "Raipur", 
-  "Kota", "Chandigarh", "Guwahati", "Solapur", "Hubli-Dharwad", "Mysore", "Tiruchirappalli", "Bareilly", 
+  "Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur",
+  "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", "Pimpri-Chinchwad", "Patna",
+  "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Kalyan-Dombivli",
+  "Vasai-Virar", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Navi Mumbai", "Allahabad",
+  "Howrah", "Ranchi", "Gwalior", "Jabalpur", "Coimbatore", "Vijayawada", "Jodhpur", "Madurai", "Raipur",
+  "Kota", "Chandigarh", "Guwahati", "Solapur", "Hubli-Dharwad", "Mysore", "Tiruchirappalli", "Bareilly",
   "Aligarh", "Tiruppur", "Gurgaon", "Moradabad", "Jalandhar", "Bhubaneswar", "Salem", "Warangal", "Guntur",
   "Bhiwandi", "Saharanpur", "Gorakhpur", "Bikaner", "Amravati", "Noida", "Jamshedpur", "Bhilai", "Cuttack",
   "Firozabad", "Kochi", "Nellore", "Bhavnagar", "Dehradun", "Durgapur", "Asansol", "Rourkela", "Nanded",
@@ -217,7 +229,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       notifyError("Error uploading logo.");
     }
   };
-  
+
   // Scraper status
   const [isScraping, setIsScraping] = useState(false);
 
@@ -274,7 +286,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
   // Fetch saved profile on load
   useEffect(() => {
     fetchAssets();
-    
+
     const loadProfile = async () => {
       try {
         const savedTenantId = localStorage.getItem('tenant_id') || '1';
@@ -493,8 +505,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
       setLocationSuggestions([]);
       return;
     }
-    const matches = INDIAN_CITIES.filter(city => 
-      city.toLowerCase().includes(val.toLowerCase()) && 
+    const matches = INDIAN_CITIES.filter(city =>
+      city.toLowerCase().includes(val.toLowerCase()) &&
       !targetLocations.includes(city)
     ).slice(0, 5);
     setLocationSuggestions(matches);
@@ -514,7 +526,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-      
+
       {/* Sub-steps Header (only if not settings) */}
       {!isSettings ? (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', borderBottom: '1px solid rgba(82, 183, 136, 0.15)', paddingBottom: '20px' }}>
@@ -534,25 +546,25 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', borderBottom: '1px solid rgba(82, 183, 136, 0.15)', paddingBottom: '12px' }}>
-          <button 
+          <button
             type="button"
-            className={subStep === 1 ? "btn-primary" : "btn-secondary"} 
+            className={subStep === 1 ? "btn-primary" : "btn-secondary"}
             style={{ padding: '8px 16px', fontSize: '14px' }}
             onClick={() => setSubStep(1)}
           >
             🎨 Brand Identity
           </button>
-          <button 
+          <button
             type="button"
-            className={subStep === 2 ? "btn-primary" : "btn-secondary"} 
+            className={subStep === 2 ? "btn-primary" : "btn-secondary"}
             style={{ padding: '8px 16px', fontSize: '14px' }}
             onClick={() => setSubStep(2)}
           >
             🎯 Target & Tone
           </button>
-          <button 
+          <button
             type="button"
-            className={subStep === 3 ? "btn-primary" : "btn-secondary"} 
+            className={subStep === 3 ? "btn-primary" : "btn-secondary"}
             style={{ padding: '8px 16px', fontSize: '14px' }}
             onClick={() => setSubStep(3)}
           >
@@ -569,16 +581,16 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>🔗 Import Brand Details (Optional)</label>
             <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>Enter your website URL, Facebook page, or Instagram link to auto-fill details using AI.</p>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <input 
-                className="input-field" 
-                placeholder="e.g. https://mybusiness.com" 
-                value={brandUrl} 
-                onChange={(e) => setBrandUrl(e.target.value)} 
+              <input
+                className="input-field"
+                placeholder="e.g. https://mybusiness.com"
+                value={brandUrl}
+                onChange={(e) => setBrandUrl(e.target.value)}
                 style={{ flex: 1 }}
               />
-              <button 
-                type="button" 
-                className="btn-secondary" 
+              <button
+                type="button"
+                className="btn-secondary"
                 style={{ whiteSpace: 'nowrap', padding: '12px 20px' }}
                 onClick={handleScrape}
                 disabled={isScraping}
@@ -615,10 +627,10 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             </div>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Business Tagline / Description</span>
-              <textarea 
-                className="input-field" 
-                placeholder="Describe what you sell or stand for..." 
-                value={businessDescription} 
+              <textarea
+                className="input-field"
+                placeholder="Describe what you sell or stand for..."
+                value={businessDescription}
                 onChange={(e) => setBusinessDescription(e.target.value)}
                 style={{ minHeight: '42px', resize: 'vertical', fontFamily: 'inherit' }}
               />
@@ -635,16 +647,16 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
               {brandLogoUrl && (
                 <img src={brandLogoUrl} alt="Brand Logo Preview" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'contain', background: '#ffffff', padding: '4px', border: '1.5px solid var(--primary-color)' }} />
               )}
-              <input 
-                type="file" 
-                ref={logoFileInputRef} 
-                accept="image/*" 
-                style={{ display: 'none' }} 
-                onChange={handleLogoFileUpload} 
+              <input
+                type="file"
+                ref={logoFileInputRef}
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleLogoFileUpload}
               />
-              <button 
-                type="button" 
-                className="btn-secondary" 
+              <button
+                type="button"
+                className="btn-secondary"
                 style={{ fontSize: '13px', padding: '8px 16px' }}
                 onClick={() => logoFileInputRef.current?.click()}
               >
@@ -656,7 +668,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           {/* Brand Colors */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '24px', marginBottom: '16px' }}>
             <span style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '12px' }}>🎨 Select Brand Theme</span>
-            
+
             {/* Color Presets */}
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
               {COLOR_PALETTES.map((palette) => (
@@ -692,31 +704,31 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             <div style={{ display: 'flex', gap: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Primary:</span>
-                <input 
-                  type="color" 
-                  value={brandColorPrimary} 
-                  onChange={(e) => setBrandColorPrimary(e.target.value)} 
+                <input
+                  type="color"
+                  value={brandColorPrimary}
+                  onChange={(e) => setBrandColorPrimary(e.target.value)}
                   style={{ width: '36px', height: '36px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
                 />
-                <input 
-                  type="text" 
-                  value={brandColorPrimary} 
-                  onChange={(e) => setBrandColorPrimary(e.target.value)} 
+                <input
+                  type="text"
+                  value={brandColorPrimary}
+                  onChange={(e) => setBrandColorPrimary(e.target.value)}
                   style={{ width: '80px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '6px', borderRadius: '6px', color: '#fff', fontSize: '12px', textAlign: 'center' }}
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Secondary:</span>
-                <input 
-                  type="color" 
-                  value={brandColorSecondary} 
-                  onChange={(e) => setBrandColorSecondary(e.target.value)} 
+                <input
+                  type="color"
+                  value={brandColorSecondary}
+                  onChange={(e) => setBrandColorSecondary(e.target.value)}
                   style={{ width: '36px', height: '36px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
                 />
-                <input 
-                  type="text" 
-                  value={brandColorSecondary} 
-                  onChange={(e) => setBrandColorSecondary(e.target.value)} 
+                <input
+                  type="text"
+                  value={brandColorSecondary}
+                  onChange={(e) => setBrandColorSecondary(e.target.value)}
                   style={{ width: '80px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '6px', borderRadius: '6px', color: '#fff', fontSize: '12px', textAlign: 'center' }}
                 />
               </div>
@@ -732,28 +744,28 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           <div style={{ marginBottom: '28px' }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>🎯 Target Locations</label>
             <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>Where is your business located or where are your customers? This refines localization in copy.</p>
-            
+
             {/* Visual Tags */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
               {targetLocations.map((city) => (
-                <span 
-                  key={city} 
-                  style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '6px', 
-                    background: 'var(--accent-purple)', 
-                    border: '1px solid rgba(82, 183, 136, 0.25)', 
-                    borderRadius: '8px', 
-                    padding: '6px 12px', 
-                    fontSize: '13px', 
-                    fontWeight: 500 
+                <span
+                  key={city}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--accent-purple)',
+                    border: '1px solid rgba(82, 183, 136, 0.25)',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    fontWeight: 500
                   }}
                 >
                   📍 {city}
-                  <button 
+                  <button
                     type="button"
-                    onClick={() => removeLocation(city)} 
+                    onClick={() => removeLocation(city)}
                     style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
                   >
                     ×
@@ -767,17 +779,17 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
             {/* Input with Autocomplete */}
             <div style={{ position: 'relative' }}>
-              <input 
-                className="input-field" 
-                placeholder="Search and add cities (e.g. Mumbai, Delhi, Bengaluru)..." 
-                value={locationSearch} 
-                onChange={(e) => handleLocationSearch(e.target.value)} 
+              <input
+                className="input-field"
+                placeholder="Search and add cities (e.g. Mumbai, Delhi, Bengaluru)..."
+                value={locationSearch}
+                onChange={(e) => handleLocationSearch(e.target.value)}
               />
               {locationSuggestions.length > 0 && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', marginTop: '4px', zIndex: 10, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
                   {locationSuggestions.map((city) => (
-                    <div 
-                      key={city} 
+                    <div
+                      key={city}
                       onClick={() => addLocation(city)}
                       style={{ padding: '10px 16px', cursor: 'pointer', transition: 'background 0.2s', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(82, 183, 136, 0.1)'}
@@ -824,24 +836,24 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             <div>
               <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Target Age Range ({targetAgeMin} - {targetAgeMax})</span>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input 
-                  type="number" 
-                  className="input-field" 
-                  min="13" 
-                  max="100" 
-                  value={targetAgeMin} 
-                  onChange={(e) => setTargetAgeMin(Number(e.target.value))} 
-                  style={{ width: '80px', textAlign: 'center' }} 
+                <input
+                  type="number"
+                  className="input-field"
+                  min="13"
+                  max="100"
+                  value={targetAgeMin}
+                  onChange={(e) => setTargetAgeMin(Number(e.target.value))}
+                  style={{ width: '80px', textAlign: 'center' }}
                 />
                 <span style={{ color: 'var(--text-light)' }}>to</span>
-                <input 
-                  type="number" 
-                  className="input-field" 
-                  min="13" 
-                  max="100" 
-                  value={targetAgeMax} 
-                  onChange={(e) => setTargetAgeMax(Number(e.target.value))} 
-                  style={{ width: '80px', textAlign: 'center' }} 
+                <input
+                  type="number"
+                  className="input-field"
+                  min="13"
+                  max="100"
+                  value={targetAgeMax}
+                  onChange={(e) => setTargetAgeMax(Number(e.target.value))}
+                  style={{ width: '80px', textAlign: 'center' }}
                 />
               </div>
             </div>
@@ -890,29 +902,29 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
         <div className="fade-in-up">
           <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>📸 Ingest Business Media Assets</label>
           <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '20px' }}>Upload brand photos or early product videos. The campaign scheduler utilizes these assets when publishing.</p>
-          
+
           {/* Hidden File Input */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            multiple 
-            onChange={handleFileChange} 
-            style={{ display: 'none' }} 
-            accept="image/*,video/*" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            multiple
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            accept="image/*,video/*"
           />
-          
-          <div 
+
+          <div
             onClick={() => fileInputRef.current?.click()}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onDrop={handleDrop}
-            style={{ 
-              border: `2px dashed ${dragActive ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.25)'}`, 
-              borderRadius: '16px', 
-              padding: '36px', 
-              textAlign: 'center', 
-              background: dragActive ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
+            style={{
+              border: `2px dashed ${dragActive ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.25)'}`,
+              borderRadius: '16px',
+              padding: '36px',
+              textAlign: 'center',
+              background: dragActive ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               transform: dragActive ? 'scale(1.01)' : 'scale(1)'
@@ -925,9 +937,9 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '16px' }}>
               Supports JPG, PNG, MP4 up to 50MB.
             </p>
-            <button 
-              type="button" 
-              className="btn-secondary" 
+            <button
+              type="button"
+              className="btn-secondary"
               style={{ padding: '8px 16px', fontSize: '14px' }}
               disabled={isUploading}
               onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
@@ -944,8 +956,8 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '16px' }}>
                 {assets.map((asset, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     draggable={true}
                     onDragStart={(e) => {
                       if (e.dataTransfer) {
@@ -955,11 +967,11 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
                         e.dataTransfer.setData('URL', asset.url);
                       }
                     }}
-                    style={{ 
-                      position: 'relative', 
-                      aspectRatio: '1', 
-                      borderRadius: '10px', 
-                      overflow: 'hidden', 
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '1',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
                       border: '1px solid rgba(255,255,255,0.08)',
                       boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
                       cursor: 'grab'
@@ -1008,7 +1020,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
 
       {/* Nav Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '28px', marginTop: '32px' }}>
-        
+
         {/* Back Button */}
         {isSettings ? (
           <div /> // placeholder
@@ -1028,9 +1040,9 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
             <button type="button" className="btn-primary" onClick={() => handleSave(false)}>Save Settings</button>
           ) : (
             subStep < 3 ? (
-              <button 
-                type="button" 
-                className="btn-primary" 
+              <button
+                type="button"
+                className="btn-primary"
                 onClick={() => {
                   handleSave(false);
                   setSubStep(subStep + 1);
@@ -1063,33 +1075,33 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   useEffect(() => {
     const appId = process.env.NEXT_PUBLIC_META_APP_ID;
     console.log("Next.js injected App ID:", appId);
-    
+
     if (appId) {
       // Setup the initialization callback
-      (window as any).fbAsyncInit = function() {
+      (window as any).fbAsyncInit = function () {
         console.log("FB SDK executing fbAsyncInit");
         (window as any).FB.init({
-          appId      : appId,
-          cookie     : true,
-          xfbml      : true,
-          version    : 'v19.0'
+          appId: appId,
+          cookie: true,
+          xfbml: true,
+          version: 'v19.0'
         });
       };
-      
+
       // In case the script loaded BEFORE this component mounted
       if ((window as any).FB && !(window as any).FB._initialized) {
-         console.log("FB already loaded, calling init manually");
-         (window as any).FB.init({
-          appId      : appId,
-          cookie     : true,
-          xfbml      : true,
-          version    : 'v19.0'
+        console.log("FB already loaded, calling init manually");
+        (window as any).FB.init({
+          appId: appId,
+          cookie: true,
+          xfbml: true,
+          version: 'v19.0'
         });
       }
     } else {
       console.warn("Facebook SDK Initialization Skipped: NEXT_PUBLIC_META_APP_ID is missing from .env.local");
       // Define a dummy fbAsyncInit so the FB script doesn't crash when it runs
-      (window as any).fbAsyncInit = function() {}; 
+      (window as any).fbAsyncInit = function () { };
     }
 
     // Load SDK asynchronously
@@ -1105,7 +1117,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       if (fjs && fjs.parentNode) fjs.parentNode.insertBefore(js, fjs);
     })(document, "script", "facebook-jssdk");
   }, []);
-  
+
   useEffect(() => {
     const checkConnection = async () => {
       try {
@@ -1145,7 +1157,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       scope: "public_profile,pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish",
       auth_type: 'rerequest'
     };
-    
+
     if (process.env.NEXT_PUBLIC_META_CONFIG_ID) {
       loginOptions.config_id = process.env.NEXT_PUBLIC_META_CONFIG_ID;
     }
@@ -1159,9 +1171,9 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
               try {
                 const pagesRes = await fetch(`/api/meta/pages?user_access_token=${response.authResponse.accessToken}`);
                 if (!pagesRes.ok) throw new Error("Failed to fetch pages");
-                
+
                 const pagesData = await pagesRes.json();
-                
+
                 if (pagesData.data && pagesData.data.length > 0) {
                   setFbPages(pagesData.data);
                   setSelectedPageId(pagesData.data[0].id);
@@ -1203,7 +1215,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenant_id: parseInt(savedTenantId, 10), 
+          tenant_id: parseInt(savedTenantId, 10),
           page_id: selectedPage.id,
           page_name: selectedPage.name,
           access_token: selectedPage.access_token
@@ -1251,14 +1263,14 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
     <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
       <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Connect Platforms</h2>
       <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>Link your social accounts to publish AI campaigns directly.</p>
-      
+
       {showPageSelector && (
         <div style={{ marginBottom: '40px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Select Facebook Page</h3>
           <p style={{ color: 'var(--text-light)', marginBottom: '16px', fontSize: '14px' }}>Choose which Facebook Page you want to connect to DigiM app.</p>
-          <select 
-            className="input-field" 
-            value={selectedPageId} 
+          <select
+            className="input-field"
+            value={selectedPageId}
             onChange={(e) => setSelectedPageId(e.target.value)}
             style={{ marginBottom: '16px' }}
           >
@@ -1272,13 +1284,13 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           </div>
         </div>
       )}
-       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
         {/* Facebook Page Connection */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          padding: '24px', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '24px',
           borderRadius: '16px',
           transition: 'all 0.3s',
           background: isFbConnected ? 'rgba(82, 183, 136, 0.05)' : 'rgba(255, 255, 255, 0.02)',
@@ -1305,7 +1317,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
                   try {
                     const savedTenantId = localStorage.getItem('tenant_id') || '1';
                     await fetch(`/api/meta/disconnect?tenant_id=${savedTenantId}&platform=facebook`, { method: 'POST' });
-                  } catch(e) { console.error(e); }
+                  } catch (e) { console.error(e); }
                   setIsFbConnected(false);
                   setFbPageName('');
                   setIsIgConnected(false);
@@ -1315,7 +1327,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
                 Disconnect
               </button>
             )}
-            <button 
+            <button
               className="btn-secondary"
               onClick={() => {
                 setIsFbConnected(false);
@@ -1330,15 +1342,15 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         </div>
 
         {/* Instagram Connection */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          padding: '24px', 
-          background: isIgConnected ? 'rgba(82, 183, 136, 0.05)' : 'rgba(255, 255, 255, 0.02)', 
-          border: isIgConnected ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)', 
-          borderRadius: '16px', 
-          transition: 'all 0.3s' 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '24px',
+          background: isIgConnected ? 'rgba(82, 183, 136, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+          border: isIgConnected ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+          borderRadius: '16px',
+          transition: 'all 0.3s'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '48px', height: '48px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px' }}>in</div>
@@ -1357,7 +1369,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
                   try {
                     const savedTenantId = localStorage.getItem('tenant_id') || '1';
                     await fetch(`/api/meta/disconnect?tenant_id=${savedTenantId}&platform=instagram`, { method: 'POST' });
-                  } catch(e) { console.error(e); }
+                  } catch (e) { console.error(e); }
                   setIsIgConnected(false);
                 }}
                 style={{ padding: '10px 14px', fontSize: '13px', color: '#ef4444', borderColor: '#ef4444', background: 'rgba(239,68,68,0.07)' }}
@@ -1365,16 +1377,16 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
                 Disconnect
               </button>
             )}
-            <button 
-              className="btn-secondary" 
-              style={{ 
-                padding: '10px 20px', fontSize: '14px', 
+            <button
+              className="btn-secondary"
+              style={{
+                padding: '10px 20px', fontSize: '14px',
                 opacity: (isFbConnected || isIgConnected) ? 1 : 0.5,
                 background: isIgConnected ? 'rgba(82, 183, 136, 0.1)' : 'transparent',
                 color: isIgConnected ? 'var(--primary-color)' : 'var(--text-color)',
                 borderColor: isIgConnected ? 'var(--primary-color)' : 'rgba(82, 183, 136, 0.2)',
                 cursor: (isFbConnected || isIgConnected) ? 'pointer' : 'not-allowed'
-              }} 
+              }}
               disabled={!isFbConnected || isIgConnected || isConnectingIg}
               onClick={connectInstagram}
             >
@@ -1416,14 +1428,14 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   );
 }
 
-function MetaPostScheduler({ 
-  onSchedule, 
-  onCancel, 
-  initialValue 
-}: { 
-  onSchedule: (isoString: string) => void; 
-  onCancel?: () => void; 
-  initialValue?: string; 
+function MetaPostScheduler({
+  onSchedule,
+  onCancel,
+  initialValue
+}: {
+  onSchedule: (isoString: string) => void;
+  onCancel?: () => void;
+  initialValue?: string;
 }) {
   const now = new Date();
   const defaultDt = initialValue ? new Date(initialValue) : new Date(now.getTime() + 24 * 3600 * 1000);
@@ -1519,7 +1531,7 @@ function MetaPostScheduler({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         {/* Date Box */}
-        <div 
+        <div
           onClick={() => setActivePicker(activePicker === 'date' ? null : 'date')}
           style={{
             background: 'rgba(255, 255, 255, 0.04)',
@@ -1541,7 +1553,7 @@ function MetaPostScheduler({
         </div>
 
         {/* Time Box */}
-        <div 
+        <div
           onClick={() => setActivePicker(activePicker === 'time' ? null : 'time')}
           style={{
             background: 'rgba(255, 255, 255, 0.04)',
@@ -1575,8 +1587,8 @@ function MetaPostScheduler({
           animation: 'fadeIn 0.15s ease-out'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handlePrevMonth}
               style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', borderRadius: '6px', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}
             >
@@ -1585,8 +1597,8 @@ function MetaPostScheduler({
             <span style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>
               {monthNamesFull[calMonth]} {calYear}
             </span>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handleNextMonth}
               style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', borderRadius: '6px', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}
             >
@@ -1696,8 +1708,8 @@ function MetaPostScheduler({
               </div>
             </div>
           </div>
-          
-          <button 
+
+          <button
             type="button"
             onClick={() => setActivePicker(null)}
             style={{ marginTop: '14px', width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#ffffff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
@@ -1779,13 +1791,13 @@ function SocialFeedPreviewModal({
       <div style={{ background: '#18191a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', width: '100%', maxWidth: '520px', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '10px' }}>
-            <button 
+            <button
               onClick={() => setPlatform('facebook')}
               style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: platform === 'facebook' ? '#1877f2' : 'transparent', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               📘 Facebook Feed
             </button>
-            <button 
+            <button
               onClick={() => setPlatform('instagram')}
               style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: platform === 'instagram' ? 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)' : 'transparent', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
@@ -1878,7 +1890,7 @@ function ScheduledPostInspectorModal({
   const [isDeleting, setIsDeleting] = useState(false);
   if (!campaign) return null;
 
-  const dateStr = campaign.scheduled_time 
+  const dateStr = campaign.scheduled_time
     ? new Date(campaign.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
     : 'Draft / Unscheduled';
 
@@ -1920,9 +1932,9 @@ function ScheduledPostInspectorModal({
         <div style={{ padding: '20px' }}>
           {/* Draft Post Card Preview */}
           <div style={{ background: '#242526', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', color: '#e4e6eb', marginBottom: '20px' }}>
-            {campaign.image_url ? (
+            {(campaign.image_url || (campaign.visual_suggestion && (campaign.visual_suggestion.startsWith('/') || campaign.visual_suggestion.startsWith('http')))) ? (
               <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={campaign.image_url} alt="Scheduled post visual" style={{ width: '100%', maxHeight: '340px', objectFit: 'contain' }} />
+                <img src={campaign.image_url || campaign.visual_suggestion} alt="Scheduled post visual" style={{ width: '100%', maxHeight: '340px', objectFit: 'contain' }} />
               </div>
             ) : (
               <div style={{ height: '180px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0b3b8' }}>
@@ -2000,7 +2012,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [isPublishing, setIsPublishing] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [aiManaged, setAiManaged] = useState(true);
-  
+
   const [freq, setFreq] = useState('3 times a week');
   const [minAge, setMinAge] = useState(18);
   const [maxAge, setMaxAge] = useState(35);
@@ -2021,7 +2033,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [visualSuggestion, setVisualSuggestion] = useState('');
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
+
   const [selectedAssetUrl, setSelectedAssetUrl] = useState<string | null>(null);
   const [originalAssetUrl, setOriginalAssetUrl] = useState<string | null>(null);
   const [hasOverlay, setHasOverlay] = useState(false);
@@ -2064,7 +2076,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         console.error("Failed to fetch WhatsApp status", err);
       }
     };
-    
+
     const fetchCalendarEvents = async () => {
       try {
         const response = await fetch('/api/calendar/events');
@@ -2153,7 +2165,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       setCampaignId(initialCampaign.id || null);
       setGeneratedText(initialCampaign.generated_text || '');
       setVisualSuggestion(initialCampaign.visual_suggestion || '');
-      setSelectedAssetUrl(initialCampaign.image_url || null);
+      const hasVisualUrl = initialCampaign.visual_suggestion && (initialCampaign.visual_suggestion.startsWith('/') || initialCampaign.visual_suggestion.startsWith('http'));
+      setSelectedAssetUrl(initialCampaign.image_url || (hasVisualUrl ? initialCampaign.visual_suggestion : null));
       setIsLiked(initialCampaign.is_liked || false);
       if (initialCampaign.generated_text) {
         setGenerated(true);
@@ -2241,7 +2254,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     let bizName = "";
     let phone = "";
     let ind = "Clothing & Apparel";
-    
+
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('businessProfile');
       if (saved) {
@@ -2250,7 +2263,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           if (parsed.businessName) bizName = parsed.businessName;
           if (parsed.phoneNumber) phone = parsed.phoneNumber;
           if (parsed.industry) ind = parsed.industry;
-        } catch(e) {}
+        } catch (e) { }
       }
     }
 
@@ -2346,7 +2359,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       const res = await fetch('/api/campaign/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt: visualSuggestion,
           num_images: countToGen,
           format_type: formatType
@@ -2432,7 +2445,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       notifyError("Brand overlay can only be applied to static image assets.");
       return;
     }
-    
+
     let primaryColor = "#52b788";
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('businessProfile');
@@ -2440,7 +2453,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         try {
           const parsed = JSON.parse(saved);
           if (parsed.brandColorPrimary) primaryColor = parsed.brandColorPrimary;
-        } catch(e) {}
+        } catch (e) { }
       }
     }
 
@@ -2448,7 +2461,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) { notifyError("Canvas 2D context not supported."); return; }
-      
+
       const cw = imageElement.naturalWidth || 1080;
       const ch = imageElement.naturalHeight || 1080;
       canvas.width = cw;
@@ -2680,7 +2693,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: generatedText, 
+          message: generatedText,
           image_url: selectedAssetUrl || null,
           publish_to_instagram: publishToIg,
           tenant_id: parseInt(savedTenantId, 10),
@@ -2698,7 +2711,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           let targetPlatforms = publishToIg ? "Facebook & Instagram" : "Facebook";
           notifySuccess(`Published successfully to ${targetPlatforms}! ✨`);
         }
-        
+
         if (onClearEdit) onClearEdit();
       } else {
         const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
@@ -2724,9 +2737,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           </p>
         </div>
         {campaignId && (
-          <button 
+          <button
             type="button"
-            className="btn-secondary" 
+            className="btn-secondary"
             style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '13px' }}
             onClick={() => {
               setCampaignId(null);
@@ -2744,14 +2757,14 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           </button>
         )}
       </div>
-      
+
       <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
         {/* Left Column: Controls */}
         <div style={{ flex: '1 1 420px', minWidth: '300px', boxSizing: 'border-box' }}>
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Campaign Goal & Prompt</label>
             <textarea className="input-field" placeholder="e.g., Promote our new summer silk collection..." rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)}></textarea>
-            
+
             {/* Quick Templates */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', width: '100%', fontWeight: 500 }}>
@@ -2854,7 +2867,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
-            
+
             {/* AI Smart Match Rationale & Recommendation Banners */}
             {matchRationale && !recommendAiGen && (
               <div style={{ marginBottom: '12px', background: 'rgba(82, 183, 136, 0.12)', border: '1px solid var(--primary-color)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', color: 'var(--primary-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2892,7 +2905,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 </button>
               </div>
             )}
-            <div 
+            <div
               onDragEnter={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2920,7 +2933,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 e.preventDefault();
                 e.stopPropagation();
                 setIsDraggingOverAssetZone(false);
-                
+
                 // 1. Check for files dropped directly from local computer (Finder / Explorer)
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                   const file = e.dataTransfer.files[0];
@@ -2948,19 +2961,19 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 }
 
                 // 2. Check for dragged asset URLs (from internal tray or web)
-                const draggedUrl = e.dataTransfer.getData('text/plain') || 
-                                   e.dataTransfer.getData('text/uri-list') || 
-                                   e.dataTransfer.getData('URL');
+                const draggedUrl = e.dataTransfer.getData('text/plain') ||
+                  e.dataTransfer.getData('text/uri-list') ||
+                  e.dataTransfer.getData('URL');
                 if (draggedUrl) {
                   setSelectedAssetUrl(draggedUrl);
                   notifySuccess("Asset selected!");
                   return;
                 }
               }}
-              style={{ 
-                padding: '16px', 
-                border: isDraggingOverAssetZone ? '2px dashed var(--primary-color)' : '1px dashed rgba(82, 183, 136, 0.25)', 
-                borderRadius: '12px', 
+              style={{
+                padding: '16px',
+                border: isDraggingOverAssetZone ? '2px dashed var(--primary-color)' : '1px dashed rgba(82, 183, 136, 0.25)',
+                borderRadius: '12px',
                 background: isDraggingOverAssetZone ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)',
                 display: 'flex',
                 alignItems: 'center',
@@ -2983,20 +2996,20 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   <div style={{ flexGrow: 1 }}>
                     <div style={{ fontSize: '13px', color: 'var(--primary-color)', fontWeight: 600 }}>Asset Selected</div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                      <button 
+                      <button
                         onClick={handleDownload}
                         style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
                       >
                         Download
                       </button>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowAssetPicker(true)}
                         style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
                       >
                         Change
                       </button>
-                      <button 
+                      <button
                         onClick={() => setSelectedAssetUrl(null)}
                         style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
                       >
@@ -3007,7 +3020,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 </>
               ) : (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', padding: '8px 0' }}>
-                  <div 
+                  <div
                     onClick={() => dashboardFileInputRef.current?.click()}
                     style={{ cursor: 'pointer', fontSize: '13px', color: 'var(--text-light)', fontWeight: 500 }}
                   >
@@ -3026,7 +3039,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
               )}
             </div>
             <input type="file" ref={dashboardFileInputRef} onChange={handleDashboardFileUpload} style={{ display: 'none' }} accept="image/*,video/*" />
-            
+
             {/* Quick Assets Tray */}
             {libraryAssets.length > 0 && (
               <div style={{ marginTop: '12px' }}>
@@ -3035,7 +3048,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 </span>
                 <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin' }}>
                   {libraryAssets.map((asset) => (
-                    <div 
+                    <div
                       key={asset.id}
                       draggable={true}
                       onDragStart={(e) => {
@@ -3047,13 +3060,13 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                         }
                       }}
                       onClick={() => setSelectedAssetUrl(asset.url)}
-                      style={{ 
-                        width: '60px', 
-                        height: '60px', 
-                        borderRadius: '8px', 
-                        overflow: 'hidden', 
-                        border: selectedAssetUrl === asset.url ? '2.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)', 
-                        cursor: 'grab', 
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: selectedAssetUrl === asset.url ? '2.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+                        cursor: 'grab',
                         flexShrink: 0,
                         position: 'relative',
                         transition: 'all 0.2s ease'
@@ -3074,7 +3087,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
-              <input type="checkbox" checked={aiManaged} onChange={(e) => setAiManaged(e.target.checked)} /> 
+              <input type="checkbox" checked={aiManaged} onChange={(e) => setAiManaged(e.target.checked)} />
               Fully AI-Managed Posting
             </label>
           </div>
@@ -3097,40 +3110,40 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Target Audience</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
-                 <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Gender</span>
-                 <select className="input-field" value={gender} onChange={(e) => setGender(e.target.value)}>
-                   <option>All</option>
-                   <option>Female</option>
-                   <option>Male</option>
-                 </select>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Gender</span>
+                <select className="input-field" value={gender} onChange={(e) => setGender(e.target.value)}>
+                  <option>All</option>
+                  <option>Female</option>
+                  <option>Male</option>
+                </select>
               </div>
               <div>
-                 <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Range</span>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                   <input 
-                     type="number" 
-                     className="input-field" 
-                     style={{ padding: '8px', width: '70px' }}
-                     value={minAge} 
-                     onChange={(e) => setMinAge(Math.max(13, parseInt(e.target.value) || 13))}
-                   />
-                   <span style={{ color: 'var(--text-light)', fontSize: '14px' }}>to</span>
-                   <input 
-                     type="number" 
-                     className="input-field" 
-                     style={{ padding: '8px', width: '70px' }}
-                     value={maxAge} 
-                     onChange={(e) => setMaxAge(Math.min(100, parseInt(e.target.value) || 100))}
-                   />
-                   <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>years</span>
-                 </div>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Range</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    className="input-field"
+                    style={{ padding: '8px', width: '70px' }}
+                    value={minAge}
+                    onChange={(e) => setMinAge(Math.max(13, parseInt(e.target.value) || 13))}
+                  />
+                  <span style={{ color: 'var(--text-light)', fontSize: '14px' }}>to</span>
+                  <input
+                    type="number"
+                    className="input-field"
+                    style={{ padding: '8px', width: '70px' }}
+                    value={maxAge}
+                    onChange={(e) => setMaxAge(Math.min(100, parseInt(e.target.value) || 100))}
+                  />
+                  <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>years</span>
+                </div>
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               style={{ flex: 1, padding: '16px', fontSize: '16px', opacity: isGenerating ? 0.7 : 1 }}
               onClick={() => handleGenerate()}
               disabled={isGenerating}
@@ -3159,702 +3172,702 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
               overflow: 'hidden',
               position: 'relative'
             }}>
-                {selectedAssetUrl ? (
-                  <>
-                    {selectedAssetUrl.endsWith('.mp4') ? (
-                      <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} autoPlay loop muted />
-                    ) : (
-                      <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: formatType === 'carousel' ? 'contain' : imageFit }} />
-                    )}
-                    
-                    {/* Size and Zoom Control buttons on top */}
-                    {!selectedAssetUrl.endsWith('.mp4') && (
-                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 6 }}>
-                        <button 
-                          type="button"
-                          onClick={() => setImageFit(prev => prev === 'cover' ? 'contain' : 'cover')}
-                          style={{
-                            background: 'rgba(12, 20, 16, 0.8)', color: 'white',
-                            border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
-                            padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
-                          }}
-                          title="Toggle between Crop (Cover) and Full image (Contain)"
-                        >
-                          {imageFit === 'cover' ? '🖼️ Fit Image' : '🖼️ Crop Fill'}
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setShowLightbox(true)}
-                          style={{
-                            background: 'rgba(12, 20, 16, 0.8)', color: 'white',
-                            border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
-                            padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
-                          }}
-                          title="View entire image in full screen"
-                        >
-                          🔍 View Full
-                        </button>
-                      </div>
-                    )}
+              {selectedAssetUrl ? (
+                <>
+                  {selectedAssetUrl.endsWith('.mp4') ? (
+                    <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} autoPlay loop muted />
+                  ) : (
+                    <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: formatType === 'carousel' ? 'contain' : imageFit }} />
+                  )}
 
-                    {/* Overlay: Regenerate + Download */}
-                    <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', gap: '8px', zIndex: 5 }}>
+                  {/* Size and Zoom Control buttons on top */}
+                  {!selectedAssetUrl.endsWith('.mp4') && (
+                    <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 6 }}>
                       <button
-                        onClick={handleGenerateAiImage}
-                        disabled={isGeneratingImage}
-                        title="Regenerate with current prompt"
+                        type="button"
+                        onClick={() => setImageFit(prev => prev === 'cover' ? 'contain' : 'cover')}
                         style={{
-                          background: 'rgba(99, 102, 241, 0.85)',
-                          color: 'white',
-                          padding: '6px 12px',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          backdropFilter: 'blur(4px)',
-                          cursor: isGeneratingImage ? 'not-allowed' : 'pointer',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                          transition: 'all 0.2s ease',
+                          background: 'rgba(12, 20, 16, 0.8)', color: 'white',
+                          border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
+                          padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
                         }}
+                        title="Toggle between Crop (Cover) and Full image (Contain)"
                       >
-                        🔄 Regenerate
+                        {imageFit === 'cover' ? '🖼️ Fit Image' : '🖼️ Crop Fill'}
                       </button>
-                      <button 
-                        onClick={handleDownload}
+                      <button
+                        type="button"
+                        onClick={() => setShowLightbox(true)}
                         style={{
-                          background: 'rgba(15, 23, 42, 0.75)',
-                          color: 'white',
-                          padding: '6px 12px',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          backdropFilter: 'blur(4px)',
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                          transition: 'all 0.2s ease',
+                          background: 'rgba(12, 20, 16, 0.8)', color: 'white',
+                          border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
+                          padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
                         }}
+                        title="View entire image in full screen"
                       >
-                        ⬇️ Download
+                        🔍 View Full
                       </button>
                     </div>
-                  </>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <div style={{ fontSize: '40px', marginBottom: '8px' }}>🖼️</div>
-                    <div style={{ color: 'var(--text-light)', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>No image yet</div>
-                    <div style={{ color: 'var(--text-light)', opacity: 0.6, fontSize: '12px' }}>Edit the prompt below and click Generate</div>
-                  </div>
-                )}
-                {isGeneratingImage && (
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(12, 20, 16, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, gap: '10px' }}>
-                    <div style={{ fontSize: '28px' }}>🎨</div>
-                    <div style={{ fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>AI is creating your visual...</div>
-                  </div>
-                )}
-              </div>
+                  )}
 
-              {/* Multi-Image Carousel Selector Strip */}
-              {carouselUrls.length > 1 && (
-                <div style={{ marginBottom: '14px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                      📱 Multi-Slide Carousel ({carouselUrls.length} Slides)
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
-                      Slide {activeCarouselIndex + 1} of {carouselUrls.length}
-                    </span>
+                  {/* Overlay: Regenerate + Download */}
+                  <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', gap: '8px', zIndex: 5 }}>
+                    <button
+                      onClick={handleGenerateAiImage}
+                      disabled={isGeneratingImage}
+                      title="Regenerate with current prompt"
+                      style={{
+                        background: 'rgba(99, 102, 241, 0.85)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        backdropFilter: 'blur(4px)',
+                        cursor: isGeneratingImage ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      🔄 Regenerate
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        backdropFilter: 'blur(4px)',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      ⬇️ Download
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
-                    {carouselUrls.map((url, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          setSelectedAssetUrl(url);
-                          setActiveCarouselIndex(idx);
-                        }}
-                        style={{
-                          width: '64px',
-                          height: '64px',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: activeCarouselIndex === idx ? '2.5px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.15)',
-                          cursor: 'pointer',
-                          flexShrink: 0,
-                          opacity: activeCarouselIndex === idx ? 1 : 0.6,
-                          transition: 'all 0.2s ease',
-                          position: 'relative'
-                        }}
-                      >
-                        <img src={url} alt={`Slide ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <span style={{ position: 'absolute', bottom: '2px', right: '4px', fontSize: '9px', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                          #{idx + 1}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '8px' }}>🖼️</div>
+                  <div style={{ color: 'var(--text-light)', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>No image yet</div>
+                  <div style={{ color: 'var(--text-light)', opacity: 0.6, fontSize: '12px' }}>Edit the prompt below and click Generate</div>
                 </div>
               )}
+              {isGeneratingImage && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(12, 20, 16, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, gap: '10px' }}>
+                  <div style={{ fontSize: '28px' }}>🎨</div>
+                  <div style={{ fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>AI is creating your visual...</div>
+                </div>
+              )}
+            </div>
 
-              {/* Image Actions: Generate / Regenerate + optional prompt editor */}
-              <div style={{ marginBottom: '12px' }}>
-                {/* Primary action row */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                  <button
-                    onClick={handleGenerateAiImage}
-                    disabled={isGeneratingImage || !visualSuggestion}
-                    title={!visualSuggestion ? 'Generate campaign content first to get an image prompt' : selectedAssetUrl ? 'Regenerate image using AI prompt' : 'Generate image using AI prompt'}
-                    style={{
-                      flex: 1,
-                      padding: '10px 16px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: isGeneratingImage || !visualSuggestion
-                        ? 'rgba(255, 255, 255, 0.04)'
-                        : 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
-                      color: isGeneratingImage || !visualSuggestion ? 'var(--text-light)' : 'white',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      cursor: isGeneratingImage || !visualSuggestion ? 'not-allowed' : 'pointer',
-                      boxShadow: isGeneratingImage || !visualSuggestion ? 'none' : '0 4px 12px var(--primary-glow)',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {isGeneratingImage ? '🎨 Generating...' : selectedAssetUrl ? '🔄 Regenerate' : '✨ Generate Image'}
-                  </button>
-                  {visualSuggestion && (
-                    <button
-                      onClick={() => setShowPromptEditor(prev => !prev)}
-                      title="Customize the image prompt"
+            {/* Multi-Image Carousel Selector Strip */}
+            {carouselUrls.length > 1 && (
+              <div style={{ marginBottom: '14px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                    📱 Multi-Slide Carousel ({carouselUrls.length} Slides)
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                    Slide {activeCarouselIndex + 1} of {carouselUrls.length}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {carouselUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setSelectedAssetUrl(url);
+                        setActiveCarouselIndex(idx);
+                      }}
                       style={{
-                        padding: '10px 12px',
-                        borderRadius: '10px',
-                        border: '1.5px solid rgba(82, 183, 136, 0.25)',
-                        background: showPromptEditor ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                        color: showPromptEditor ? 'var(--primary-color)' : 'var(--text-color)',
-                        fontSize: '12px',
-                        fontWeight: 600,
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: activeCarouselIndex === idx ? '2.5px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.15)',
                         cursor: 'pointer',
+                        flexShrink: 0,
+                        opacity: activeCarouselIndex === idx ? 1 : 0.6,
                         transition: 'all 0.2s ease',
-                        whiteSpace: 'nowrap',
+                        position: 'relative'
                       }}
                     >
-                      ✏️ Customize
-                    </button>
-                  )}
-                </div>
-
-                {/* Brand Logo Option Bar & Position Selector */}
-                {selectedAssetUrl && (
-                  <div style={{ marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '12px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={includeLogo} 
-                          onChange={(e) => {
-                            const isChecked = e.target.checked;
-                            setIncludeLogo(isChecked);
-                            if (isChecked) {
-                              handleApplyBrandOverlay();
-                            } else {
-                              if (originalAssetUrl) {
-                                setSelectedAssetUrl(originalAssetUrl);
-                              }
-                              setHasOverlay(false);
-                              notifySuccess("Brand logo watermark removed.");
-                            }
-                          }} 
-                        />
-                        Include Brand Logo Watermark
-                      </label>
-                      
-                      {includeLogo && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
-                            <img 
-                              src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''} 
-                              alt="Logo" 
-                              style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }} 
-                            />
-                          )}
-                          <input 
-                            type="file" 
-                            ref={postLogoFileInputRef} 
-                            accept="image/*" 
-                            style={{ display: 'none' }} 
-                            onChange={handlePostLogoUpload} 
-                          />
-                          <button 
-                            type="button" 
-                            style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
-                            onClick={() => postLogoFileInputRef.current?.click()}
-                          >
-                            {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
-                          </button>
-                        </div>
-                      )}
+                      <img src={url} alt={`Slide ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <span style={{ position: 'absolute', bottom: '2px', right: '4px', fontSize: '9px', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                        #{idx + 1}
+                      </span>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Image Actions: Generate / Regenerate + optional prompt editor */}
+            <div style={{ marginBottom: '12px' }}>
+              {/* Primary action row */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                <button
+                  onClick={handleGenerateAiImage}
+                  disabled={isGeneratingImage || !visualSuggestion}
+                  title={!visualSuggestion ? 'Generate campaign content first to get an image prompt' : selectedAssetUrl ? 'Regenerate image using AI prompt' : 'Generate image using AI prompt'}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: isGeneratingImage || !visualSuggestion
+                      ? 'rgba(255, 255, 255, 0.04)'
+                      : 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
+                    color: isGeneratingImage || !visualSuggestion ? 'var(--text-light)' : 'white',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: isGeneratingImage || !visualSuggestion ? 'not-allowed' : 'pointer',
+                    boxShadow: isGeneratingImage || !visualSuggestion ? 'none' : '0 4px 12px var(--primary-glow)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {isGeneratingImage ? '🎨 Generating...' : selectedAssetUrl ? '🔄 Regenerate' : '✨ Generate Image'}
+                </button>
+                {visualSuggestion && (
+                  <button
+                    onClick={() => setShowPromptEditor(prev => !prev)}
+                    title="Customize the image prompt"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      border: '1.5px solid rgba(82, 183, 136, 0.25)',
+                      background: showPromptEditor ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                      color: showPromptEditor ? 'var(--primary-color)' : 'var(--text-color)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    ✏️ Customize
+                  </button>
+                )}
+              </div>
+
+              {/* Brand Logo Option Bar & Position Selector */}
+              {selectedAssetUrl && (
+                <div style={{ marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '12px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={includeLogo}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setIncludeLogo(isChecked);
+                          if (isChecked) {
+                            handleApplyBrandOverlay();
+                          } else {
+                            if (originalAssetUrl) {
+                              setSelectedAssetUrl(originalAssetUrl);
+                            }
+                            setHasOverlay(false);
+                            notifySuccess("Brand logo watermark removed.");
+                          }
+                        }}
+                      />
+                      Include Brand Logo Watermark
+                    </label>
 
                     {includeLogo && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '6px', borderTop: '1px dashed rgba(82, 183, 136, 0.15)' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600, marginRight: '4px' }}>Logo Position:</span>
-                        {[
-                          { id: 'top-left', label: '↖ Top Left' },
-                          { id: 'top-right', label: '↗ Top Right' },
-                          { id: 'bottom-left', label: '↙ Bottom Left' },
-                          { id: 'bottom-right', label: '↘ Bottom Right' },
-                          { id: 'bottom-center', label: '⬇ Bottom' },
-                        ].map((pos) => {
-                          const isActive = logoPosition === pos.id;
-                          return (
-                            <button
-                              key={pos.id}
-                              type="button"
-                              onClick={() => {
-                                const p = pos.id as any;
-                                setLogoPosition(p);
-                                if (hasOverlay) {
-                                  handleApplyBrandOverlay(p);
-                                }
-                              }}
-                              style={{
-                                fontSize: '11px',
-                                padding: '4px 9px',
-                                borderRadius: '6px',
-                                border: isActive ? '1.5px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.12)',
-                                background: isActive ? 'rgba(82, 183, 136, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-                                color: isActive ? 'var(--primary-color)' : 'var(--text-light)',
-                                fontWeight: isActive ? 700 : 500,
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                              }}
-                            >
-                              {pos.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {/* Collapsible prompt editor */}
-                {showPromptEditor && visualSuggestion && (
-                  <div style={{ animation: 'fadeInUp 0.2s ease-out' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Image Prompt (editable)</label>
-                    <textarea
-                      value={visualSuggestion}
-                      onChange={(e) => setVisualSuggestion(e.target.value)}
-                      rows={3}
-                      placeholder="Describe the image you want..."
-                      style={{
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        padding: '10px 12px',
-                        borderRadius: '10px',
-                        border: '1.5px solid var(--primary-color)',
-                        fontSize: '12px',
-                        lineHeight: '1.5',
-                        color: 'var(--text-color)',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                        outline: 'none',
-                        background: 'rgba(5, 8, 6, 0.8)',
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Tone & Category selectors styled as premium interactive chips */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {[
-                      { key: "Product Showcase", label: "Product Showcase 🛍️" },
-                      { key: "Behind the Scenes", label: "Behind the Scenes 🎬" },
-                      { key: "Promotions", label: "Promotions 📣" },
-                      { key: "Knowledge Info", label: "Knowledge Info 💡" }
-                    ].map((cat) => (
-                      <button
-                        key={cat.key}
-                        type="button"
-                        onClick={() => {
-                          setCategory(cat.key);
-                          handleGenerate(tone, cat.key);
-                        }}
-                        style={{
-                          background: category === cat.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                          border: category === cat.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '20px',
-                          padding: '6px 14px',
-                          fontSize: '12px',
-                          color: category === cat.key ? 'var(--primary-color)' : 'var(--text-color)',
-                          fontWeight: category === cat.key ? 700 : 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseOver={(e) => {
-                          if (category !== cat.key) {
-                            e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (category !== cat.key) {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                          }
-                        }}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tone</span>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {[
-                      { key: "casual", label: "Casual 😊" },
-                      { key: "formal", label: "Formal 👔" },
-                      { key: "elaborate", label: "Elaborate 📝" },
-                      { key: "shorten", label: "Shorten ✂️" }
-                    ].map((t) => (
-                      <button
-                        key={t.key}
-                        type="button"
-                        onClick={() => {
-                          setTone(t.key);
-                          if (generated && generatedText) {
-                            handleRefineText(t.key);
-                          }
-                        }}
-                        disabled={isRefiningText}
-                        style={{
-                          background: tone === t.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                          border: tone === t.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '20px',
-                          padding: '6px 14px',
-                          fontSize: '12px',
-                          color: tone === t.key ? 'var(--primary-color)' : 'var(--text-color)',
-                          fontWeight: tone === t.key ? 700 : 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseOver={(e) => {
-                          if (tone !== t.key) {
-                            e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (tone !== t.key) {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                          }
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Generated Post Copy</span>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowFeedPreview(true)}
-                    style={{
-                      background: 'rgba(82, 183, 136, 0.12)',
-                      border: '1px solid var(--primary-color)',
-                      color: 'var(--primary-color)',
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    👁️ Feed Preview (FB / IG)
-                  </button>
-                  {campaignId && (
-                    <button 
-                      onClick={handleToggleLike}
-                      disabled={isLiking}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: isLiked ? '#52b788' : '#94a3b8',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontWeight: 600,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {isLiked ? '❤️ Style Saved' : '🖤 Save Style (Train AI)'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <SocialFeedPreviewModal
-                isOpen={showFeedPreview}
-                onClose={() => setShowFeedPreview(false)}
-                imageUrl={selectedAssetUrl}
-                caption={generatedText}
-                businessName={typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName || '') : ''}
-                logoUrl={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
-              />
-
-              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.15)', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', minHeight: '300px' }}>
-                <textarea 
-                  value={generatedText}
-                  onChange={(e) => setGeneratedText(e.target.value)}
-                  style={{ width: '100%', flexGrow: 1, border: 'none', resize: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.6', color: 'var(--text-color)', fontFamily: 'inherit', background: 'transparent' }}
-                  placeholder="Edit your post content here..."
-                />
-              </div>
-
-              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                  <input type="checkbox" checked={isScheduling} onChange={(e) => {
-                    setIsScheduling(e.target.checked);
-                    if (!e.target.checked) setScheduledTime('');
-                  }} />
-                  Schedule post for later date/time
-                </label>
-                {isScheduling && !scheduledTime && (
-                  <MetaPostScheduler
-                    initialValue={draftScheduledTime}
-                    onSchedule={(isoString) => {
-                      setScheduledTime(isoString);
-                      setDraftScheduledTime(isoString);
-                      const d = new Date(isoString);
-                      const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-                      notifySuccess(`⏰ Scheduled for ${label}`);
-                    }}
-                    onCancel={() => {
-                      setIsScheduling(false);
-                      setScheduledTime('');
-                    }}
-                  />
-                )}
-                {isScheduling && scheduledTime && (
-                  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                      ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setScheduledTime('')}
-                      style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', textDecoration: 'underline' }}
-                    >
-                      Change
-                    </button>
-                  </div>
-                )}
-                {(() => {
-                  if (!scheduledTime) return null;
-                  const selectedDate = new Date(scheduledTime);
-                  const sYear = selectedDate.getFullYear();
-                  const sMonth = selectedDate.getMonth();
-                  const sDay = selectedDate.getDate();
-                  
-                  const matchingEvents = calendarEvents.filter(e => {
-                    const parts = e.date.split('-');
-                    const eYear = parseInt(parts[0], 10);
-                    const eMonth = parseInt(parts[1], 10) - 1;
-                    const eDay = parseInt(parts[2], 10);
-                    return eYear === sYear && eMonth === sMonth && eDay === sDay;
-                  });
-
-                  if (matchingEvents.length === 0) return null;
-
-                  return (
-                    <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
-                      {matchingEvents.map(event => (
-                        <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            📅 {event.name} ({event.type.replace('_', ' ')})
-                          </span>
-                          <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
-                            {event.description}
-                          </span>
-                          <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
-                            ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* WhatsApp Broadcast Option */}
-              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                  <input type="checkbox" checked={publishToWa} onChange={(e) => {
-                    setPublishToWa(e.target.checked);
-                  }} />
-                  Send template broadcast via WhatsApp 💬
-                </label>
-                {publishToWa && (
-                  <div className="fade-in-up" style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Setup Status */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
-                        Status: {waConnected ? '🟢 Connected' : '🔴 Credentials Missing'}
-                      </span>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowWaSettings(!showWaSettings)}
-                        style={{ fontSize: '11px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
-                      >
-                        {showWaSettings ? 'Close Settings' : 'Configure API'}
-                      </button>
-                    </div>
-
-                    {showWaSettings && (
-                      <div style={{ background: 'rgba(5, 8, 6, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>Phone Number ID</span>
-                          <input 
-                            className="input-field" 
-                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }} 
-                            placeholder="e.g. 10452718..." 
-                            value={waPhoneId}
-                            onChange={(e) => setWaPhoneId(e.target.value)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
+                          <img
+                            src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
+                            alt="Logo"
+                            style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }}
                           />
-                        </div>
-                        <div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>System Access Token</span>
-                          <input 
-                            type="password"
-                            className="input-field" 
-                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }} 
-                            placeholder="EAAG..." 
-                            value={waToken}
-                            onChange={(e) => setWaToken(e.target.value)}
-                          />
-                        </div>
-                        <button 
-                          type="button" 
-                          className="btn-secondary" 
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer' }}
-                          onClick={handleSaveWaSettings}
+                        )}
+                        <input
+                          type="file"
+                          ref={postLogoFileInputRef}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handlePostLogoUpload}
+                        />
+                        <button
+                          type="button"
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
+                          onClick={() => postLogoFileInputRef.current?.click()}
                         >
-                          Save Credentials
+                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
                         </button>
                       </div>
                     )}
-
-                    {/* Recipient Phone & Template */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Recipient Number</span>
-                        <input 
-                          className="input-field" 
-                          style={{ padding: '8px 12px', fontSize: '13px' }} 
-                          placeholder="e.g., +919988776655" 
-                          value={waRecipient}
-                          onChange={(e) => setWaRecipient(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Template Name</span>
-                        <input 
-                          className="input-field" 
-                          style={{ padding: '8px 12px', fontSize: '13px' }} 
-                          placeholder="hello_world"
-                          value={waTemplateName}
-                          onChange={(e) => setWaTemplateName(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <button 
-                      type="button" 
-                      className="btn-primary" 
-                      style={{ padding: '10px', fontSize: '13px', borderRadius: '8px', width: '100%', opacity: isSendingWa ? 0.7 : 1 }}
-                      disabled={isSendingWa}
-                      onClick={handleSendWaMessage}
-                    >
-                      {isSendingWa ? 'Sending...' : '⚡ Send Test WhatsApp Template'}
-                    </button>
                   </div>
-                )}
+
+                  {includeLogo && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '6px', borderTop: '1px dashed rgba(82, 183, 136, 0.15)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600, marginRight: '4px' }}>Logo Position:</span>
+                      {[
+                        { id: 'top-left', label: '↖ Top Left' },
+                        { id: 'top-right', label: '↗ Top Right' },
+                        { id: 'bottom-left', label: '↙ Bottom Left' },
+                        { id: 'bottom-right', label: '↘ Bottom Right' },
+                        { id: 'bottom-center', label: '⬇ Bottom' },
+                      ].map((pos) => {
+                        const isActive = logoPosition === pos.id;
+                        return (
+                          <button
+                            key={pos.id}
+                            type="button"
+                            onClick={() => {
+                              const p = pos.id as any;
+                              setLogoPosition(p);
+                              if (hasOverlay) {
+                                handleApplyBrandOverlay(p);
+                              }
+                            }}
+                            style={{
+                              fontSize: '11px',
+                              padding: '4px 9px',
+                              borderRadius: '6px',
+                              border: isActive ? '1.5px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.12)',
+                              background: isActive ? 'rgba(82, 183, 136, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                              color: isActive ? 'var(--primary-color)' : 'var(--text-light)',
+                              fontWeight: isActive ? 700 : 500,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {pos.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Collapsible prompt editor */}
+              {showPromptEditor && visualSuggestion && (
+                <div style={{ animation: 'fadeInUp 0.2s ease-out' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Image Prompt (editable)</label>
+                  <textarea
+                    value={visualSuggestion}
+                    onChange={(e) => setVisualSuggestion(e.target.value)}
+                    rows={3}
+                    placeholder="Describe the image you want..."
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      border: '1.5px solid var(--primary-color)',
+                      fontSize: '12px',
+                      lineHeight: '1.5',
+                      color: 'var(--text-color)',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      outline: 'none',
+                      background: 'rgba(5, 8, 6, 0.8)',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Tone & Category selectors styled as premium interactive chips */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: "Product Showcase", label: "Product Showcase 🛍️" },
+                    { key: "Behind the Scenes", label: "Behind the Scenes 🎬" },
+                    { key: "Promotions", label: "Promotions 📣" },
+                    { key: "Knowledge Info", label: "Knowledge Info 💡" }
+                  ].map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => {
+                        setCategory(cat.key);
+                        handleGenerate(tone, cat.key);
+                      }}
+                      style={{
+                        background: category === cat.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                        border: category === cat.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '20px',
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        color: category === cat.key ? 'var(--primary-color)' : 'var(--text-color)',
+                        fontWeight: category === cat.key ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        if (category !== cat.key) {
+                          e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (category !== cat.key) {
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                        }
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tone</span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: "casual", label: "Casual 😊" },
+                    { key: "formal", label: "Formal 👔" },
+                    { key: "elaborate", label: "Elaborate 📝" },
+                    { key: "shorten", label: "Shorten ✂️" }
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => {
+                        setTone(t.key);
+                        if (generated && generatedText) {
+                          handleRefineText(t.key);
+                        }
+                      }}
+                      disabled={isRefiningText}
+                      style={{
+                        background: tone === t.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                        border: tone === t.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '20px',
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        color: tone === t.key ? 'var(--primary-color)' : 'var(--text-color)',
+                        fontWeight: tone === t.key ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        if (tone !== t.key) {
+                          e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (tone !== t.key) {
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                        }
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Generated Post Copy</span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   type="button"
-                  className="btn-secondary"
-                  style={{ padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
-                  onClick={() => handleSaveDraft(false)}
-                  disabled={isSavingDraft}
+                  onClick={() => setShowFeedPreview(true)}
+                  style={{
+                    background: 'rgba(82, 183, 136, 0.12)',
+                    border: '1px solid var(--primary-color)',
+                    color: 'var(--primary-color)',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
                 >
-                  💾 {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                  👁️ Feed Preview (FB / IG)
                 </button>
-
-                <button 
-                  className="btn-primary" 
-                  style={{ flexGrow: 1, background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
-                  onClick={handlePublish}
-                  disabled={isPublishing}
-                >
-                  {isPublishing ? 'Publishing...' : (isScheduling ? '✓ Schedule Post' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook'))}
-                </button>
-
-                {metaStatus.connected && (
-                  <button 
-                    onClick={() => {
-                      if (!metaStatus.has_instagram) {
-                        notifyError("To post to Instagram, make sure an Instagram Business Account is linked to your Facebook Page.");
-                        return;
-                      }
-                      setPublishToIg(!publishToIg);
+                {campaignId && (
+                  <button
+                    onClick={handleToggleLike}
+                    disabled={isLiking}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: isLiked ? '#52b788' : '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
                     }}
-                    style={{ 
-                      padding: '0 20px', 
-                      borderRadius: '12px', 
-                      border: '1px solid rgba(82, 183, 136, 0.2)',
-                      background: !metaStatus.has_instagram 
-                        ? 'rgba(255, 255, 255, 0.02)' 
-                        : publishToIg 
-                          ? 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' 
-                          : 'rgba(255, 255, 255, 0.04)',
-                      color: !metaStatus.has_instagram 
-                        ? 'var(--text-light)' 
-                        : publishToIg 
-                          ? 'white' 
-                          : 'var(--text-color)',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      cursor: !metaStatus.has_instagram ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.3s ease',
-                      boxShadow: publishToIg && metaStatus.has_instagram ? '0 4px 12px rgba(220, 39, 67, 0.3)' : 'none'
-                    }}
-                    title={!metaStatus.has_instagram ? "No Instagram Business account linked to this Facebook Page" : "Toggle Instagram posting"}
                   >
-                    IG: {!metaStatus.has_instagram ? 'Not Linked' : publishToIg ? 'ON' : 'OFF'}
+                    {isLiked ? '❤️ Style Saved' : '🖤 Save Style (Train AI)'}
                   </button>
                 )}
               </div>
             </div>
+
+            <SocialFeedPreviewModal
+              isOpen={showFeedPreview}
+              onClose={() => setShowFeedPreview(false)}
+              imageUrl={selectedAssetUrl}
+              caption={generatedText}
+              businessName={typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName || '') : ''}
+              logoUrl={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
+            />
+
+            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.15)', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', minHeight: '300px' }}>
+              <textarea
+                value={generatedText}
+                onChange={(e) => setGeneratedText(e.target.value)}
+                style={{ width: '100%', flexGrow: 1, border: 'none', resize: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.6', color: 'var(--text-color)', fontFamily: 'inherit', background: 'transparent' }}
+                placeholder="Edit your post content here..."
+              />
+            </div>
+
+            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                <input type="checkbox" checked={isScheduling} onChange={(e) => {
+                  setIsScheduling(e.target.checked);
+                  if (!e.target.checked) setScheduledTime('');
+                }} />
+                Schedule post for later date/time
+              </label>
+              {isScheduling && !scheduledTime && (
+                <MetaPostScheduler
+                  initialValue={draftScheduledTime}
+                  onSchedule={(isoString) => {
+                    setScheduledTime(isoString);
+                    setDraftScheduledTime(isoString);
+                    const d = new Date(isoString);
+                    const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                    notifySuccess(`⏰ Scheduled for ${label}`);
+                  }}
+                  onCancel={() => {
+                    setIsScheduling(false);
+                    setScheduledTime('');
+                  }}
+                />
+              )}
+              {isScheduling && scheduledTime && (
+                <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                    ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setScheduledTime('')}
+                    style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+              {(() => {
+                if (!scheduledTime) return null;
+                const selectedDate = new Date(scheduledTime);
+                const sYear = selectedDate.getFullYear();
+                const sMonth = selectedDate.getMonth();
+                const sDay = selectedDate.getDate();
+
+                const matchingEvents = calendarEvents.filter(e => {
+                  const parts = e.date.split('-');
+                  const eYear = parseInt(parts[0], 10);
+                  const eMonth = parseInt(parts[1], 10) - 1;
+                  const eDay = parseInt(parts[2], 10);
+                  return eYear === sYear && eMonth === sMonth && eDay === sDay;
+                });
+
+                if (matchingEvents.length === 0) return null;
+
+                return (
+                  <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
+                    {matchingEvents.map(event => (
+                      <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          📅 {event.name} ({event.type.replace('_', ' ')})
+                        </span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
+                          {event.description}
+                        </span>
+                        <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                          ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* WhatsApp Broadcast Option */}
+            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                <input type="checkbox" checked={publishToWa} onChange={(e) => {
+                  setPublishToWa(e.target.checked);
+                }} />
+                Send template broadcast via WhatsApp 💬
+              </label>
+              {publishToWa && (
+                <div className="fade-in-up" style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Setup Status */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                      Status: {waConnected ? '🟢 Connected' : '🔴 Credentials Missing'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowWaSettings(!showWaSettings)}
+                      style={{ fontSize: '11px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      {showWaSettings ? 'Close Settings' : 'Configure API'}
+                    </button>
+                  </div>
+
+                  {showWaSettings && (
+                    <div style={{ background: 'rgba(5, 8, 6, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>Phone Number ID</span>
+                        <input
+                          className="input-field"
+                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }}
+                          placeholder="e.g. 10452718..."
+                          value={waPhoneId}
+                          onChange={(e) => setWaPhoneId(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>System Access Token</span>
+                        <input
+                          type="password"
+                          className="input-field"
+                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }}
+                          placeholder="EAAG..."
+                          value={waToken}
+                          onChange={(e) => setWaToken(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer' }}
+                        onClick={handleSaveWaSettings}
+                      >
+                        Save Credentials
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Recipient Phone & Template */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Recipient Number</span>
+                      <input
+                        className="input-field"
+                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                        placeholder="e.g., +919988776655"
+                        value={waRecipient}
+                        onChange={(e) => setWaRecipient(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Template Name</span>
+                      <input
+                        className="input-field"
+                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                        placeholder="hello_world"
+                        value={waTemplateName}
+                        onChange={(e) => setWaTemplateName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ padding: '10px', fontSize: '13px', borderRadius: '8px', width: '100%', opacity: isSendingWa ? 0.7 : 1 }}
+                    disabled={isSendingWa}
+                    onClick={handleSendWaMessage}
+                  >
+                    {isSendingWa ? 'Sending...' : '⚡ Send Test WhatsApp Template'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleSaveDraft(false)}
+                disabled={isSavingDraft}
+              >
+                💾 {isSavingDraft ? 'Saving...' : 'Save Draft'}
+              </button>
+
+              <button
+                className="btn-primary"
+                style={{ flexGrow: 1, background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
+                onClick={handlePublish}
+                disabled={isPublishing}
+              >
+                {isPublishing ? 'Publishing...' : (isScheduling ? '✓ Schedule Post' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook'))}
+              </button>
+
+              {metaStatus.connected && (
+                <button
+                  onClick={() => {
+                    if (!metaStatus.has_instagram) {
+                      notifyError("To post to Instagram, make sure an Instagram Business Account is linked to your Facebook Page.");
+                      return;
+                    }
+                    setPublishToIg(!publishToIg);
+                  }}
+                  style={{
+                    padding: '0 20px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(82, 183, 136, 0.2)',
+                    background: !metaStatus.has_instagram
+                      ? 'rgba(255, 255, 255, 0.02)'
+                      : publishToIg
+                        ? 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)'
+                        : 'rgba(255, 255, 255, 0.04)',
+                    color: !metaStatus.has_instagram
+                      ? 'var(--text-light)'
+                      : publishToIg
+                        ? 'white'
+                        : 'var(--text-color)',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: !metaStatus.has_instagram ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: publishToIg && metaStatus.has_instagram ? '0 4px 12px rgba(220, 39, 67, 0.3)' : 'none'
+                  }}
+                  title={!metaStatus.has_instagram ? "No Instagram Business account linked to this Facebook Page" : "Toggle Instagram posting"}
+                >
+                  IG: {!metaStatus.has_instagram ? 'Not Linked' : publishToIg ? 'ON' : 'OFF'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3883,7 +3896,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Select from Media Library</h3>
-              <button 
+              <button
                 onClick={() => setShowAssetPicker(false)}
                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%' }}
               >
@@ -3892,9 +3905,9 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             </div>
             <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '24px' }}>Choose an existing image or video asset for your campaign.</p>
 
-            <div style={{ 
-              flexGrow: 1, 
-              overflowY: 'auto', 
+            <div style={{
+              flexGrow: 1,
+              overflowY: 'auto',
               paddingRight: '4px',
               minHeight: '200px',
             }}>
@@ -3907,13 +3920,13 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
                   {libraryAssets.map((asset) => (
-                    <div 
-                      key={asset.id} 
+                    <div
+                      key={asset.id}
                       onClick={() => {
                         setSelectedAssetUrl(asset.url);
                         setShowAssetPicker(false);
                       }}
-                      style={{ 
+                      style={{
                         cursor: 'pointer',
                         borderRadius: '12px',
                         overflow: 'hidden',
@@ -3942,8 +3955,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
           </div>
         </div>
       )}
-     {showLightbox && selectedAssetUrl && (
-        <div 
+      {showLightbox && selectedAssetUrl && (
+        <div
           onClick={() => setShowLightbox(false)}
           style={{
             position: 'fixed', inset: 0,
@@ -3960,7 +3973,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             ) : (
               <img src={selectedAssetUrl} alt="Full Preview" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
             )}
-            <button 
+            <button
               type="button"
               onClick={() => setShowLightbox(false)}
               style={{
@@ -4191,7 +4204,7 @@ function FacebookSetupGuide() {
 
   const Alert = ({ type, children }: { type: 'tip' | 'warn' | 'info'; children: React.ReactNode }) => {
     const styles: Record<string, { bg: string; border: string; icon: string }> = {
-      tip:  { bg: 'rgba(82, 183, 136, 0.05)', border: 'var(--primary-color)', icon: '💡' },
+      tip: { bg: 'rgba(82, 183, 136, 0.05)', border: 'var(--primary-color)', icon: '💡' },
       warn: { bg: 'rgba(249, 115, 22, 0.08)', border: '#f97316', icon: '⚠️' },
       info: { bg: 'rgba(59, 130, 246, 0.08)', border: '#3b82f6', icon: 'ℹ️' },
     };
@@ -4355,7 +4368,7 @@ function AdminPanel() {
                 1. AI Prompt Generation Pipeline
               </h4>
               <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.6' }}>
-                The backend utilizes <strong>Gemini 2.5 Flash</strong> (via the Google GenAI SDK) for generating the marketing copy, and <strong>Imagen 3</strong> for custom visual generation. 
+                The backend utilizes <strong>Gemini 2.5 Flash</strong> (via the Google GenAI SDK) for generating the marketing copy, and <strong>Imagen 3</strong> for custom visual generation.
                 The prompt construction merges the user's campaign goal with local business profile metadata (Business Name, Phone Number, Industry) stored in the browser's <code>localStorage</code>.
               </p>
             </div>
@@ -4391,7 +4404,7 @@ function AdminPanel() {
                 4. Secure Local HTTPS & SSL Setup
               </h4>
               <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.6' }}>
-                The Next.js development server runs using <code>next dev --experimental-https</code> with self-signed SSL certificates inside <code>frontend/certificates</code>. 
+                The Next.js development server runs using <code>next dev --experimental-https</code> with self-signed SSL certificates inside <code>frontend/certificates</code>.
                 If you encounter a browser security warning:
               </p>
               <div style={{ background: 'rgba(82, 183, 136, 0.05)', borderLeft: '4px solid var(--primary-color)', padding: '12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px', color: 'var(--text-color)' }}>
@@ -4407,9 +4420,14 @@ function AdminPanel() {
   );
 }
 
-function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLogin: () => void }) {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem('user_logged_in') === 'true');
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -4436,8 +4454,14 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <a href="#contact" style={{ color: 'var(--text-light)', textDecoration: 'none', fontWeight: 500, fontSize: '15px', transition: 'color 0.2s' }}>Contact</a>
           </nav>
           <div style={{ display: 'flex', gap: '16px' }}>
-            <button className="btn-secondary" onClick={onGetStarted} style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '10px' }}>Log In</button>
-            <button className="btn-primary" onClick={onGetStarted} style={{ padding: '8px 20px', fontSize: '14px', borderRadius: '10px' }}>Get Started</button>
+            {isLoggedIn ? (
+              <button className="btn-primary" onClick={onGetStarted} style={{ padding: '8px 20px', fontSize: '14px', borderRadius: '10px' }}>Open App</button>
+            ) : (
+              <>
+                <button className="btn-secondary" onClick={onLogin} style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '10px' }}>Log In</button>
+                <button className="btn-primary" onClick={onGetStarted} style={{ padding: '8px 20px', fontSize: '14px', borderRadius: '10px' }}>Get Started</button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -4652,7 +4676,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
   const totalDays = new Date(year, month + 1, 0).getDate();
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June", 
+    "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
 
@@ -4716,8 +4740,8 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                   e.currentTarget.style.transform = 'none';
                 }}
               >
-                {draft.visual_suggestion ? (
-                  <img src={draft.visual_suggestion} alt="Draft" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }} />
+                {(draft.image_url || (draft.visual_suggestion && (draft.visual_suggestion.startsWith('/') || draft.visual_suggestion.startsWith('http')))) ? (
+                  <img src={draft.image_url || draft.visual_suggestion} alt="Draft" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
                     📝
@@ -4768,8 +4792,8 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
           return (
-            <div 
-              key={`day-${day}`} 
+            <div
+              key={`day-${day}`}
               style={{
                 minHeight: '120px',
                 background: isToday ? 'rgba(82, 183, 136, 0.08)' : 'rgba(255,255,255,0.03)',
@@ -4787,7 +4811,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                   {day} {isToday && '•'}
                 </span>
                 {dayPosts.length > 0 && (
-                  <span 
+                  <span
                     title={`${dayPosts.length} post(s) scheduled on this day`}
                     style={{
                       display: 'inline-flex',
@@ -4815,9 +4839,9 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                   if (event.type === "public_holiday") emoji = "🏢";
                   if (event.type === "restricted_holiday") emoji = "🏛️";
                   if (event.type === "season") emoji = "🌤️";
-                  
+
                   return (
-                    <div 
+                    <div
                       key={event.name}
                       title={`${event.name}: ${event.description}`}
                       style={{
@@ -4850,8 +4874,8 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                   const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
 
                   return (
-                    <div 
-                      key={post.id} 
+                    <div
+                      key={post.id}
                       onClick={() => onSelectCampaign?.(post)}
                       style={{
                         background: isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)',
@@ -4875,10 +4899,10 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                       }}
                       title={`[${postTime}] ${post.prompt || post.generated_text} (${isPast ? 'Past / Scratched' : 'Scheduled'}) - Click to edit`}
                     >
-                      <div style={{ 
-                        fontWeight: 700, 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis', 
+                      <div style={{
+                        fontWeight: 700,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         textDecoration: isPast ? 'line-through' : 'none'
                       }}>
@@ -4909,13 +4933,13 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {campaigns.map((c) => (
-              <div 
-                key={c.id} 
+              <div
+                key={c.id}
                 onClick={() => onSelectCampaign?.(c)}
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.02)', 
-                  border: '1px solid rgba(82, 183, 136, 0.15)', 
-                  borderRadius: '12px', 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(82, 183, 136, 0.15)',
+                  borderRadius: '12px',
                   padding: '16px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -5014,7 +5038,7 @@ function AnalyticsTab() {
             Real-time Reach and Engagement statistics for connected profiles.
           </p>
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isConnected ? 'rgba(82, 183, 136, 0.1)' : 'rgba(131, 156, 143, 0.1)', border: `1px solid ${isConnected ? 'var(--primary-color)' : 'rgba(131, 156, 143, 0.2)'}`, padding: '8px 16px', borderRadius: '20px', fontSize: '13px' }}>
           <span style={{ display: 'inline-block', width: '8px', height: '8px', background: isConnected ? 'var(--primary-color)' : '#9CA3AF', borderRadius: '50%' }}></span>
           <span style={{ fontWeight: 600 }}>{isConnected ? `Connected to ${data.page_name}` : 'Running in Demo Mode'}</span>
@@ -5022,13 +5046,13 @@ function AnalyticsTab() {
       </div>
 
       <div style={{ display: 'flex', gap: '8px', background: 'rgba(82, 183, 136, 0.05)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)', width: 'fit-content' }}>
-        <button 
+        <button
           onClick={() => setActivePlatform('facebook')}
           style={{ background: activePlatform === 'facebook' ? 'var(--primary-color)' : 'transparent', color: activePlatform === 'facebook' ? '#000000' : 'var(--text-color)', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
           📘 Facebook
         </button>
-        <button 
+        <button
           onClick={() => setActivePlatform('instagram')}
           style={{ background: activePlatform === 'instagram' ? 'var(--primary-color)' : 'transparent', color: activePlatform === 'instagram' ? '#000000' : 'var(--text-color)', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
@@ -5067,8 +5091,8 @@ function AnalyticsTab() {
               <line x1="0" y1="40" x2="100%" y2="40" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
               <line x1="0" y1="90" x2="100%" y2="90" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
               <line x1="0" y1="140" x2="100%" y2="140" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
-              
-              <path 
+
+              <path
                 d={`M 10,${150 - (pData?.follower_growth[0] / (activePlatform === 'facebook' ? 8 : 16))} 
                    L 90,${150 - (pData?.follower_growth[1] / (activePlatform === 'facebook' ? 8 : 16))} 
                    L 170,${150 - (pData?.follower_growth[2] / (activePlatform === 'facebook' ? 8 : 16))} 
@@ -5080,7 +5104,7 @@ function AnalyticsTab() {
                 strokeWidth="3"
                 strokeLinecap="round"
               />
-              
+
               {pData?.follower_growth.map((val: number, idx: number) => (
                 <g key={idx}>
                   <circle cx={10 + idx * 80} cy={150 - (val / (activePlatform === 'facebook' ? 8 : 16))} r="4" fill="var(--bg-dark)" stroke="var(--primary-color)" strokeWidth="2" />
@@ -5099,8 +5123,8 @@ function AnalyticsTab() {
               <line x1="0" y1="40" x2="100%" y2="40" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
               <line x1="0" y1="90" x2="100%" y2="90" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
               <line x1="0" y1="140" x2="100%" y2="140" stroke="rgba(82, 183, 136, 0.05)" strokeWidth="1" />
-              
-              <path 
+
+              <path
                 d={`M 10,160 
                    L 10,${160 - (pData?.reach_trend[0] / 35)} 
                    L 90,${160 - (pData?.reach_trend[1] / 35)} 
@@ -5112,8 +5136,8 @@ function AnalyticsTab() {
                 fill="rgba(82, 183, 136, 0.1)"
                 stroke="none"
               />
-              
-              <path 
+
+              <path
                 d={`M 10,${160 - (pData?.reach_trend[0] / 35)} 
                    L 90,${160 - (pData?.reach_trend[1] / 35)} 
                    L 170,${160 - (pData?.reach_trend[2] / 35)} 
@@ -5231,7 +5255,7 @@ function ArchivedPostsTab() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
           {archived.map((item) => (
             <div key={item.id} className="glass-panel" style={{ borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {item.visual_suggestion ? (
+              {(item.visual_suggestion && (item.visual_suggestion.startsWith('/') || item.visual_suggestion.startsWith('http'))) ? (
                 <img src={item.visual_suggestion} alt="Visual" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
               ) : (
                 <div style={{ height: '140px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)', gap: '6px' }}>
@@ -5272,11 +5296,12 @@ function ArchivedPostsTab() {
   );
 }
 
-function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
+function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState('campaigns');
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedCampaignForEdit, setSelectedCampaignForEdit] = useState<any>(null);
   const [inspectCampaign, setInspectCampaign] = useState<any>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [archivalWarnings, setArchivalWarnings] = useState<any[]>([]);
   const [storageStatus, setStorageStatus] = useState<any>(null);
@@ -5304,6 +5329,7 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
   }, []);
 
   return (
+    <>
     <div className="fade-in-up" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
       {inspectCampaign && (
         <ScheduledPostInspectorModal
@@ -5321,8 +5347,8 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
       )}
       {/* Sidebar */}
       <div className="glass-panel" style={{ width: '250px', padding: '24px', position: 'sticky', top: '40px' }}>
-        <div 
-          onClick={onGoHome} 
+        <div
+          onClick={onGoHome}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px', cursor: 'pointer', transition: 'opacity 0.2s' }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -5331,58 +5357,58 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
           <img src="/logo.png" alt="DigiM Logo" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
           <h3 style={{ fontSize: '18px', fontWeight: 800, background: 'linear-gradient(135deg, var(--primary-color) 0%, #2D6A4F 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>DigiM app</h3>
         </div>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button 
+          <button
             onClick={() => setActiveTab('campaigns')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'campaigns' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'campaigns' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'campaigns' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
             Campaigns
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('calendar')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'calendar' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'calendar' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'calendar' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Calendar Queue
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('analytics')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'analytics' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'analytics' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'analytics' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             Analytics
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('assets')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'assets' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'assets' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'assets' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Asset Library
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('archived')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'archived' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'archived' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'archived' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
             Archived Posts
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('profile')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'profile' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'profile' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'profile' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             Profile
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('settings')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'settings' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'settings' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'settings' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Integrations
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('admin')}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'admin' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'admin' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'admin' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
           >
@@ -5436,24 +5462,83 @@ function MainDashboard({ onGoHome }: { onGoHome?: () => void }) {
           </div>
         )}
         {activeTab === 'campaigns' && (
-          <CampaignDashboard 
-            initialCampaign={selectedCampaignForEdit} 
-            onClearEdit={() => setSelectedCampaignForEdit(null)} 
+          <CampaignDashboard
+            initialCampaign={selectedCampaignForEdit}
+            onClearEdit={() => setSelectedCampaignForEdit(null)}
           />
         )}
         {activeTab === 'calendar' && (
-          <CalendarTab 
-            onSelectCampaign={(c) => setInspectCampaign(c)} 
+          <CalendarTab
+            onSelectCampaign={(c) => setInspectCampaign(c)}
           />
         )}
         {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'assets' && <AssetsLibrary />}
         {activeTab === 'archived' && <ArchivedPostsTab />}
-        {activeTab === 'profile' && <Onboarding isSettings={true} />}
+        {activeTab === 'profile' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <Onboarding isSettings={true} />
+            <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>Sign Out</div>
+                  <div style={{ color: 'var(--text-light)', fontSize: '13px' }}>You will be returned to the login screen. Your data stays saved.</div>
+                </div>
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)')}
+                  onMouseOut={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
+                >
+                  🚪 Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'settings' && <Platforms isSettings={true} />}
         {activeTab === 'admin' && <AdminPanel />}
       </div>
     </div>
+
+    {/* Logout Confirmation Modal */}
+    {showLogoutConfirm && (
+      <div
+        onClick={() => setShowLogoutConfirm(false)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          className="glass-panel"
+          style={{ width: '100%', maxWidth: '420px', padding: '36px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.25)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚪</div>
+          <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>Log Out?</h3>
+          <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '28px', lineHeight: 1.5 }}>
+            You will be signed out of your account and returned to the login screen. Your data will remain saved.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button
+              onClick={() => setShowLogoutConfirm(false)}
+              style={{ flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-color)', padding: '12px', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onLogout}
+              style={{ flex: 1, background: '#ef4444', border: 'none', color: '#fff', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={e => (e.currentTarget.style.background = '#dc2626')}
+              onMouseOut={e => (e.currentTarget.style.background = '#ef4444')}
+            >
+              Yes, Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -5465,13 +5550,11 @@ export default function App() {
 
   // Determine initial step after mount — runs only on the client
   useEffect(() => {
-    const savedTenantId = localStorage.getItem('tenant_id');
-    const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
     const isLoggedIn = localStorage.getItem('user_logged_in') === 'true';
-    if (isLoggedIn || isCompleted || savedTenantId) {
-      setStep(4);
+    if (isLoggedIn) {
+      setStep(4); // Already logged in — go straight to dashboard
     } else {
-      setStep(0);
+      setStep(0); // Not logged in — show landing page
     }
   }, []);
 
@@ -5493,23 +5576,7 @@ export default function App() {
     }
   }, [notification]);
 
-  useEffect(() => {
-    // Verify brand profile status on load to sync state
-    const savedTenantId = localStorage.getItem('tenant_id') || '1';
-    if (localStorage.getItem('tenant_id') || localStorage.getItem('onboarding_completed')) {
-      localStorage.setItem('user_logged_in', 'true');
-      fetch(`/api/onboarding/brand-profile?tenant_id=${savedTenantId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.business_name) {
-            localStorage.setItem('onboarding_completed', 'true');
-            localStorage.setItem('user_logged_in', 'true');
-            setStep(4);
-          }
-        })
-        .catch(err => console.error(err));
-    }
-  }, []);
+  // (Removed auto-session-resume: login is now always explicit via user_logged_in flag)
 
   // Render nothing until we've checked localStorage on the client.
   // This prevents any SSR/CSR mismatch.
@@ -5519,23 +5586,26 @@ export default function App() {
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       {/* Inject the official Facebook JS SDK */}
       <Script src="https://connect.facebook.net/en_US/sdk.js" strategy="lazyOnload" crossOrigin="anonymous" />
-      
+
       {step === 0 ? (
-        <LandingPage onGetStarted={() => {
-          const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
-          if (isCompleted) {
-            setStep(4);
-          } else {
-            setStep(1);
-          }
-        }} />
+        <LandingPage
+          onGetStarted={() => {
+            const isCompleted = localStorage.getItem('onboarding_completed') === 'true';
+            if (isCompleted) {
+              setStep(4);
+            } else {
+              setStep(1);
+            }
+          }}
+          onLogin={() => setStep(1)}
+        />
       ) : (
         <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
           {step > 1 && step < 4 && <Stepper currentStep={step} />}
           {step === 1 && (
             <div style={{ position: 'relative', width: '100%', maxWidth: '500px' }}>
-              <button 
-                onClick={() => setStep(0)} 
+              <button
+                onClick={() => setStep(0)}
                 style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 ← Back to Webpage
@@ -5545,13 +5615,19 @@ export default function App() {
           )}
           {step === 2 && <Onboarding onBack={() => setStep(1)} onNext={() => setStep(3)} />}
           {step === 3 && <Platforms onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-          {step === 4 && <MainDashboard onGoHome={() => setStep(0)} />}
+          {step === 4 && <MainDashboard onGoHome={() => setStep(0)} onLogout={() => {
+            localStorage.removeItem('user_logged_in');
+            localStorage.removeItem('tenant_id');
+            localStorage.removeItem('onboarding_completed');
+            localStorage.removeItem('businessProfile');
+            setStep(1);
+          }} />}
         </div>
       )}
 
       {/* Success Notification (Toast top-right) */}
       {notification && notification.type === 'success' && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: '24px',
@@ -5577,7 +5653,7 @@ export default function App() {
             </div>
             <div style={{ fontSize: '13px', opacity: 0.9 }}>{notification.message}</div>
           </div>
-          <button 
+          <button
             onClick={() => setNotification(null)}
             style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer', opacity: 0.7 }}
           >

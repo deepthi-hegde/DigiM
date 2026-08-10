@@ -24,12 +24,12 @@ def test_campaign_generate_success():
 
 def test_campaign_generate_missing_field():
     payload = {
-        "prompt": "Test campaign",
         "minAge": 18,
         "maxAge": 45,
         "gender": "Female",
-        "freq": "Everyday"
-        # missing category
+        "freq": "Everyday",
+        "category": "Promotions"
+        # missing prompt
     }
     response = client.post("/api/campaign/generate", json=payload)
     assert response.status_code == 422 # Unprocessable Entity
