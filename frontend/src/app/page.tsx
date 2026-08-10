@@ -2611,7 +2611,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('/api/meta/status');
+        const savedTenantId = localStorage.getItem('tenant_id') || '1';
+        const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
         const data = await res.json();
         setMetaStatus(data);
       } catch (err) {
