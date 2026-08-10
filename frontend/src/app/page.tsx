@@ -1263,7 +1263,8 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         if (typeof window !== 'undefined') localStorage.setItem('ig_connected', 'true');
         notifySuccess("Instagram Business account connected! 🎉");
       } else {
-        notifyError("Failed to connect Instagram account");
+        const errorData = await res.json().catch(() => ({}));
+        notifyError(errorData.detail || "Failed to connect Instagram account");
       }
     } catch (err) {
       console.error("Instagram connect error", err);

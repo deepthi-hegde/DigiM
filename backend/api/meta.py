@@ -77,14 +77,7 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
     else:
         print("DEBUG - META_APP_ID or META_APP_SECRET not set, skipping token exchange")
 
-    # Try to find a linked Instagram account using the Page token
-    ig_id = None
-    try:
-        ig_res = get_instagram_accounts(payload.page_id, page_access_token)
-        ig_id = ig_res.get("instagram_business_account", {}).get("id")
-    except:
-        pass
-
+    # Save the Meta Page connection details (leave ig_user_id as None or unchanged)
     account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id, page_id=payload.page_id).first()
     if not account:
         account = MetaAccount(
@@ -92,19 +85,18 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
             page_id=payload.page_id,
             page_name=payload.page_name,
             access_token=page_access_token,
-            ig_user_id=ig_id
+            ig_user_id=None
         )
         db.add(account)
     else:
         account.access_token = page_access_token
         account.page_name = payload.page_name
-        account.ig_user_id = ig_id
     
     db.commit()
     return {
         "status": "success", 
         "message": f"Connected {payload.page_name}",
-        "has_instagram": ig_id is not None
+        "has_instagram": account.ig_user_id is not None
     }
 
 class InstagramConnectRequest(BaseModel):
@@ -114,23 +106,38 @@ class InstagramConnectRequest(BaseModel):
 @router.post("/connect-instagram")
 def connect_instagram_account(payload: InstagramConnectRequest, db: Session = Depends(get_db)):
     """
-    Persists Instagram connection for a tenant in the database.
+    Persists Instagram connection for a tenant in the database by querying 
+    the Meta Graph API using the connected Facebook Page access token.
     """
     account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id)\
         .order_by(MetaAccount.id.desc()).first()
-    target_ig_id = payload.ig_user_id
-    if not account:
-        account = MetaAccount(
-            tenant_id=payload.tenant_id,
-            page_id="pending_page_selection",
-            page_name="Connected Meta Page",
-            access_token="stub_token",
-            ig_user_id=target_ig_id
+        
+    if not account or account.page_id == "pending_page_selection" or not account.access_token:
+        raise HTTPException(
+            status_code=400, 
+            detail="Please connect Facebook Page first before linking Instagram."
         )
-        db.add(account)
-    else:
-        account.ig_user_id = target_ig_id
-    
+
+    target_ig_id = payload.ig_user_id
+
+    # Query the Meta Graph API to discover the linked Instagram Business account
+    if not target_ig_id:
+        try:
+            ig_res = get_instagram_accounts(account.page_id, account.access_token)
+            target_ig_id = ig_res.get("instagram_business_account", {}).get("id")
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Failed to query linked Instagram account: {str(e)}"
+            )
+
+    if not target_ig_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No Instagram Business Account is connected to this Facebook Page. Please link your Instagram account to your Facebook Page first."
+        )
+
+    account.ig_user_id = target_ig_id
     db.commit()
     db.refresh(account)
     return {"status": "success", "message": "Instagram connected successfully", "ig_user_id": account.ig_user_id}
