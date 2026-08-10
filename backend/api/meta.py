@@ -77,9 +77,39 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
     else:
         print("DEBUG - META_APP_ID or META_APP_SECRET not set, skipping token exchange")
 
+    # Try to find a linked Instagram account using the Page token
+    ig_id = None
+    try:
+        ig_res = get_instagram_accounts(payload.page_id, page_access_token)
+        ig_id = ig_res.get("instagram_business_account", {}).get("id")
+    except:
+        pass
+
+    account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id, page_id=payload.page_id).first()
+    if not account:
+        account = MetaAccount(
+            tenant_id=payload.tenant_id,
+            page_id=payload.page_id,
+            page_name=payload.page_name,
+            access_token=page_access_token,
+            ig_user_id=ig_id
+        )
+        db.add(account)
+    else:
+        account.access_token = page_access_token
+        account.page_name = payload.page_name
+        account.ig_user_id = ig_id
+    
+    db.commit()
+    return {
+        "status": "success", 
+        "message": f"Connected {payload.page_name}",
+        "has_instagram": ig_id is not None
+    }
+
 class InstagramConnectRequest(BaseModel):
     tenant_id: int = 1
-    ig_user_id: Optional[str] = "17841400000000000"
+    ig_user_id: Optional[str] = None
 
 @router.post("/connect-instagram")
 def connect_instagram_account(payload: InstagramConnectRequest, db: Session = Depends(get_db)):
@@ -88,7 +118,7 @@ def connect_instagram_account(payload: InstagramConnectRequest, db: Session = De
     """
     account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id)\
         .order_by(MetaAccount.id.desc()).first()
-    target_ig_id = payload.ig_user_id or "17841400000000000"
+    target_ig_id = payload.ig_user_id
     if not account:
         account = MetaAccount(
             tenant_id=payload.tenant_id,
@@ -119,39 +149,6 @@ def disconnect_platform(tenant_id: int = 1, platform: str = "all", db: Session =
             db.delete(account)
         db.commit()
     return {"status": "success", "message": f"Disconnected {platform}"}
-
-    # Try to find a linked Instagram account using the Page token
-    ig_id = None
-    try:
-        ig_res = get_instagram_accounts(payload.page_id, page_access_token)
-        ig_id = ig_res.get("instagram_business_account", {}).get("id")
-    except:
-        pass
-
-    account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id, page_id=payload.page_id).first()
-    if not account:
-        account = MetaAccount(
-            tenant_id=payload.tenant_id,
-            page_id=payload.page_id,
-            page_name=payload.page_name,
-            access_token=page_access_token,
-            ig_user_id=ig_id
-        )
-        db.add(account)
-    else:
-        account.access_token = page_access_token
-        account.page_name = payload.page_name
-        if ig_id:
-            account.ig_user_id = ig_id
-        else:
-            account.ig_user_id = None
-    
-    db.commit()
-    return {
-        "status": "success", 
-        "message": f"Connected {payload.page_name}",
-        "has_instagram": account.ig_user_id is not None
-    }
 
 @router.get("/pages")
 def get_user_pages(user_access_token: str):
