@@ -1265,22 +1265,22 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       <p style={{ color: 'var(--text-light)', marginBottom: '32px' }}>Link your social accounts to publish AI campaigns directly.</p>
 
       {showPageSelector && (
-        <div style={{ marginBottom: '40px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Select Facebook Page</h3>
-          <p style={{ color: 'var(--text-light)', marginBottom: '16px', fontSize: '14px' }}>Choose which Facebook Page you want to connect to DigiM app.</p>
+        <div className="glass-panel" style={{ marginBottom: '40px', padding: '24px', borderRadius: '16px', border: '1px solid var(--primary-color)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: 'var(--text-color)' }}>Select Facebook Page</h3>
+          <p style={{ color: 'var(--text-light)', marginBottom: '20px', fontSize: '14px', lineHeight: '1.5' }}>Choose which Facebook Page you want to connect to DigiM app.</p>
           <select
             className="input-field"
             value={selectedPageId}
             onChange={(e) => setSelectedPageId(e.target.value)}
-            style={{ marginBottom: '16px' }}
+            style={{ marginBottom: '24px' }}
           >
             {fbPages.map(page => (
-              <option key={page.id} value={page.id}>{page.name}</option>
+              <option key={page.id} value={page.id} style={{ background: 'var(--bg-dark)', color: 'var(--text-color)' }}>{page.name}</option>
             ))}
           </select>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn-primary" onClick={handleConfirmPage}>Confirm & Connect</button>
-            <button className="btn-secondary" onClick={() => setShowPageSelector(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleConfirmPage} style={{ padding: '12px 24px', borderRadius: '10px' }}>Confirm & Connect</button>
+            <button className="btn-secondary" onClick={() => setShowPageSelector(false)} style={{ padding: '12px 24px', borderRadius: '10px' }}>Cancel</button>
           </div>
         </div>
       )}
