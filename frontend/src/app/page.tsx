@@ -30,6 +30,20 @@ const notifyError = (message: string) => {
   }
 };
 
+/**
+ * Returns the business timezone from localStorage (set during onboarding).
+ * Falls back to 'Asia/Kolkata' if not set.
+ */
+const getBizTimezone = (): string => {
+  if (typeof window === 'undefined') return 'Asia/Kolkata';
+  try {
+    const profile = JSON.parse(localStorage.getItem('businessProfile') || '{}');
+    return profile.timezone || 'Asia/Kolkata';
+  } catch {
+    return 'Asia/Kolkata';
+  }
+};
+
 function Stepper({ currentStep }: { currentStep: number }) {
   const steps = ["Account", "Profile", "Platforms", "Campaign"];
   return (
@@ -1891,7 +1905,7 @@ function ScheduledPostInspectorModal({
   if (!campaign) return null;
 
   const dateStr = campaign.scheduled_time
-    ? new Date(campaign.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(campaign.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })
     : 'Draft / Unscheduled';
 
   const handleDelete = async () => {
@@ -3658,7 +3672,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                     setScheduledTime(isoString);
                     setDraftScheduledTime(isoString);
                     const d = new Date(isoString);
-                    const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                    const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() });
                     notifySuccess(`⏰ Scheduled for ${label}`);
                   }}
                   onCancel={() => {
@@ -3670,7 +3684,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
               {isScheduling && scheduledTime && (
                 <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                    ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                    ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })}
                   </span>
                   <button
                     type="button"
@@ -4869,7 +4883,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
               {/* Scheduled Posts */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
                 {dayPosts.map((post) => {
-                  const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: getBizTimezone() });
                   const isPast = new Date(post.scheduled_time) < new Date() || post.status === 'published' || post.status === 'failed';
                   const promptText = (post.prompt || post.generated_text || "Campaign").trim();
                   const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
@@ -4969,7 +4983,7 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                     </span>
                     {c.status === 'scheduled' && (
                       <span style={{ fontSize: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        Scheduled: {c.scheduled_time_local ? `${new Date(c.scheduled_time).toLocaleDateString()} at ${c.scheduled_time_local}` : new Date(c.scheduled_time).toLocaleString()}
+                        Scheduled: {c.scheduled_time_local ? `${new Date(c.scheduled_time).toLocaleDateString('en-IN', { timeZone: getBizTimezone() })} at ${c.scheduled_time_local}` : new Date(c.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })}
                       </span>
                     )}
                     {c.status === 'published' && (
