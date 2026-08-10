@@ -809,7 +809,9 @@ def save_campaign_draft(payload: CampaignDraftRequest, db: Session = Depends(get
         campaign.tone = payload.tone or campaign.tone
         campaign.generated_text = payload.generated_text
         if payload.image_url:
-            campaign.visual_suggestion = payload.image_url
+            campaign.visual_suggestion = save_permanent_asset_if_needed(payload.image_url)
+        elif payload.visual_suggestion:
+            campaign.visual_suggestion = payload.visual_suggestion
         if payload.scheduled_time:
             try:
                 raw_dt = datetime.datetime.fromisoformat(payload.scheduled_time.replace("Z", "+00:00"))
@@ -826,7 +828,7 @@ def save_campaign_draft(payload: CampaignDraftRequest, db: Session = Depends(get
             max_age=35,
             gender="All",
             generated_text=payload.generated_text or "",
-            visual_suggestion=payload.image_url or payload.visual_suggestion or "",
+            visual_suggestion=save_permanent_asset_if_needed(payload.image_url) or payload.visual_suggestion or "",
             tone=payload.tone or "casual",
             status="draft"
         )
