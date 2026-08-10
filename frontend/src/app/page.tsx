@@ -2025,7 +2025,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [aiManaged, setAiManaged] = useState(true);
 
   const [freq, setFreq] = useState('3 times a week');
   const [minAge, setMinAge] = useState(18);
@@ -2205,7 +2204,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       if (initialCampaign.max_age !== undefined) setMaxAge(initialCampaign.max_age);
       if (initialCampaign.gender) setGender(initialCampaign.gender);
       if (initialCampaign.freq) setFreq(initialCampaign.freq);
-      if (initialCampaign.ai_managed !== undefined) setAiManaged(initialCampaign.ai_managed);
     }
   }, [initialCampaign]);
 
@@ -3100,26 +3098,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             )}
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
-              <input type="checkbox" checked={aiManaged} onChange={(e) => setAiManaged(e.target.checked)} />
-              Fully AI-Managed Posting
-            </label>
-          </div>
 
-          {aiManaged && (
-            <div className="fade-in-up" style={{ background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(82, 183, 136, 0.15)', marginBottom: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.4)' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Frequency</span>
-                <select className="input-field" value={freq} onChange={(e) => setFreq(e.target.value)}>
-                  <option>3 times a week</option>
-                  <option>Everyday</option>
-                  <option>Once a week</option>
-                  <option>Custom</option>
-                </select>
-              </div>
-            </div>
-          )}
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Target Audience</label>
