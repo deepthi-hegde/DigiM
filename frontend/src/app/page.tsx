@@ -1774,7 +1774,7 @@ function MetaPostScheduler({
             transition: 'all 0.15s ease'
           }}
         >
-          Confirm
+          Done
         </button>
       </div>
     </div>
@@ -2081,6 +2081,22 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
   const [isSendingWa, setIsSendingWa] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
 
+  const clearForm = () => {
+    setPrompt('');
+    setCategory('Product Showcase');
+    setTone('casual');
+    setCampaignId(null);
+    setGeneratedText('');
+    setVisualSuggestion('');
+    setSelectedAssetUrl(null);
+    setOriginalAssetUrl(null);
+    setCarouselUrls([]);
+    setIsLiked(false);
+    setGenerated(false);
+    setIsScheduling(false);
+    setScheduledTime('');
+  };
+
   // Check WhatsApp connection configuration status and load calendar events on mount
   useEffect(() => {
     const checkWaStatus = async () => {
@@ -2213,6 +2229,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       if (initialCampaign.max_age !== undefined) setMaxAge(initialCampaign.max_age);
       if (initialCampaign.gender) setGender(initialCampaign.gender);
       if (initialCampaign.freq) setFreq(initialCampaign.freq);
+    } else {
+      clearForm();
     }
   }, [initialCampaign]);
 
@@ -2790,14 +2808,18 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
       const data = await response.json();
       if (response.ok) {
         if (scheduledTime) {
-          notifySuccess(`Post scheduled successfully for ${new Date(scheduledTime).toLocaleString()}!`);
-          setIsScheduling(false);
-          setScheduledTime('');
+          const formattedTime = new Date(scheduledTime).toLocaleString('en-IN', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: getBizTimezone()
+          });
+          notifySuccess(`Post scheduled successfully for ${formattedTime}! 🎉`);
         } else {
           let targetPlatforms = publishToIg ? "Facebook & Instagram" : "Facebook";
           notifySuccess(`Published successfully to ${targetPlatforms}! ✨`);
         }
 
+        clearForm();
         if (onClearEdit) onClearEdit();
       } else {
         const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
@@ -3764,9 +3786,6 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                   onSchedule={(isoString) => {
                     setScheduledTime(isoString);
                     setDraftScheduledTime(isoString);
-                    const d = new Date(isoString);
-                    const label = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() });
-                    notifySuccess(`⏰ Scheduled for ${label}`);
                   }}
                   onCancel={() => {
                     setIsScheduling(false);
@@ -3937,7 +3956,7 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
                 onClick={handlePublish}
                 disabled={isPublishing}
               >
-                {isPublishing ? 'Publishing...' : (isScheduling ? '✓ Schedule Post' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook'))}
+                {isPublishing ? 'Publishing...' : (isScheduling ? 'Schedule Publish' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook'))}
               </button>
 
               {metaStatus.connected && (
@@ -4746,7 +4765,7 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
             <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-light)', marginBottom: '8px', fontWeight: 500 }}>Message</label>
             <textarea className="input-field" rows={4} style={{ resize: 'vertical' }} placeholder="Tell us what you're looking for..." required value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
           </div>
-          <button type="submit" className="btn-primary" style={{ marginTop: '10px' }}>Send Message</button>
+          <button type="submit" className="btn-primary" style={{ marginTop: '10px' }}>Submit Inquiry</button>
         </form>
       </section>
 
