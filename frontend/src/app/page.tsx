@@ -2027,10 +2027,21 @@ function ScheduledPostInspectorModal({
   );
 }
 
-export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCampaign?: any, onClearEdit?: () => void }) {
+export function CampaignDashboard({
+  initialCampaign,
+  onClearEdit,
+  onNavigateToTab
+}: {
+  initialCampaign?: any,
+  onClearEdit?: () => void,
+  onNavigateToTab?: (tab: string) => void
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [generated, setGenerated] = useState(false);
+  
+  const [showScheduleSuccessModal, setShowScheduleSuccessModal] = useState(false);
+  const [scheduledLabelForModal, setScheduledLabelForModal] = useState('');
 
   const [freq, setFreq] = useState('3 times a week');
   const [minAge, setMinAge] = useState(18);
@@ -2095,6 +2106,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
     setGenerated(false);
     setIsScheduling(false);
     setScheduledTime('');
+    setRecommendAiGen(false);
+    setMatchRationale('');
   };
 
   // Check WhatsApp connection configuration status and load calendar events on mount
@@ -2813,7 +2826,8 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             timeStyle: 'short',
             timeZone: getBizTimezone()
           });
-          notifySuccess(`Post scheduled successfully for ${formattedTime}! 🎉`);
+          setScheduledLabelForModal(formattedTime);
+          setShowScheduleSuccessModal(true);
         } else {
           let targetPlatforms = publishToIg ? "Facebook & Instagram" : "Facebook";
           notifySuccess(`Published successfully to ${targetPlatforms}! ✨`);
@@ -4122,6 +4136,99 @@ export function CampaignDashboard({ initialCampaign, onClearEdit }: { initialCam
             >
               ✕ Close
             </button>
+          </div>
+        </div>
+      )}
+      
+      {showScheduleSuccessModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.25s ease-out'
+        }}>
+          <div style={{
+            background: '#1a1d20',
+            border: '1px solid rgba(82, 183, 136, 0.3)',
+            borderRadius: '24px',
+            padding: '40px',
+            maxWidth: '480px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+            animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: 'rgba(82, 183, 136, 0.1)',
+              border: '2px solid var(--primary-color)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+              fontSize: '40px',
+              animation: 'bounceIn 0.5s ease-out'
+            }}>
+              ⏰
+            </div>
+            
+            <h3 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
+              Post Successfully Scheduled!
+            </h3>
+            
+            <p style={{ color: 'var(--text-light)', fontSize: '15px', lineHeight: 1.6, marginBottom: '32px' }}>
+              Your social media post is queued and scheduled for:<br />
+              <strong style={{ color: 'var(--primary-color)', fontSize: '16px' }}>{scheduledLabelForModal}</strong>
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setShowScheduleSuccessModal(false);
+                  if (onNavigateToTab) onNavigateToTab('calendar');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                📅 View on Calendar
+              </button>
+              
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setShowScheduleSuccessModal(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'transparent',
+                  color: '#ffffff'
+                }}
+              >
+                ➕ Create Another Campaign
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -5607,6 +5714,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           <CampaignDashboard
             initialCampaign={selectedCampaignForEdit}
             onClearEdit={() => setSelectedCampaignForEdit(null)}
+            onNavigateToTab={(tab) => setActiveTab(tab)}
           />
         )}
         {activeTab === 'calendar' && (

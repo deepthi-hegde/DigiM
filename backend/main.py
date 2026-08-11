@@ -556,8 +556,10 @@ load_dotenv()
 def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
     api_key = os.environ.get("GEMINI_API_KEY")
     
+    target_tenant_id = payload.tenant_id if payload.tenant_id is not None else 1
+
     existing_campaign = db.query(Campaign).filter_by(
-        tenant_id=1,
+        tenant_id=target_tenant_id,
         prompt=payload.prompt,
         category=payload.category,
         min_age=payload.minAge,
@@ -577,7 +579,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         }
 
     # Retrieve liked campaigns to construct few-shot learning prompt context
-    liked_campaigns = db.query(Campaign).filter_by(tenant_id=1, is_liked=True).limit(3).all()
+    liked_campaigns = db.query(Campaign).filter_by(tenant_id=target_tenant_id, is_liked=True).limit(3).all()
     few_shot_context = ""
     if liked_campaigns:
         few_shot_context = "\nBelow are examples of posts the user has saved and likes (match this style and format):\n"
@@ -699,7 +701,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
             suggestion = "A professional lifestyle photo related to the product."
  
         new_campaign = Campaign(
-            tenant_id=1,
+            tenant_id=target_tenant_id,
             prompt=payload.prompt,
             category=payload.category,
             min_age=payload.minAge,
@@ -715,7 +717,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         
         # Log the generation event
         log = AuditLog(
-            tenant_id=1,
+            tenant_id=target_tenant_id,
             user_email="admin@digim.com",
             action="Generate Campaign",
             details=f"Generated campaign {new_campaign.id} with tone {payload.tone}"
