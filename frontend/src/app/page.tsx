@@ -2401,7 +2401,14 @@ export function CampaignDashboard({
   };
 
   const handleGenerateAiImage = async () => {
-    if (!visualSuggestion) return;
+    const promptToUse = visualSuggestion || generatedText;
+    if (!promptToUse) {
+      notifyError("Please type a message first or generate campaign text to get an image prompt.");
+      return;
+    }
+    if (!visualSuggestion) {
+      setVisualSuggestion(promptToUse);
+    }
     setIsGeneratingImage(true);
     try {
       // If we already have a carousel set and user is clicking Regenerate on a single slide, only request 1 image
@@ -2412,7 +2419,7 @@ export function CampaignDashboard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: visualSuggestion,
+          prompt: promptToUse,
           num_images: countToGen,
           format_type: formatType
         })
@@ -3460,29 +3467,34 @@ export function CampaignDashboard({
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                 <button
                   onClick={handleGenerateAiImage}
-                  disabled={isGeneratingImage || !visualSuggestion}
-                  title={!visualSuggestion ? 'Generate campaign content first to get an image prompt' : selectedAssetUrl ? 'Regenerate image using AI prompt' : 'Generate image using AI prompt'}
+                  disabled={isGeneratingImage || (!visualSuggestion && !generatedText)}
+                  title={isGeneratingImage ? 'Generating image...' : (!visualSuggestion && !generatedText) ? 'Please type a message or generate campaign text first' : selectedAssetUrl ? 'Regenerate image using AI prompt' : 'Generate image using AI prompt'}
                   style={{
                     flex: 1,
                     padding: '10px 16px',
                     borderRadius: '10px',
                     border: 'none',
-                    background: isGeneratingImage || !visualSuggestion
+                    background: isGeneratingImage || (!visualSuggestion && !generatedText)
                       ? 'rgba(255, 255, 255, 0.04)'
                       : 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
-                    color: isGeneratingImage || !visualSuggestion ? 'var(--text-light)' : 'white',
+                    color: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'var(--text-light)' : 'white',
                     fontSize: '13px',
                     fontWeight: 700,
-                    cursor: isGeneratingImage || !visualSuggestion ? 'not-allowed' : 'pointer',
-                    boxShadow: isGeneratingImage || !visualSuggestion ? 'none' : '0 4px 12px var(--primary-glow)',
+                    cursor: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'not-allowed' : 'pointer',
+                    boxShadow: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'none' : '0 4px 12px var(--primary-glow)',
                     transition: 'all 0.2s ease',
                   }}
                 >
                   {isGeneratingImage ? '🎨 Generating...' : selectedAssetUrl ? '🔄 Regenerate' : '✨ Generate Image'}
                 </button>
-                {visualSuggestion && (
+                {(visualSuggestion || generatedText) && (
                   <button
-                    onClick={() => setShowPromptEditor(prev => !prev)}
+                    onClick={() => {
+                      if (!visualSuggestion && generatedText) {
+                        setVisualSuggestion(generatedText);
+                      }
+                      setShowPromptEditor(prev => !prev);
+                    }}
                     title="Customize the image prompt"
                     style={{
                       padding: '10px 12px',
@@ -3598,11 +3610,11 @@ export function CampaignDashboard({
                 </div>
               )}
               {/* Collapsible prompt editor */}
-              {showPromptEditor && visualSuggestion && (
+              {showPromptEditor && (visualSuggestion || generatedText) && (
                 <div style={{ animation: 'fadeInUp 0.2s ease-out' }}>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Image Prompt (editable)</label>
                   <textarea
-                    value={visualSuggestion}
+                    value={visualSuggestion || generatedText}
                     onChange={(e) => setVisualSuggestion(e.target.value)}
                     rows={3}
                     placeholder="Describe the image you want..."
