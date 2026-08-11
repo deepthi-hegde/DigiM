@@ -1143,7 +1143,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
             setIsFbConnected(true);
             setFbPageName(data.page_name);
           }
-          if (data.has_instagram || (typeof window !== 'undefined' && localStorage.getItem('ig_connected') === 'true')) {
+          if (data.has_instagram) {
             setIsIgConnected(true);
           }
         }
@@ -1260,7 +1260,6 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
       });
       if (res.ok) {
         setIsIgConnected(true);
-        if (typeof window !== 'undefined') localStorage.setItem('ig_connected', 'true');
         notifySuccess("Instagram Business account connected! 🎉");
       } else {
         const errorData = await res.json().catch(() => ({}));
