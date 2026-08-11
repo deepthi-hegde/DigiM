@@ -1142,9 +1142,14 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           if (data.connected) {
             setIsFbConnected(true);
             setFbPageName(data.page_name);
+          } else {
+            setIsFbConnected(false);
+            setFbPageName('');
           }
           if (data.has_instagram) {
             setIsIgConnected(true);
+          } else {
+            setIsIgConnected(false);
           }
         }
       } catch (e) {
