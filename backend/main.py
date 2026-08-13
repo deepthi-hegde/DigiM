@@ -230,10 +230,35 @@ def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
         temp_filename = image_url.split("/api/temp_assets/raw/")[-1]
         temp_path = os.path.join(TEMP_UPLOAD_DIR, temp_filename)
         if os.path.exists(temp_path):
+            # Upload permanently to GCS (if on Cloud Run) or copy locally
+            perm_url = upload_to_gcs(temp_path, f"assets/{temp_filename}")
+            if perm_url.startswith("http"):
+                return perm_url
+            # Fallback: local copy
             perm_path = os.path.join(UPLOAD_DIR, temp_filename)
             import shutil
             shutil.copy(temp_path, perm_path)
             return f"/api/assets/raw/{temp_filename}"
+
+    # Handle GCS temp-ai-gen paths — copy blob to permanent assets/ path
+    BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME") or "marketflow-assets-digim-496018"
+    temp_ai_gen_prefix = f"https://storage.googleapis.com/{BUCKET_NAME}/temp-ai-gen/"
+    if image_url.startswith(temp_ai_gen_prefix) and os.environ.get("K_SERVICE"):
+        try:
+            from google.cloud import storage as gcs
+            client = gcs.Client()
+            bucket = client.bucket(BUCKET_NAME)
+            src_blob_name = "temp-ai-gen/" + image_url.split("/temp-ai-gen/")[-1]
+            dest_blob_name = "assets/" + image_url.split("/temp-ai-gen/")[-1]
+            src_blob = bucket.blob(src_blob_name)
+            dest_blob = bucket.blob(dest_blob_name)
+            if src_blob.exists():
+                bucket.copy_blob(src_blob, bucket, dest_blob_name)
+                print(f"Promoted temp-ai-gen image to permanent assets/: {dest_blob_name}")
+                return f"https://storage.googleapis.com/{BUCKET_NAME}/{dest_blob_name}"
+        except Exception as e:
+            print(f"Error promoting temp-ai-gen GCS blob: {e}")
+
     return image_url
 
 
@@ -458,7 +483,8 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             campaign.publish_to_facebook = True
             campaign.publish_to_instagram = payload.publish_to_instagram
             if payload.image_url:
-                campaign.visual_suggestion = payload.image_url
+                # Always promote temp/base64 images to permanent GCS storage before saving
+                campaign.visual_suggestion = save_permanent_asset_if_needed(payload.image_url)
         else:
             campaign = Campaign(
                 tenant_id=payload.tenant_id,
@@ -468,7 +494,8 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
                 max_age=65,
                 gender="All",
                 generated_text=payload.message,
-                visual_suggestion=payload.image_url,
+                # Always promote temp/base64 images to permanent GCS storage before saving
+                visual_suggestion=save_permanent_asset_if_needed(payload.image_url),
                 scheduled_time=parsed_time,
                 status="scheduled",
                 publish_to_facebook=True,
@@ -1311,90 +1338,9 @@ def process_scheduled_campaigns():
 from db.schema import ArchivedCampaign
 from utils.storage import get_gcs_bucket_size_bytes
 
-def process_post_archival_and_pruning():
-    """
-    Background worker that runs periodically:
-    1. Archives published posts >90 days old to archived_campaigns table.
-    2. Prunes GCS media files >180 days old if GCS usage exceeds 5.0 GB limit.
-    """
-    while True:
-        try:
-            time.sleep(3600) # Check hourly
-            from db.database import SessionLocal
-            db = SessionLocal()
-            now = datetime.datetime.utcnow()
-            thirty_days_ago = now - datetime.timedelta(days=30)
-            ninety_days_ago = now - datetime.timedelta(days=90)
-            one_eighty_days_ago = now - datetime.timedelta(days=180)
-
-            # ── 0. Auto-Prune Abandoned Drafts (>30 days old & unliked) ────────
-            abandoned_drafts = db.query(Campaign).filter(
-                Campaign.status == "draft",
-                Campaign.is_liked == False,
-                Campaign.scheduled_time == None
-            ).all()
-
-            for draft in abandoned_drafts:
-                db.delete(draft)
-            db.commit()
-
-            # ── 1. DB Archival (>90 days old published posts) ──────────────────
-            old_published = db.query(Campaign).filter(
-                Campaign.status == "published",
-                Campaign.scheduled_time <= ninety_days_ago
-            ).all()
-
-            for post in old_published:
-                archived = ArchivedCampaign(
-                    original_campaign_id=post.id,
-                    tenant_id=post.tenant_id,
-                    prompt=post.prompt,
-                    category=post.category,
-                    min_age=post.min_age,
-                    max_age=post.max_age,
-                    gender=post.gender,
-                    generated_text=post.generated_text,
-                    visual_suggestion=post.visual_suggestion,
-                    tone=post.tone,
-                    is_liked=post.is_liked,
-                    scheduled_time=post.scheduled_time,
-                    status="archived",
-                    archived_at=now
-                )
-                db.add(archived)
-                db.delete(post)
-                db.add(AuditLog(
-                    tenant_id=post.tenant_id,
-                    user_email="system@digim.com",
-                    action="Archive Campaign",
-                    details=f"Auto-archived post {post.id} (published >90d ago)"
-                ))
-            db.commit()
-
-            # ── 2. GCS Storage Quota Pruning (>180d old & GCS > 5GB limit) ────
-            FIVE_GB_BYTES = 5 * 1024 * 1024 * 1024
-            gcs_bytes = get_gcs_bucket_size_bytes()
-
-            if gcs_bytes > FIVE_GB_BYTES:
-                old_archived = db.query(ArchivedCampaign).filter(
-                    ArchivedCampaign.scheduled_time <= one_eighty_days_ago,
-                    ArchivedCampaign.media_pruned == False
-                ).all()
-
-                for arch in old_archived:
-                    arch.media_pruned = True
-                    arch.visual_suggestion = None  # Clear heavy media reference
-                    db.add(AuditLog(
-                        tenant_id=arch.tenant_id,
-                        user_email="system@digim.com",
-                        action="Prune GCS Media Blob",
-                        details=f"Pruned GCS media blob for archived post {arch.id} (>180d & GCS quota > 5GB)"
-                    ))
-                db.commit()
-
-            db.close()
-        except Exception as e:
-            print(f"Error in archival processor thread: {e}")
+# NOTE: Archival and pruning worker intentionally removed.
+# At this stage of the product there are too few users and campaigns to warrant
+# automatic deletion. Re-enable when DB size becomes a real concern (>10k rows).
 
 @app.get("/api/storage/status")
 def get_storage_status():
@@ -1470,5 +1416,5 @@ def unarchive_campaign(archived_id: int, tenant_id: int = 1, db: Session = Depen
 def start_scheduler():
     print("Starting scheduled post background worker thread...")
     threading.Thread(target=process_scheduled_campaigns, daemon=True).start()
-    threading.Thread(target=process_post_archival_and_pruning, daemon=True).start()
+    # NOTE: Archival/pruning worker removed — not needed at current scale.
 
