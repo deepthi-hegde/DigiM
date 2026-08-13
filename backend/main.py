@@ -221,6 +221,12 @@ def save_permanent_asset_if_needed(image_url: Optional[str]) -> Optional[str]:
             file_path = os.path.join(UPLOAD_DIR, filename)
             with open(file_path, "wb") as f:
                 f.write(base64.b64decode(base64_data))
+            # Upload to GCS for permanent storage (survives container redeploys)
+            gcs_url = upload_to_gcs(file_path, f"assets/{filename}")
+            if gcs_url.startswith("http"):
+                print(f"Overlay image uploaded to GCS permanently: {gcs_url}")
+                return gcs_url
+            # Fallback to local path if GCS not configured (local dev)
             return f"/api/assets/raw/{filename}"
         except Exception as e:
             print(f"Error saving base64 asset: {e}")
