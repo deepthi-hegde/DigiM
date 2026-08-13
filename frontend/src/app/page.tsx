@@ -1803,7 +1803,9 @@ function SocialFeedPreviewModal({
 
   if (!isOpen) return null;
 
-  const displayName = businessName || "Your Business Name";
+  const displayName = businessName
+    || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName : '')
+    || 'Your Brand';
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 20px 20px', overflowY: 'auto' }}>
@@ -1952,6 +1954,28 @@ function ScheduledPostInspectorModal({
         <div style={{ padding: '20px' }}>
           {/* Draft Post Card Preview */}
           <div style={{ background: '#242526', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', color: '#e4e6eb', marginBottom: '20px' }}>
+            {/* Post header with business name */}
+            {(() => {
+              const bizName = typeof window !== 'undefined'
+                ? (JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName || 'Your Brand')
+                : 'Your Brand';
+              const logoUrl = typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') || '' : '';
+              return (
+                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #52b788 0%, #1b4332 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', color: '#fff' }}>
+                      {bizName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#f0f2f5' }}>{bizName}</div>
+                    <div style={{ fontSize: '10px', color: '#b0b3b8' }}>Sponsored • 🌐</div>
+                  </div>
+                </div>
+              );
+            })()}
             {(campaign.image_url || (campaign.visual_suggestion && (campaign.visual_suggestion.startsWith('/') || campaign.visual_suggestion.startsWith('http')))) ? (
               <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img src={campaign.image_url || campaign.visual_suggestion} alt="Scheduled post visual" style={{ width: '100%', maxHeight: '340px', objectFit: 'contain' }} />
