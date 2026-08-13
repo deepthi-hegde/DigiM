@@ -4937,7 +4937,7 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
   );
 }
 
-function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) => void }) {
+function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?: (campaign: any) => void; onNavigateToTab?: (tab: string) => void }) {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -5788,6 +5788,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         )}
         {activeTab === 'calendar' && (
           <CalendarTab
+              onNavigateToTab={(tab) => handleTabChange(tab)}
             onSelectCampaign={(c) => setInspectCampaign(c)}
           />
         )}
