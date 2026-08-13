@@ -2867,8 +2867,12 @@ export function CampaignDashboard({
         clearForm();
         if (onClearEdit) onClearEdit();
       } else {
-        const errorMsg = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
-        notifyError("Failed to publish: " + errorMsg);
+        const rawError = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
+        const isTokenExpired = rawError.toLowerCase().includes("session has expired") || rawError.toLowerCase().includes("error validating access token") || rawError.toLowerCase().includes("invalid oauth");
+        const errorMsg = isTokenExpired
+          ? "Your Facebook session has expired. Please go to Settings → Integrations and reconnect Facebook."
+          : "Failed to publish: " + rawError;
+        notifyError(errorMsg);
       }
     } catch (error) {
       console.error("Failed to publish", error);
