@@ -1545,7 +1545,7 @@ function MetaPostScheduler({
       animation: 'fadeInUp 0.2s ease-out'
     }}>
       <div style={{ fontSize: '13px', color: '#e4e6eb', marginBottom: '16px', lineHeight: '1.4', fontWeight: 500 }}>
-        Choose a date and time in the future when you want your post to be published.
+        Choose a date and time for your post. All times are in <strong style={{ color: '#52b788' }}>IST (India Standard Time)</strong>.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -1587,9 +1587,22 @@ function MetaPostScheduler({
           }}
         >
           <div style={{ fontSize: '20px', color: '#1877f2' }}>🕒</div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '11px', color: '#b0b3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Time</span>
-            <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>{timeLabel}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <span style={{ fontSize: '11px', color: '#b0b3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Time <span style={{ color: '#52b788', textTransform: 'none' }}>(IST)</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>{timeLabel}</span>
+              <input
+                type="time"
+                value={`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`}
+                onClick={e => e.stopPropagation()}
+                onChange={e => {
+                  const [h, m] = e.target.value.split(':').map(Number);
+                  if (!isNaN(h)) setHour(h);
+                  if (!isNaN(m)) setMinute(m);
+                }}
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#ffffff', fontSize: '12px', padding: '2px 4px', colorScheme: 'dark' }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -5162,35 +5175,25 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                   return (
                     <div
                       key={post.id}
-                      onClick={() => onSelectCampaign?.(post)}
+                      onClick={() => post.status !== 'failed' && onSelectCampaign?.(post)}
                       style={{
-                        background: isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)',
-                        border: isPast ? '1px dashed rgba(255, 255, 255, 0.2)' : '1.5px solid var(--primary-color)',
+                        background: post.status === 'failed' ? 'rgba(239, 68, 68, 0.08)' : isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)',
+                        border: post.status === 'failed' ? '1.5px solid rgba(239, 68, 68, 0.5)' : isPast ? '1px dashed rgba(255, 255, 255, 0.2)' : '1.5px solid var(--primary-color)',
                         borderRadius: '6px',
                         padding: '4px 6px',
                         fontSize: '10px',
-                        color: isPast ? 'rgba(255, 255, 255, 0.5)' : 'var(--text-color)',
-                        cursor: 'pointer',
-                        boxShadow: isPast ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
+                        color: post.status === 'failed' ? '#fca5a5' : isPast ? 'rgba(255, 255, 255, 0.5)' : 'var(--text-color)',
+                        cursor: post.status === 'failed' ? 'default' : 'pointer',
                         transition: 'all 0.2s',
-                        opacity: isPast ? 0.75 : 1
                       }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = isPast ? 'rgba(255, 255, 255, 0.08)' : 'rgba(82, 183, 136, 0.25)';
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)';
-                        e.currentTarget.style.transform = 'none';
-                      }}
-                      title={`[${postTime}] ${post.prompt || post.generated_text} (${isPast ? 'Past / Scratched' : 'Scheduled'}) - Click to edit`}
+                      title={post.status === 'failed' ? (post.failure_reason || 'Failed to publish') : `[${postTime}] ${post.prompt || post.generated_text}`}
                     >
                       <div style={{
                         fontWeight: 700,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        textDecoration: isPast ? 'line-through' : 'none'
+                        textDecoration: isPast && post.status !== 'failed' ? 'line-through' : 'none'
                       }}>
                         {firstTwoWords}
                       </div>
@@ -5202,8 +5205,23 @@ function CalendarTab({ onSelectCampaign }: { onSelectCampaign?: (campaign: any) 
                           </span>
                         )}
                       </div>
+                      {post.status === 'failed' && post.failure_reason && (
+                        <div style={{ marginTop: '4px', fontSize: '8.5px', color: '#fca5a5', lineHeight: '1.3' }}>
+                          {(post.failure_reason.toLowerCase().includes('session expired') || post.failure_reason.toLowerCase().includes('reconnect')) ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToTab?.('settings'); }}
+                              style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '4px', color: '#fca5a5', fontSize: '8px', padding: '2px 5px', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              🔗 Reconnect Facebook
+                            </button>
+                          ) : (
+                            <span>{post.failure_reason.slice(0, 60)}{post.failure_reason.length > 60 ? '…' : ''}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
+
                 })}
               </div>
             </div>

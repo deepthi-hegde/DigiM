@@ -110,6 +110,7 @@ class Campaign(Base):
     is_liked = Column(Boolean, default=False)
     scheduled_time = Column(DateTime, nullable=True)
     status = Column(String, default="draft")  # draft, scheduled, published, failed
+    failure_reason = Column(String, nullable=True)  # Human-readable error when status=failed
     publish_to_facebook = Column(Boolean, default=True)
     publish_to_instagram = Column(Boolean, default=False)
     

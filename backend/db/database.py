@@ -36,6 +36,30 @@ engine = create_engine(
 # Session local factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def run_migrations():
+    """
+    Applies incremental schema migrations to an existing SQLite database.
+    Safe to run on every startup — each migration is guarded by a column existence check.
+    """
+    import sqlite3
+    db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        # Check existing columns
+        cur.execute("PRAGMA table_info(campaigns)")
+        existing_cols = {row[1] for row in cur.fetchall()}
+        # Migration: add failure_reason column (stores human-readable error for failed scheduled posts)
+        if "failure_reason" not in existing_cols:
+            cur.execute("ALTER TABLE campaigns ADD COLUMN failure_reason TEXT")
+            print("Migration applied: campaigns.failure_reason column added.")
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Migration error (non-fatal): {e}")
+
+run_migrations()
+
 def sync_db_to_gcs():
     """
     Uploads the updated SQLite database file back to Google Cloud Storage.

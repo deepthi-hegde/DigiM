@@ -1081,6 +1081,8 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
             "tone": c.tone,
             "is_liked": c.is_liked,
             "status": c.status,
+            "failure_reason": getattr(c, "failure_reason", None),
+            "publish_to_instagram": getattr(c, "publish_to_instagram", False),
             "scheduled_time": None,
             "scheduled_time_local": None,
             "timezone": tz_str
@@ -1327,6 +1329,11 @@ def process_scheduled_campaigns():
                 except Exception as pub_err:
                     print(f"Error publishing scheduled post {post.id}: {pub_err}")
                     post.status = "failed"
+                    err_str = str(pub_err)
+                    if "session has expired" in err_str.lower() or "error validating access token" in err_str.lower() or "invalid oauth" in err_str.lower():
+                        post.failure_reason = "Facebook session expired. Please reconnect Facebook in Settings → Integrations."
+                    else:
+                        post.failure_reason = err_str[:300]  # cap length
                 
                 db.commit()
                 
