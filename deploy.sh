@@ -47,6 +47,7 @@ gcloud run deploy backend \
   --region "$REGION" \
   --project "$PROJECT_ID" \
   --set-env-vars GCS_BUCKET_NAME="marketflow-assets-digim-496018",META_APP_ID="$META_APP_ID",META_APP_SECRET="$META_APP_SECRET",GEMINI_API_KEY="$GEMINI_API_KEY" \
+  --max-instances 1 \
   --allow-unauthenticated
 
 # Retrieve the backend URL dynamically to bake it into the frontend

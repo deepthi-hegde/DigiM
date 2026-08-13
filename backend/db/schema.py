@@ -110,6 +110,8 @@ class Campaign(Base):
     is_liked = Column(Boolean, default=False)
     scheduled_time = Column(DateTime, nullable=True)
     status = Column(String, default="draft")  # draft, scheduled, published, failed
+    publish_to_facebook = Column(Boolean, default=True)
+    publish_to_instagram = Column(Boolean, default=False)
     
     # Relationships
     tenant = relationship("Tenant", back_populates="campaigns")

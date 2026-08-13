@@ -65,6 +65,16 @@ with engine.connect() as conn:
         conn.commit()
     except Exception:
         pass
+    try:
+        conn.execute(text("ALTER TABLE campaigns ADD COLUMN publish_to_facebook BOOLEAN DEFAULT 1"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE campaigns ADD COLUMN publish_to_instagram BOOLEAN DEFAULT 0"))
+        conn.commit()
+    except Exception:
+        pass
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -445,6 +455,8 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             campaign.scheduled_time = parsed_time
             campaign.status = "scheduled"
             campaign.generated_text = payload.message
+            campaign.publish_to_facebook = True
+            campaign.publish_to_instagram = payload.publish_to_instagram
             if payload.image_url:
                 campaign.visual_suggestion = payload.image_url
         else:
@@ -458,7 +470,9 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
                 generated_text=payload.message,
                 visual_suggestion=payload.image_url,
                 scheduled_time=parsed_time,
-                status="scheduled"
+                status="scheduled",
+                publish_to_facebook=True,
+                publish_to_instagram=payload.publish_to_instagram
             )
             db.add(campaign)
         
@@ -1232,17 +1246,41 @@ def process_scheduled_campaigns():
                     continue
                 
                 try:
-                    image_url = post.visual_suggestion
+                    image_url = save_permanent_asset_if_needed(post.visual_suggestion)
                     if image_url and not image_url.startswith("http"):
-                        image_url = "https://picsum.photos/id/237/600/600.jpg"
+                        public_backend_url = os.environ.get("BACKEND_URL", "https://backend-uaicdvk4ka-uc.a.run.app")
+                        if image_url.startswith("/"):
+                            image_url = f"{public_backend_url.rstrip('/')}{image_url}"
+                        else:
+                            image_url = "https://picsum.photos/id/237/600/600.jpg"
                     
-                    pub_req = PublishRequest(
-                        page_id=account.page_id,
-                        message=post.generated_text,
-                        access_token=account.access_token,
-                        image_url=image_url
-                    )
-                    publish_to_facebook(pub_req)
+                    fb_res = None
+                    ig_res = None
+
+                    # 1. Publish to Facebook
+                    if getattr(post, "publish_to_facebook", True):
+                        pub_req = PublishRequest(
+                            page_id=account.page_id,
+                            message=post.generated_text,
+                            access_token=account.access_token,
+                            image_url=image_url
+                        )
+                        fb_res = publish_to_facebook(pub_req)
+                    
+                    # 2. Publish to Instagram
+                    if getattr(post, "publish_to_instagram", False):
+                        if account.ig_user_id and image_url:
+                            from api.meta import publish_to_instagram, InstagramPublishRequest
+                            ig_pub_req = InstagramPublishRequest(
+                                ig_user_id=account.ig_user_id,
+                                image_url=image_url,
+                                caption=post.generated_text,
+                                access_token=account.access_token
+                            )
+                            ig_res = publish_to_instagram(ig_pub_req)
+                        else:
+                            print(f"Skipping Instagram auto-publish for campaign {post.id} (no IG account or no image)")
+
                     post.status = "published"
                     
                     # Log the auto-publish action
@@ -1250,7 +1288,7 @@ def process_scheduled_campaigns():
                         tenant_id=post.tenant_id,
                         user_email="system@digim.com",
                         action="Auto-Publish Scheduled Post",
-                        details=f"Campaign ID: {post.id} successfully published."
+                        details=f"Campaign ID: {post.id} successfully published to FB/IG."
                     )
                     db.add(log)
                 except Exception as pub_err:
@@ -1258,6 +1296,13 @@ def process_scheduled_campaigns():
                     post.status = "failed"
                 
                 db.commit()
+                
+                # Backup updated database to GCS
+                try:
+                    from db.database import sync_db_to_gcs
+                    sync_db_to_gcs()
+                except Exception as gcs_err:
+                    print(f"Failed to backup database to GCS in scheduler loop: {gcs_err}")
         except Exception as err:
             print(f"Error in scheduler processor loop: {err}")
         finally:
