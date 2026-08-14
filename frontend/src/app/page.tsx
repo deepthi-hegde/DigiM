@@ -1589,22 +1589,20 @@ function MetaPostScheduler({
           <div style={{ fontSize: '20px', color: '#1877f2' }}>🕒</div>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <span style={{ fontSize: '11px', color: '#b0b3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Time <span style={{ color: '#52b788', textTransform: 'none' }}>(IST)</span></span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>{timeLabel}</span>
-              <input
-                type="time"
-                value={`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`}
-                onClick={e => e.stopPropagation()}
-                onChange={e => {
-                  const [h, m] = e.target.value.split(':').map(Number);
-                  if (!isNaN(h)) setHour(h);
-                  if (!isNaN(m)) setMinute(m);
-                }}
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#ffffff', fontSize: '12px', padding: '2px 4px', colorScheme: 'dark' }}
-              />
-            </div>
+            <input
+              type="time"
+              value={`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`}
+              onClick={e => e.stopPropagation()}
+              onChange={e => {
+                const [h, m] = e.target.value.split(':').map(Number);
+                if (!isNaN(h)) setHour(h);
+                if (!isNaN(m)) setMinute(m);
+              }}
+              style={{ background: 'transparent', border: 'none', outline: 'none', color: '#ffffff', fontSize: '15px', fontWeight: 700, padding: 0, colorScheme: 'dark', cursor: 'pointer', width: '100%' }}
+            />
           </div>
         </div>
+
       </div>
 
       {/* Popover 1: Date Calendar Picker */}
@@ -2865,7 +2863,9 @@ export function CampaignDashboard({
       const data = await response.json();
       if (response.ok) {
         if (scheduledTime) {
-          const formattedTime = new Date(scheduledTime).toLocaleString('en-IN', {
+          // Parse naked picker string as IST (backend also treats it as IST)
+          const istDate = new Date(scheduledTime.length === 16 ? scheduledTime + ':00+05:30' : scheduledTime);
+          const formattedTime = istDate.toLocaleString('en-IN', {
             dateStyle: 'medium',
             timeStyle: 'short',
             timeZone: getBizTimezone()
