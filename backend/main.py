@@ -434,11 +434,49 @@ def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
     account = db.query(MetaAccount).filter_by(tenant_id=tenant_id)\
         .order_by(MetaAccount.id.desc()).first()
     if account:
+        token_valid = True
+        expires_at_str = None
+        expires_in_days = None
+        error_msg = None
+
+        app_id = os.environ.get("META_APP_ID", "")
+        app_secret = os.environ.get("META_APP_SECRET", "")
+        if account.access_token and app_id and app_secret:
+            try:
+                import requests
+                app_access_token = f"{app_id}|{app_secret}"
+                dbg_res = requests.get(
+                    "https://graph.facebook.com/debug_token",
+                    params={
+                        "input_token": account.access_token,
+                        "access_token": app_access_token
+                    },
+                    timeout=5
+                )
+                if dbg_res.status_code == 200:
+                    data = dbg_res.json().get("data", {})
+                    token_valid = data.get("is_valid", True)
+                    exp_ts = data.get("expires_at", 0)
+                    if exp_ts:
+                        exp_dt = datetime.datetime.fromtimestamp(exp_ts, datetime.timezone.utc)
+                        now_dt = datetime.datetime.now(datetime.timezone.utc)
+                        days_diff = (exp_dt - now_dt).total_seconds() / 86400.0
+                        expires_in_days = round(days_diff, 1)
+                        expires_at_str = exp_dt.strftime("%d %b %Y, %I:%M %p UTC")
+                    if not token_valid:
+                        error_msg = data.get("error", {}).get("message", "Session has expired")
+            except Exception as e:
+                print(f"Error checking debug_token status in /status endpoint: {e}")
+
         return {
             "connected": True,
             "page_name": account.page_name,
             "page_id": account.page_id,
-            "has_instagram": bool(account.ig_user_id)
+            "has_instagram": bool(account.ig_user_id),
+            "token_valid": token_valid,
+            "expires_in_days": expires_in_days,
+            "expires_at": expires_at_str,
+            "error_message": error_msg
         }
     return {"connected": False}
 

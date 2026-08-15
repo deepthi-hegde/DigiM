@@ -1080,6 +1080,12 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   const [isIgConnected, setIsIgConnected] = useState(false);
   const [isConnectingFb, setIsConnectingFb] = useState(false);
   const [isConnectingIg, setIsConnectingIg] = useState(false);
+  const [fbTokenInfo, setFbTokenInfo] = useState<{
+    tokenValid?: boolean;
+    expiresInDays?: number | null;
+    expiresAt?: string | null;
+    errorMessage?: string | null;
+  }>({});
 
   // New state for Page Selection
   const [fbPages, setFbPages] = useState<any[]>([]);
@@ -1142,9 +1148,16 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           if (data.connected) {
             setIsFbConnected(true);
             setFbPageName(data.page_name);
+            setFbTokenInfo({
+              tokenValid: data.token_valid,
+              expiresInDays: data.expires_in_days,
+              expiresAt: data.expires_at,
+              errorMessage: data.error_message
+            });
           } else {
             setIsFbConnected(false);
             setFbPageName('');
+            setFbTokenInfo({});
           }
           if (data.has_instagram) {
             setIsIgConnected(true);
@@ -1320,12 +1333,44 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
               f
             </div>
             <div>
-              <h4 style={{ fontWeight: 600, fontSize: '16px', color: isFbConnected ? 'var(--primary-color)' : 'var(--text-color)' }}>
-                Facebook Page
-              </h4>
-              <p style={{ fontSize: '13px', color: isFbConnected ? 'var(--text-color)' : 'var(--text-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h4 style={{ fontWeight: 600, fontSize: '16px', color: isFbConnected ? (fbTokenInfo.tokenValid === false ? '#ef4444' : 'var(--primary-color)') : 'var(--text-color)' }}>
+                  Facebook Page
+                </h4>
+                {isFbConnected && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    background: fbTokenInfo.tokenValid === false ? 'rgba(239, 68, 68, 0.2)' : 'rgba(82, 183, 136, 0.2)',
+                    color: fbTokenInfo.tokenValid === false ? '#f87171' : '#52b788'
+                  }}>
+                    {fbTokenInfo.tokenValid === false ? '❌ Session Expired' : '✓ Connected'}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '13px', color: isFbConnected ? 'var(--text-color)' : 'var(--text-light)', marginTop: '2px' }}>
                 {isFbConnected ? `Connected as ${fbPageName}` : 'Ready to connect'}
               </p>
+              {isFbConnected && (
+                <div style={{ marginTop: '6px', fontSize: '11px', lineHeight: '1.4' }}>
+                  {fbTokenInfo.tokenValid === false ? (
+                    <span style={{ color: '#f87171', fontWeight: 600 }}>
+                      ⚠️ Session expired{fbTokenInfo.expiresAt ? ` on ${fbTokenInfo.expiresAt}` : ''}. Click <strong>Re-connect</strong> to restore auto-publishing.
+                    </span>
+                  ) : fbTokenInfo.expiresInDays !== null && fbTokenInfo.expiresInDays !== undefined ? (
+                    <span style={{ color: fbTokenInfo.expiresInDays <= 3 ? '#fbbf24' : 'var(--text-light)' }}>
+                      ⏳ Token valid for <strong>{fbTokenInfo.expiresInDays} day(s)</strong> {fbTokenInfo.expiresAt ? `(expires ${fbTokenInfo.expiresAt})` : ''}
+                      {fbTokenInfo.expiresInDays <= 3 && ' — Re-connect soon to renew.'}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#52b788' }}>
+                      ♾️ Permanent Token (Non-expiring)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
