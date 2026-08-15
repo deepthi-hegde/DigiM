@@ -1963,6 +1963,27 @@ function ScheduledPostInspectorModal({
         </div>
 
         <div style={{ padding: '20px' }}>
+          {campaign.status === 'failed' && (
+            <div style={{ marginBottom: '16px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', padding: '12px 16px', borderRadius: '12px', color: '#fca5a5' }}>
+              <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>❌ Post Publishing Failed</span>
+              </div>
+              <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.9 }}>
+                {campaign.failure_reason || "Facebook returned an error while attempting to auto-publish."}
+              </div>
+              {(campaign.failure_reason || '').toLowerCase().includes('session expired') && (
+                <div style={{ marginTop: '10px' }}>
+                  <a
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onClose(); if (typeof window !== 'undefined') window.location.hash = '#settings'; }}
+                    style={{ background: '#ef4444', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}
+                  >
+                    🔗 Reconnect Facebook Account
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
           {/* Draft Post Card Preview */}
           <div style={{ background: '#242526', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', color: '#e4e6eb', marginBottom: '20px' }}>
             {/* Post header with business name */}
@@ -5168,49 +5189,50 @@ function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?:
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
                 {dayPosts.map((post) => {
                   const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: getBizTimezone() });
-                  const isPast = new Date(post.scheduled_time) < new Date() || post.status === 'published' || post.status === 'failed';
+                  const isPublished = post.status === 'published';
+                  const isFailed = post.status === 'failed';
+                  const isScheduled = post.status === 'scheduled';
+                  const isPast = new Date(post.scheduled_time) < new Date();
                   const promptText = (post.prompt || post.generated_text || "Campaign").trim();
                   const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
 
                   return (
                     <div
                       key={post.id}
-                      onClick={() => post.status !== 'failed' && onSelectCampaign?.(post)}
+                      onClick={() => onSelectCampaign?.(post)}
                       style={{
-                        background: post.status === 'failed' ? 'rgba(239, 68, 68, 0.08)' : isPast ? 'rgba(255, 255, 255, 0.04)' : 'rgba(82, 183, 136, 0.15)',
-                        border: post.status === 'failed' ? '1.5px solid rgba(239, 68, 68, 0.5)' : isPast ? '1px dashed rgba(255, 255, 255, 0.2)' : '1.5px solid var(--primary-color)',
+                        background: isFailed ? 'rgba(239, 68, 68, 0.12)' : isPublished ? 'rgba(82, 183, 136, 0.15)' : isPast ? 'rgba(245, 158, 11, 0.12)' : 'rgba(56, 189, 248, 0.15)',
+                        border: isFailed ? '1.5px solid rgba(239, 68, 68, 0.6)' : isPublished ? '1.5px solid var(--primary-color)' : isPast ? '1px dashed #f59e0b' : '1px solid #38bdf8',
                         borderRadius: '6px',
                         padding: '4px 6px',
                         fontSize: '10px',
-                        color: post.status === 'failed' ? '#fca5a5' : isPast ? 'rgba(255, 255, 255, 0.5)' : 'var(--text-color)',
-                        cursor: post.status === 'failed' ? 'default' : 'pointer',
+                        color: isFailed ? '#fca5a5' : isPublished ? 'var(--text-color)' : isPast ? '#fde68a' : '#7dd3fc',
+                        cursor: 'pointer',
                         transition: 'all 0.2s',
                       }}
-                      title={post.status === 'failed' ? (post.failure_reason || 'Failed to publish') : `[${postTime}] ${post.prompt || post.generated_text}`}
+                      title={isFailed ? (post.failure_reason || 'Failed to publish') : `[${postTime}] ${post.prompt || post.generated_text}`}
                     >
                       <div style={{
                         fontWeight: 700,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        textDecoration: isPast && post.status !== 'failed' ? 'line-through' : 'none'
+                        textDecoration: isPublished ? 'none' : 'none'
                       }}>
                         {firstTwoWords}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.85, fontSize: '9px', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9, fontSize: '9px', marginTop: '2px' }}>
                         <span>⏰ {postTime}</span>
-                        {isPast && (
-                          <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, color: post.status === 'failed' ? '#f87171' : '#a3e635' }}>
-                            {post.status === 'failed' ? '× failed' : '✓ done'}
-                          </span>
-                        )}
+                        <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, color: isFailed ? '#f87171' : isPublished ? '#a3e635' : isPast ? '#f59e0b' : '#38bdf8' }}>
+                          {isFailed ? '× failed' : isPublished ? '✓ done' : isPast ? '⏳ processing' : '📅 set'}
+                        </span>
                       </div>
-                      {post.status === 'failed' && post.failure_reason && (
+                      {isFailed && post.failure_reason && (
                         <div style={{ marginTop: '4px', fontSize: '8.5px', color: '#fca5a5', lineHeight: '1.3' }}>
                           {(post.failure_reason.toLowerCase().includes('session expired') || post.failure_reason.toLowerCase().includes('reconnect')) ? (
                             <button
                               onClick={(e) => { e.stopPropagation(); onNavigateToTab?.('settings'); }}
-                              style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '4px', color: '#fca5a5', fontSize: '8px', padding: '2px 5px', cursor: 'pointer', fontWeight: 700 }}
+                              style={{ background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: '4px', color: '#ffffff', fontSize: '8px', padding: '2px 5px', cursor: 'pointer', fontWeight: 700 }}
                             >
                               🔗 Reconnect Facebook
                             </button>
