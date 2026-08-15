@@ -67,7 +67,25 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
                     matched = next((p for p in pages if p["id"] == payload.page_id), None)
                     if matched:
                         page_access_token = matched["access_token"]
-                        print(f"DEBUG - Got non-expiring Page token (first 30): {page_access_token[:30]}")
+                        print(f"DEBUG - Got Page token (first 30): {page_access_token[:30]}")
+                        try:
+                            app_access_token = f"{app_id}|{app_secret}"
+                            dbg_res = requests.get(f"{META_GRAPH_URL}/debug_token", params={
+                                "input_token": page_access_token,
+                                "access_token": app_access_token
+                            })
+                            if dbg_res.status_code == 200:
+                                dbg_data = dbg_res.json().get("data", {})
+                                exp_ts = dbg_data.get("expires_at", 0)
+                                if exp_ts:
+                                    import datetime
+                                    exp_dt = datetime.datetime.fromtimestamp(exp_ts, datetime.timezone.utc)
+                                    days_left = (exp_dt - datetime.datetime.now(datetime.timezone.utc)).total_seconds() / 86400.0
+                                    print(f"DEBUG - Page token expires_at: {exp_dt.isoformat()} UTC ({days_left:.1f} days valid)")
+                                else:
+                                    print("DEBUG - Page token expires_at: 0 (Non-expiring permanent token)")
+                        except Exception as dbg_err:
+                            print(f"DEBUG - Could not inspect debug_token: {dbg_err}")
                     else:
                         print(f"DEBUG - Page {payload.page_id} not found in /me/accounts, using fallback token")
             else:
