@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sri Krishna Associates | The Raymond Shop Authorized Franchise Partner</title>
+  <meta name="description" content="Official website of Sri Krishna Associates, authorized franchise partner of The Raymond Shop across Karnataka with showrooms in Sirsi, Mysuru, and Mandya. Premium suiting, shirting, and bespoke tailoring.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="images/favicon.png">
+  <style>
+    :root {
+      --primary: #0a1128;
+      --primary-light: #1c2541;
+      --accent: #b45309;
+      --accent-gold: #d97706;
+      --accent-red: #881337;
+      --text-dark: #0f172a;
+      --text-muted: #475569;
+      --bg-light: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --font-serif: 'Cinzel', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--text-dark);
+      background-color: var(--bg-light);
+      line-height: 1.6;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      background: var(--primary);
+      color: #cbd5e1;
+      padding: 8px 24px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .top-bar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .top-bar a {
+      color: #f1f5f9;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .top-bar a:hover {
+      color: var(--accent-gold);
+    }
+    .top-bar-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(217, 119, 6, 0.2);
+      color: #fbbf24;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+    }
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+    .brand-logo-img {
+      height: 46px;
+      width: 46px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.12));
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    .brand-subtitle {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-red);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    nav ul {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+      align-items: center;
+    }
+    nav a {
+      text-decoration: none;
+      color: var(--text-dark);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    nav a:hover {
+      color: var(--accent);
+    }
+    .btn-cta {
+      background: var(--accent-red);
+      color: #ffffff !important;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(136, 19, 55, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-cta:hover {
+      background: #700f2b;
+      transform: translateY(-1px);
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, rgba(10, 17, 40, 0.92) 0%, rgba(28, 37, 65, 0.88) 100%),
+                  url('images/raymond-mysuru.png') center/cover no-repeat;
+      color: #ffffff;
+      padding: 100px 24px 90px;
+      text-align: center;
+    }
+    .hero-content {
+      max-width: 850px;
+      margin: 0 auto;
+    }
+    .hero-tag {
+      font-family: var(--font-serif);
+      color: #fbbf24;
+      font-size: 0.95rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .hero h1 {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      line-height: 1.25;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: #e2e8f0;
+      max-width: 720px;
+      margin: 0 auto 36px;
+      font-weight: 300;
+    }
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: #fbbf24;
+      color: #0f172a;
+      padding: 14px 28px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background: #f59e0b;
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      border: 2px solid rgba(255,255,255,0.7);
+      color: #ffffff;
+      padding: 12px 26px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: #ffffff;
+    }
+
+    /* Section Structure */
+    .section {
+      padding: 80px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 50px;
+    }
+    .section-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 2.1rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    /* Story / About Section */
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .story-image-wrap {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+    }
+    .story-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .story-content h3 {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+    .story-content p {
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      font-size: 1.02rem;
+    }
+    .badge-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .badge-item {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .badge-item strong {
+      display: block;
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+    .badge-item span {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Offerings / Collections */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .service-card {
+      background: var(--bg-card);
+      padding: 32px 24px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 20px -3px rgba(0,0,0,0.08);
+      border-color: #cbd5e1;
+    }
+    .service-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .service-card h4 {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .service-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    /* Store Locations */
+    .stores-section {
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+    }
+    .store-card {
+      background: var(--bg-light);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      padding: 32px 28px;
+      position: relative;
+    }
+    .store-card.highlight {
+      border: 2px solid var(--accent);
+      background: #fffdfa;
+    }
+    .store-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+    .store-badge.ho {
+      background: var(--accent-red);
+    }
+    .store-card h4 {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .store-info-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .store-info-row strong {
+      color: var(--text-dark);
+      min-width: 70px;
+    }
+    .store-actions {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+    }
+    .store-actions a {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-call {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    .btn-call:hover {
+      background: var(--primary-light);
+    }
+    .btn-wa {
+      background: #25d366;
+      color: #ffffff;
+    }
+    .btn-wa:hover {
+      background: #1ebd5b;
+    }
+
+    /* Verification & Compliance Box */
+    .compliance-box {
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 40px;
+      text-align: center;
+    }
+    .compliance-box h5 {
+      font-family: var(--font-serif);
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    .compliance-box p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--primary);
+      color: #94a3b8;
+      padding: 60px 24px 30px;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .footer-col h5 {
+      color: #ffffff;
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      margin-bottom: 18px;
+      letter-spacing: 0.5px;
+    }
+    .footer-col p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .footer-col ul {
+      list-style: none;
+    }
+    .footer-col ul li {
+      margin-bottom: 10px;
+    }
+    .footer-col a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover {
+      color: #fbbf24;
+    }
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 24px auto 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.85rem;
+    }
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+    .footer-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+    }
+    .footer-links a:hover {
+      color: #ffffff;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2rem; }
+      .story-grid { grid-template-columns: 1fr; }
+      .footer-inner { grid-template-columns: 1fr; }
+      nav ul { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div style="display:flex; align-items:center; gap: 12px; flex-wrap: wrap;">
+        <span class="top-bar-badge">Authorized Franchise Partner</span>
+        <span>Karnataka Showrooms: Sirsi | Mysuru | Mandya</span>
+      </div>
+      <div style="display:flex; align-items:center; gap: 18px;">
+        <a href="tel:+918384223166">📞 +91 83842 23166</a>
+        <a href="mailto:prash04061@gmail.com">✉️ prash04061@gmail.com</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="nav-container">
+      <div class="brand-group">
+        <a href="index.html" class="brand-link">
+          <img src="images/logo.png" alt="Sri Krishna Associates Logo" class="brand-logo-img">
+          <div class="brand-text">
+            <div class="brand-title">Sri Krishna Associates</div>
+            <div class="brand-subtitle">The Raymond Shop Franchise</div>
+          </div>
+        </a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#offerings">Collections</a></li>
+          <li><a href="#stores">Showrooms</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="https://wa.me/918384223166?text=Hi%20Sri%20Krishna%20Associates,%20I%20would%20like%20to%20inquire%20about%20Raymond%20fabrics%20and%20tailoring." target="_blank" class="btn-cta">WhatsApp Us</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-tag">Excellence in Premium Menswear</span>
+      <h1>Elegance Tailored to Perfection</h1>
+      <p>Sri Krishna Associates brings the timeless sophistication of <strong>The Raymond Shop</strong> to discerning gentlemen across Karnataka. Explore India's finest wool suiting, Egyptian cotton shirting, and master bespoke tailoring.</p>
+      <div class="hero-actions">
+        <a href="#stores" class="btn-primary">Locate a Showroom</a>
+        <a href="https://wa.me/918384223166?text=Hi%20Sri%20Krishna%20Associates,%20I%20would%20like%20to%20book%20a%20tailoring%20consultation." target="_blank" class="btn-outline">Book Tailoring Consultation</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- About / Brand Heritage -->
+  <section class="section" id="about">
+    <div class="story-grid">
+      <div class="story-image-wrap">
+        <img src="images/raymond-mysuru.png" alt="The Raymond Shop Showroom - Sri Krishna Associates">
+      </div>
+      <div class="story-content">
+        <div class="section-tag">About Sri Krishna Associates</div>
+        <h3>Authorized Franchise Partner of The Raymond Shop</h3>
+        <p><strong>Sri Krishna Associates</strong> is a premier retail and tailoring enterprise founded on a commitment to quality craftsmanship, personalized customer care, and sartorial excellence.</p>
+        <p>As an official authorized franchise partner of <strong>The Raymond Shop</strong>, we showcase the complete range of Raymond's globally celebrated suiting fabrics, fine shirting textiles, ceremonial garments, and bespoke tailoring services across our showrooms in <strong>Sirsi, Mysuru, and Mandya</strong>.</p>
+        <div class="badge-list">
+          <div class="badge-item">
+            <strong>100% Authentic</strong>
+            <span>Direct Raymond authorized fabrics & garments</span>
+          </div>
+          <div class="badge-item">
+            <strong>Master Tailoring</strong>
+            <span>Precision-crafted fit tailored to your posture</span>
+          </div>
+          <div class="badge-item">
+            <strong>3 Flagship Locations</strong>
+            <span>Conveniently serving Karnataka region</span>
+          </div>
+          <div class="badge-item">
+            <strong>Ceremonial Experts</strong>
+            <span>Wedding, executive & ceremonial wardrobes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Offerings / Collections -->
+  <section class="section" style="background:#f1f5f9; max-width:100%;" id="offerings">
+    <div style="max-width:1200px; margin:0 auto; padding:0 24px;">
+      <div class="section-header">
+        <div class="section-tag">Sartorial Collections</div>
+        <h2 class="section-title">Crafted for Discerning Gentlemen</h2>
+        <p class="section-desc">From corporate boardroom essentials to regal celebratory ensembles, explore our signature offerings.</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">🧵</div>
+          <h4>Fine Suiting & Shirting</h4>
+          <p>Super 120s to Super 250s pure wool, cashmere blends, linens, and pure Giza cotton shirting fabrics curated for supreme comfort and drape.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">✂️</div>
+          <h4>Custom Bespoke Tailoring</h4>
+          <p>Personalized measuring, cut, and finishing by our experienced master tailors. Every jacket, trouser, and shirt is crafted to your exact specifications.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">👔</div>
+          <h4>Ceremonial & Wedding Wear</h4>
+          <p>Exquisite Bandhgalas, Sherwanis, Tuxedos, Nehru Jackets, and Indo-Western outfits for weddings, receptions, and celebratory occasions.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">👞</div>
+          <h4>Accessories & Formals</h4>
+          <p>Curated collection of silk neckties, cufflinks, pocket squares, genuine leather belts, and premium accessories to complete your look.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showroom Locations -->
+  <section class="section stores-section" style="max-width:100%;" id="stores">
+    <div style="max-width:1200px; margin:0 auto; padding:0 24px;">
+      <div class="section-header">
+        <div class="section-tag">Showroom Directory</div>
+        <h2 class="section-title">Visit Our Flagship Stores</h2>
+        <p class="section-desc">Experience fabric selection in person and get measured by our master tailors at any of our Karnataka locations.</p>
+      </div>
+      <div class="stores-grid">
+        <!-- Mysuru -->
+        <div class="store-card highlight">
+          <span class="store-badge">Mysuru Showroom</span>
+          <h4>The Raymond Shop (Kalidasa Road)</h4>
+          <div class="store-info-row">
+            <strong>Address:</strong>
+            <span>Kalidasa Road, Vani Vilas Mohalla, Mysuru, Karnataka - 570002</span>
+          </div>
+          <div class="store-info-row">
+            <strong>Phone:</strong>
+            <span><a href="tel:08214242250" style="color:var(--accent); text-decoration:none;">0821-4242250</a></span>
+          </div>
+          <div class="store-info-row">
+            <strong>Instagram:</strong>
+            <span><a href="https://instagram.com/raymond_kdroadmysore" target="_blank" style="color:var(--accent); text-decoration:none;">@raymond_kdroadmysore</a></span>
+          </div>
+          <div class="store-info-row">
+            <strong>Hours:</strong>
+            <span>10:00 AM - 9:00 PM (All 7 Days)</span>
+          </div>
+          <div class="store-actions">
+            <a href="tel:08214242250" class="btn-call">Call Store</a>
+            <a href="https://wa.me/918384223166?text=Hi,%20I%20am%20inquiring%20about%20The%20Raymond%20Shop%20Kalidasa%20Road%20Mysuru." target="_blank" class="btn-wa">WhatsApp</a>
+          </div>
+        </div>
+
+        <!-- Sirsi -->
+        <div class="store-card">
+          <span class="store-badge ho">Registered Head Office & Store</span>
+          <h4>The Raymond Shop (Sirsi)</h4>
+          <div class="store-info-row">
+            <strong>Address:</strong>
+            <span>Padmavati Nilaya, Near RNS Motors, KHB Colony, Sirsi, Uttara Kannada, Karnataka - 581402</span>
+          </div>
+          <div class="store-info-row">
+            <strong>Phone:</strong>
+            <span><a href="tel:+918384223166" style="color:var(--accent); text-decoration:none;">+91 83842 23166</a></span>
+          </div>
+          <div class="store-info-row">
+            <strong>Email:</strong>
+            <span><a href="mailto:prash04061@gmail.com" style="color:var(--accent); text-decoration:none;">prash04061@gmail.com</a></span>
+          </div>
+          <div class="store-info-row">
+            <strong>Hours:</strong>
+            <span>10:00 AM - 8:30 PM (Mon - Sat)</span>
+          </div>
+          <div class="store-actions">
+            <a href="tel:+918384223166" class="btn-call">Call Store</a>
+            <a href="https://wa.me/918384223166?text=Hi,%20I%20am%20inquiring%20about%20The%20Raymond%20Shop%20Sirsi." target="_blank" class="btn-wa">WhatsApp</a>
+          </div>
+        </div>
+
+        <!-- Mandya -->
+        <div class="store-card">
+          <span class="store-badge">Mandya Showroom</span>
+          <h4>The Raymond Shop (Mandya)</h4>
+          <div class="store-info-row">
+            <strong>Address:</strong>
+            <span>The Raymond Shop, Main Commercial Area, Mandya, Karnataka</span>
+          </div>
+          <div class="store-info-row">
+            <strong>Phone:</strong>
+            <span><a href="tel:+918384223166" style="color:var(--accent); text-decoration:none;">+91 83842 23166</a></span>
+          </div>
+          <div class="store-info-row">
+            <strong>Hours:</strong>
+            <span>10:00 AM - 9:00 PM (All 7 Days)</span>
+          </div>
+          <div class="store-actions">
+            <a href="tel:+918384223166" class="btn-call">Call Store</a>
+            <a href="https://wa.me/918384223166?text=Hi,%20I%20am%20inquiring%20about%20The%20Raymond%20Shop%20Mandya." target="_blank" class="btn-wa">WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Verification Compliance Box -->
+      <div class="compliance-box" id="contact">
+        <h5>Corporate & Business Identity</h5>
+        <p>This official website (<strong>srikrishai.in</strong>) is owned and operated by <strong>Sri Krishna Associates</strong>, registered at Padmavati Nilaya, Near RNS Motors, KHB Colony, Sirsi, Uttara Kannada, Karnataka - 581402. Sri Krishna Associates is an authorized commercial franchise partner of <strong>The Raymond Shop</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <img src="images/logo.png" alt="Logo" style="height:38px; width:38px; object-fit:contain;">
+          <h5 style="margin-bottom:0;">Sri Krishna Associates</h5>
+        </div>
+        <p>Authorized franchise partner of <strong>The Raymond Shop</strong>. Dedicated to offering authentic Raymond suiting and shirting fabrics alongside bespoke custom tailoring excellence across Karnataka.</p>
+        <p><strong>Registered Address:</strong><br>Padmavati Nilaya, Near RNS Motors, KHB Colony, Sirsi, Uttara Kannada, Karnataka - 581402, India.</p>
+        <p><strong>Official Phone:</strong> +91 83842 23166 &nbsp;|&nbsp; <strong>Official Email:</strong> prash04061@gmail.com</p>
+      </div>
+      <div class="footer-col">
+        <h5>Showrooms</h5>
+        <ul>
+          <li><a href="#stores">Sirsi Showroom (Head Office)</a></li>
+          <li><a href="#stores">Mysuru Showroom (Kalidasa Rd)</a></li>
+          <li><a href="#stores">Mandya Showroom</a></li>
+          <li><a href="https://instagram.com/raymond_kdroadmysore" target="_blank">Instagram (@raymond_kdroadmysore)</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Compliance & Legal</h5>
+        <ul>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms of Service</a></li>
+          <li><a href="privacy-policy.html#cookies">Cookie Policy</a></li>
+          <li><a href="mailto:prash04061@gmail.com">Contact Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 Sri Krishna Associates. All rights reserved. Authorized Franchise Partner of The Raymond Shop.</div>
+      <div class="footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="index.html">srikrishai.in</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
