@@ -1463,6 +1463,40 @@ def unarchive_campaign(archived_id: int, tenant_id: int = 1, db: Session = Depen
     db.commit()
     return {"status": "success", "message": "Restored archived post to active history"}
 
+@app.post("/api/campaigns/{campaign_id}/archive")
+def archive_campaign(campaign_id: int, tenant_id: int = 1, db: Session = Depends(get_db)):
+    camp = db.query(Campaign).filter_by(id=campaign_id, tenant_id=tenant_id).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    archived = ArchivedCampaign(
+        tenant_id=camp.tenant_id,
+        prompt=camp.prompt,
+        category=camp.category,
+        min_age=camp.min_age,
+        max_age=camp.max_age,
+        gender=camp.gender,
+        generated_text=camp.generated_text,
+        visual_suggestion=camp.visual_suggestion,
+        tone=camp.tone,
+        is_liked=camp.is_liked,
+        scheduled_time=camp.scheduled_time,
+        status="archived",
+        archived_at=datetime.datetime.utcnow()
+    )
+    db.add(archived)
+    db.delete(camp)
+    db.commit()
+    return {"status": "success", "message": "Moved campaign to archive"}
+
+@app.post("/api/campaigns/{campaign_id}/keep-active")
+def keep_campaign_active(campaign_id: int, tenant_id: int = 1, db: Session = Depends(get_db)):
+    camp = db.query(Campaign).filter_by(id=campaign_id, tenant_id=tenant_id).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    camp.scheduled_time = datetime.datetime.utcnow()
+    db.commit()
+    return {"status": "success", "message": "Retention period refreshed for 90 days"}
+
 @app.on_event("startup")
 def start_scheduler():
     print("Starting scheduled post background worker thread...")

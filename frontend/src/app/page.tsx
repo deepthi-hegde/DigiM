@@ -5563,17 +5563,25 @@ function AnalyticsTab() {
   );
 }
 
-function ArchivedPostsTab() {
+function ArchivedPostsTab({ onRefreshWarnings }: { onRefreshWarnings?: () => void }) {
   const [archived, setArchived] = useState<any[]>([]);
+  const [pendingWarnings, setPendingWarnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchArchived = async () => {
+  const fetchData = async () => {
     try {
       const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const res = await fetch(`/api/campaigns/archived?tenant_id=${savedTenantId}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [archRes, warnRes] = await Promise.all([
+        fetch(`/api/campaigns/archived?tenant_id=${savedTenantId}`),
+        fetch(`/api/campaigns/archival-warnings?tenant_id=${savedTenantId}`)
+      ]);
+      if (archRes.ok) {
+        const data = await archRes.json();
         setArchived(data);
+      }
+      if (warnRes.ok) {
+        const wData = await warnRes.json();
+        setPendingWarnings(wData);
       }
     } catch (err) {
       console.error(err);
@@ -5583,7 +5591,7 @@ function ArchivedPostsTab() {
   };
 
   useEffect(() => {
-    fetchArchived();
+    fetchData();
   }, []);
 
   const handleUnarchive = async (id: number) => {
@@ -5592,11 +5600,42 @@ function ArchivedPostsTab() {
       const res = await fetch(`/api/campaigns/archived/${id}/unarchive?tenant_id=${savedTenantId}`, { method: 'POST' });
       if (res.ok) {
         window.showNotification?.("Post unarchived and restored to active campaigns!", "success");
-        fetchArchived();
+        fetchData();
+        onRefreshWarnings?.();
       }
     } catch (err) {
       console.error(err);
       window.showNotification?.("Failed to unarchive post", "error");
+    }
+  };
+
+  const handleArchiveNow = async (id: number) => {
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaigns/${id}/archive?tenant_id=${savedTenantId}`, { method: 'POST' });
+      if (res.ok) {
+        window.showNotification?.("Post moved to archive!", "success");
+        fetchData();
+        onRefreshWarnings?.();
+      }
+    } catch (err) {
+      console.error(err);
+      window.showNotification?.("Failed to archive post", "error");
+    }
+  };
+
+  const handleKeepActive = async (id: number) => {
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaigns/${id}/keep-active?tenant_id=${savedTenantId}`, { method: 'POST' });
+      if (res.ok) {
+        window.showNotification?.("Retention period refreshed for another 90 days!", "success");
+        fetchData();
+        onRefreshWarnings?.();
+      }
+    } catch (err) {
+      console.error(err);
+      window.showNotification?.("Failed to refresh retention period", "error");
     }
   };
 
@@ -5607,14 +5646,72 @@ function ArchivedPostsTab() {
           <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)', margin: 0 }}>
             📦 Archived Posts Library
           </h3>
-          <span style={{ fontSize: '12px', color: 'var(--text-light)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
-            {archived.length} Archived Items
-          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {pendingWarnings.length > 0 && (
+              <span style={{ fontSize: '12px', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '4px 10px', borderRadius: '8px', fontWeight: 700 }}>
+                ⚠️ {pendingWarnings.length} Pending Archival
+              </span>
+            )}
+            <span style={{ fontSize: '12px', color: 'var(--text-light)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
+              {archived.length} Archived Items
+            </span>
+          </div>
         </div>
         <p style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: 1.5, margin: 0 }}>
           Posts published over 90 days ago are automatically archived here to keep your active calendar clean. Media files over 180 days are pruned only if GCS cloud storage exceeds 5.0 GB to maintain 100% free storage.
         </p>
       </div>
+
+      {pendingWarnings.length > 0 && (
+        <div className="fade-in-up" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <h4 style={{ color: '#f59e0b', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                Posts Pending Auto-Archival (Next 7 Days)
+              </h4>
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+              These posts will move to Archive automatically when they reach 90 days.
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+            {pendingWarnings.map((w) => (
+              <div key={w.id} className="glass-panel" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245, 158, 11, 0.35)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '6px' }}>
+                      ⏳ Moves to archive in {w.days_until_archival} day{w.days_until_archival === 1 ? '' : 's'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                      📅 {new Date(w.scheduled_time).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', lineHeight: '1.5', margin: 0, color: 'var(--text-color)' }}>
+                    {w.generated_text || w.prompt}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button
+                    onClick={() => handleKeepActive(w.id)}
+                    style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '6px', background: 'rgba(82, 183, 136, 0.2)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', fontWeight: 700, cursor: 'pointer' }}
+                    title="Reset 90-day retention timer to keep this post active"
+                  >
+                    🛡️ Keep Active (+90d)
+                  </button>
+                  <button
+                    onClick={() => handleArchiveNow(w.id)}
+                    style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '6px', background: '#f59e0b', border: 'none', color: '#000', fontWeight: 700, cursor: 'pointer' }}
+                    title="Move immediately to archived posts"
+                  >
+                    📦 Archive Now
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>Loading archived posts...</div>
@@ -5690,26 +5787,27 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [archivalWarnings, setArchivalWarnings] = useState<any[]>([]);
   const [storageStatus, setStorageStatus] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchWarnings = async () => {
-      try {
-        const savedTenantId = localStorage.getItem('tenant_id') || '1';
-        const [wRes, sRes] = await Promise.all([
-          fetch(`/api/campaigns/archival-warnings?tenant_id=${savedTenantId}`),
-          fetch('/api/storage/status')
-        ]);
-        if (wRes.ok) {
-          const wData = await wRes.json();
-          setArchivalWarnings(wData);
-        }
-        if (sRes.ok) {
-          const sData = await sRes.json();
-          setStorageStatus(sData);
-        }
-      } catch (err) {
-        console.error("Error fetching warnings", err);
+  const fetchWarnings = async () => {
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const [wRes, sRes] = await Promise.all([
+        fetch(`/api/campaigns/archival-warnings?tenant_id=${savedTenantId}`),
+        fetch('/api/storage/status')
+      ]);
+      if (wRes.ok) {
+        const wData = await wRes.json();
+        setArchivalWarnings(wData);
       }
-    };
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        setStorageStatus(sData);
+      }
+    } catch (err) {
+      console.error("Error fetching warnings", err);
+    }
+  };
+
+  useEffect(() => {
     fetchWarnings();
   }, []);
 
@@ -5805,7 +5903,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
 
       {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
-        {archivalWarnings.length > 0 && (
+        {archivalWarnings.length > 0 && activeTab !== 'archived' && (
           <div className="fade-in-up" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '24px' }}>⚠️</span>
@@ -5861,7 +5959,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         )}
         {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'assets' && <AssetsLibrary />}
-        {activeTab === 'archived' && <ArchivedPostsTab />}
+        {activeTab === 'archived' && <ArchivedPostsTab onRefreshWarnings={fetchWarnings} />}
         {activeTab === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <Onboarding isSettings={true} />
