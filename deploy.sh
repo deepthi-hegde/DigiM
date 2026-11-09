@@ -20,7 +20,7 @@ if [ -f ./frontend/.env.local ]; then
 fi
 
 # Set defaults if not already loaded from env files
-META_APP_ID=${META_APP_ID:-"3531281670380966"}
+META_APP_ID=${META_APP_ID:-"1318596836889855"}
 NEXT_PUBLIC_META_CONFIG_ID=${NEXT_PUBLIC_META_CONFIG_ID:-"1627985348499071"}
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-"980545668366-1bbf1cipl6eps71rog3riakp60jvrium.apps.googleusercontent.com"}
 
