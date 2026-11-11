@@ -1002,47 +1002,54 @@ def generate_ai_image(payload: ImageGenRequest):
         except Exception as e:
             print(f"Flux image gen error (will fallback to Imagen 4): {e}")
 
-    # ── Strategy 2: Imagen 4 fallback ────────────────────────────────────────
+    # ── Strategy 2: Gemini Image Generation ─────────────────────────────────
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=400, detail="No image generation API key configured (FAL_API_KEY or GEMINI_API_KEY required)")
 
     try:
         client = genai.Client(api_key=api_key)
-        print(f"Falling back to Imagen 4 for: {payload.prompt}")
-
-        aspect_ratio = "9:16" if payload.format_type in ["carousel", "story"] else "1:1"
-
-        response = client.models.generate_images(
-            model='imagen-4.0-generate-001',
-            prompt=payload.prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=count,
-                aspect_ratio=aspect_ratio,
-                output_mime_type='image/jpeg'
-            )
-        )
-
-        if not response.generated_images:
-            raise Exception("No images generated")
+        print(f"Generating image via Gemini for: {payload.prompt}")
 
         urls = []
-        for gen_img in response.generated_images:
-            image_bytes = gen_img.image.image_bytes
-            filename = f"ai_gen_{uuid.uuid4().hex}.jpg"
+        for _ in range(count):
+            prompt_text = f"Generate a high-quality professional marketing image for this description: {payload.prompt}"
+            img_data = None
+            
+            # Try gemini-2.5-flash-image first, then fallback to gemini-3.1-flash-image
+            for img_model in ["gemini-2.5-flash-image", "gemini-3.1-flash-image"]:
+                try:
+                    res = client.models.generate_content(
+                        model=img_model,
+                        contents=prompt_text
+                    )
+                    if res.candidates and res.candidates[0].content and res.candidates[0].content.parts:
+                        for part in res.candidates[0].content.parts:
+                            if part.inline_data and part.inline_data.data:
+                                img_data = part.inline_data.data
+                                break
+                    if img_data:
+                        break
+                except Exception as model_err:
+                    print(f"Model {img_model} attempt error: {model_err}")
+
+            if not img_data:
+                raise Exception("No image bytes returned by Gemini image generation models")
+
+            filename = f"ai_gen_{uuid.uuid4().hex}.png"
             filepath = os.path.join(TEMP_UPLOAD_DIR, filename)
 
             with open(filepath, "wb") as f:
-                f.write(image_bytes)
+                f.write(img_data)
 
             public_url = upload_to_gcs(filepath, f"temp-ai-gen/{filename}")
             if not public_url.startswith("http"):
                 public_url = f"/api/temp_assets/raw/{filename}"
             urls.append(public_url)
 
-        return {"status": "success", "url": urls[0], "urls": urls, "model": "imagen-4"}
+        return {"status": "success", "url": urls[0], "urls": urls, "model": "gemini-image"}
     except Exception as e:
-        print(f"Imagen 4 error: {e}")
+        print(f"Gemini image generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
