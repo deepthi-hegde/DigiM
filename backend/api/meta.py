@@ -28,6 +28,7 @@ class ConnectMetaRequest(BaseModel):
     page_id: str
     page_name: str
     access_token: str
+    user_access_token: Optional[str] = None
 
 @router.post("/connect")
 def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_db)):
@@ -41,8 +42,11 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
 
     page_access_token = payload.access_token  # fallback
 
-    # Step 1: Exchange short-lived user token → long-lived user token (60 days)
-    if app_id and app_secret:
+    # Determine which token to exchange:
+    # Prefer user_access_token if provided (generates a non-expiring Page token via /me/accounts)
+    token_to_exchange = payload.user_access_token or payload.access_token
+
+    if app_id and app_secret and token_to_exchange:
         try:
             exchange_res = requests.get(
                 f"{META_GRAPH_URL}/oauth/access_token",
@@ -50,44 +54,51 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
                     "grant_type": "fb_exchange_token",
                     "client_id": app_id,
                     "client_secret": app_secret,
-                    "fb_exchange_token": payload.access_token
+                    "fb_exchange_token": token_to_exchange
                 }
             )
             if exchange_res.status_code == 200:
-                long_lived_user_token = exchange_res.json().get("access_token", payload.access_token)
-                print(f"DEBUG - Got long-lived user token (first 30): {long_lived_user_token[:30]}")
+                long_lived_token = exchange_res.json().get("access_token")
+                print(f"DEBUG - Got long-lived token (first 30): {long_lived_token[:30]}")
 
-                # Step 2: Get the non-expiring Page access token using the long-lived user token
+                # Step 2: Query /me/accounts using the long-lived token to get permanent Page access tokens
                 pages_res = requests.get(
                     f"{META_GRAPH_URL}/me/accounts",
-                    params={"access_token": long_lived_user_token}
+                    params={"access_token": long_lived_token}
                 )
                 if pages_res.status_code == 200:
                     pages = pages_res.json().get("data", [])
                     matched = next((p for p in pages if p["id"] == payload.page_id), None)
                     if matched:
                         page_access_token = matched["access_token"]
-                        print(f"DEBUG - Got Page token (first 30): {page_access_token[:30]}")
-                        try:
-                            app_access_token = f"{app_id}|{app_secret}"
-                            dbg_res = requests.get(f"{META_GRAPH_URL}/debug_token", params={
-                                "input_token": page_access_token,
-                                "access_token": app_access_token
-                            })
-                            if dbg_res.status_code == 200:
-                                dbg_data = dbg_res.json().get("data", {})
-                                exp_ts = dbg_data.get("expires_at", 0)
-                                if exp_ts:
-                                    import datetime
-                                    exp_dt = datetime.datetime.fromtimestamp(exp_ts, datetime.timezone.utc)
-                                    days_left = (exp_dt - datetime.datetime.now(datetime.timezone.utc)).total_seconds() / 86400.0
-                                    print(f"DEBUG - Page token expires_at: {exp_dt.isoformat()} UTC ({days_left:.1f} days valid)")
-                                else:
-                                    print("DEBUG - Page token expires_at: 0 (Non-expiring permanent token)")
-                        except Exception as dbg_err:
-                            print(f"DEBUG - Could not inspect debug_token: {dbg_err}")
+                        print(f"DEBUG - Got permanent Page token from /me/accounts (first 30): {page_access_token[:30]}")
                     else:
-                        print(f"DEBUG - Page {payload.page_id} not found in /me/accounts, using fallback token")
+                        print(f"DEBUG - Page {payload.page_id} not found in /me/accounts, using long-lived token directly")
+                        page_access_token = long_lived_token
+                else:
+                    # If /me/accounts fails (e.g. token_to_exchange was already a Page token),
+                    # the long_lived_token is already the extended Page token
+                    print(f"DEBUG - /me/accounts returned status {pages_res.status_code}, using long-lived token directly")
+                    page_access_token = long_lived_token
+
+                try:
+                    app_access_token = f"{app_id}|{app_secret}"
+                    dbg_res = requests.get(f"{META_GRAPH_URL}/debug_token", params={
+                        "input_token": page_access_token,
+                        "access_token": app_access_token
+                    })
+                    if dbg_res.status_code == 200:
+                        dbg_data = dbg_res.json().get("data", {})
+                        exp_ts = dbg_data.get("expires_at", 0)
+                        if exp_ts:
+                            import datetime
+                            exp_dt = datetime.datetime.fromtimestamp(exp_ts, datetime.timezone.utc)
+                            days_left = (exp_dt - datetime.datetime.now(datetime.timezone.utc)).total_seconds() / 86400.0
+                            print(f"DEBUG - Page token expires_at: {exp_dt.isoformat()} UTC ({days_left:.1f} days valid)")
+                        else:
+                            print("DEBUG - Page token expires_at: 0 (Non-expiring permanent token)")
+                except Exception as dbg_err:
+                    print(f"DEBUG - Could not inspect debug_token: {dbg_err}")
             else:
                 print(f"DEBUG - Token exchange failed: {exchange_res.json()}")
         except Exception as e:

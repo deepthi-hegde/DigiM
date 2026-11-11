@@ -1080,6 +1080,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
   const [isIgConnected, setIsIgConnected] = useState(false);
   const [isConnectingFb, setIsConnectingFb] = useState(false);
   const [isConnectingIg, setIsConnectingIg] = useState(false);
+  const [fbUserAccessToken, setFbUserAccessToken] = useState("");
   const [fbTokenInfo, setFbTokenInfo] = useState<{
     tokenValid?: boolean;
     expiresInDays?: number | null;
@@ -1200,6 +1201,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           const handleLoginResponse = async (response: any) => {
             if (response.authResponse) {
               console.log("OAuth Success! Access Token:", response.authResponse.accessToken);
+              setFbUserAccessToken(response.authResponse.accessToken);
               try {
                 const pagesRes = await fetch(`/api/meta/pages?user_access_token=${response.authResponse.accessToken}`);
                 if (!pagesRes.ok) throw new Error("Failed to fetch pages");
@@ -1250,7 +1252,8 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           tenant_id: parseInt(savedTenantId, 10),
           page_id: selectedPage.id,
           page_name: selectedPage.name,
-          access_token: selectedPage.access_token
+          access_token: selectedPage.access_token,
+          user_access_token: fbUserAccessToken || undefined
         })
       });
 
