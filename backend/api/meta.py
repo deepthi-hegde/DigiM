@@ -78,7 +78,7 @@ def connect_meta_account(payload: ConnectMetaRequest, db: Session = Depends(get_
                 else:
                     # If /me/accounts fails (e.g. token_to_exchange was already a Page token),
                     # the long_lived_token is already the extended Page token
-                    print(f"DEBUG - /me/accounts returned status {pages_res.status_code}, using long-lived token directly")
+                    print(f"DEBUG - /me/accounts returned status {pages_res.status_code}: {pages_res.text[:200]}, using long-lived token directly")
                     page_access_token = long_lived_token
 
                 try:

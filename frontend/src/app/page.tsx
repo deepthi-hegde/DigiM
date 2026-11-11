@@ -1139,37 +1139,38 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
     })(document, "script", "facebook-jssdk");
   }, []);
 
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const savedTenantId = localStorage.getItem('tenant_id') || '1';
-        const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.connected) {
-            setIsFbConnected(true);
-            setFbPageName(data.page_name);
-            setFbTokenInfo({
-              tokenValid: data.token_valid,
-              expiresInDays: data.expires_in_days,
-              expiresAt: data.expires_at,
-              errorMessage: data.error_message
-            });
-          } else {
-            setIsFbConnected(false);
-            setFbPageName('');
-            setFbTokenInfo({});
-          }
-          if (data.has_instagram) {
-            setIsIgConnected(true);
-          } else {
-            setIsIgConnected(false);
-          }
+  const checkConnection = async () => {
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.connected) {
+          setIsFbConnected(true);
+          setFbPageName(data.page_name);
+          setFbTokenInfo({
+            tokenValid: data.token_valid,
+            expiresInDays: data.expires_in_days,
+            expiresAt: data.expires_at,
+            errorMessage: data.error_message
+          });
+        } else {
+          setIsFbConnected(false);
+          setFbPageName('');
+          setFbTokenInfo({});
         }
-      } catch (e) {
-        console.error("Failed to check meta status", e);
+        if (data.has_instagram) {
+          setIsIgConnected(true);
+        } else {
+          setIsIgConnected(false);
+        }
       }
-    };
+    } catch (e) {
+      console.error("Failed to check meta status", e);
+    }
+  };
+
+  useEffect(() => {
     checkConnection();
   }, []);
 
@@ -1209,7 +1210,11 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
                 const pagesData = await pagesRes.json();
 
                 if (pagesData.data && pagesData.data.length > 0) {
-                  setFbPages(pagesData.data);
+                  const pagesWithUserToken = pagesData.data.map((p: any) => ({
+                    ...p,
+                    user_access_token: response.authResponse.accessToken
+                  }));
+                  setFbPages(pagesWithUserToken);
                   setSelectedPageId(pagesData.data[0].id);
                   setShowPageSelector(true);
                 } else {
@@ -1253,7 +1258,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
           page_id: selectedPage.id,
           page_name: selectedPage.name,
           access_token: selectedPage.access_token,
-          user_access_token: fbUserAccessToken || undefined
+          user_access_token: selectedPage.user_access_token || fbUserAccessToken || undefined
         })
       });
 
@@ -1261,6 +1266,7 @@ export function Platforms({ onBack, onNext, isSettings = false }: { onBack?: () 
         setIsFbConnected(true);
         setFbPageName(selectedPage.name);
         setShowPageSelector(false);
+        await checkConnection();
       } else {
         notifyError("Failed to connect page in backend");
       }
