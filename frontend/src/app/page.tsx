@@ -618,7 +618,7 @@ function Onboarding({ onBack, onNext, isSettings = false }: { onBack?: () => voi
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Business Name *</span>
-              <input className="input-field" placeholder="e.g. MarketFlow Silks" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+              <input className="input-field" placeholder="e.g. SriKrish" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
             </div>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>Industry Line</span>
@@ -2413,7 +2413,7 @@ export function CampaignDashboard({
     setIsGenerating(true);
     setGenerated(false);
 
-    let bizName = "";
+    let bizName = "SriKrish";
     let phone = "";
     let ind = "Clothing & Apparel";
 
@@ -2422,7 +2422,9 @@ export function CampaignDashboard({
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed.businessName) bizName = parsed.businessName;
+          if (parsed.businessName && !parsed.businessName.toLowerCase().includes('marketflow')) {
+            bizName = parsed.businessName;
+          }
           if (parsed.phoneNumber) phone = parsed.phoneNumber;
           if (parsed.industry) ind = parsed.industry;
         } catch (e) { }

@@ -48,7 +48,7 @@ describe('Platforms Component', () => {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            data: [{ id: "123", name: "MarketFlow Silks", access_token: "page_token" }]
+            data: [{ id: "123", name: "SriKrish", access_token: "page_token" }]
           })
         });
       }
@@ -74,7 +74,7 @@ describe('Platforms Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('✓ Connected')).toBeTruthy();
-      expect(screen.getByText('Connected as MarketFlow Silks')).toBeTruthy();
+      expect(screen.getByText('Connected as SriKrish')).toBeTruthy();
     });
 
     expect(global.fetch).toHaveBeenCalledWith("/api/meta/connect", expect.objectContaining({
@@ -82,7 +82,7 @@ describe('Platforms Component', () => {
       body: JSON.stringify({
         tenant_id: 1, 
         page_id: "123",
-        page_name: "MarketFlow Silks",
+        page_name: "SriKrish",
         access_token: "page_token"
       })
     }));

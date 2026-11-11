@@ -327,7 +327,7 @@ def get_analytics(tenant_id: int = 1, db: Session = Depends(get_db)):
     fb_impressions = 4960
     fb_engagement = 4.8
     fb_posts = [
-        {"id": "fb_1", "text": "Super excited to launch our summer catalog! 🌞👗 Check it out at MarketFlow Silks.", "likes": 42, "comments": 8, "shares": 3, "date": "May 28"},
+        {"id": "fb_1", "text": "Super excited to launch our summer catalog! 🌞👗 Check it out at SriKrish.", "likes": 42, "comments": 8, "shares": 3, "date": "May 28"},
         {"id": "fb_2", "text": "Quality threads make all the difference. Step up your fashion game today.", "likes": 28, "comments": 4, "shares": 1, "date": "May 25"},
         {"id": "fb_3", "text": "Behind the scenes at our weaving unit. Craftsmanship is key.", "likes": 56, "comments": 15, "shares": 7, "date": "May 22"}
     ]
@@ -455,8 +455,8 @@ def get_analytics(tenant_id: int = 1, db: Session = Depends(get_db)):
         "recent_posts": [
             {"id": "ig_1", "text": "Elegance is the only beauty that never fades. ✨ Summer collections are live. Link in bio!", "likes": 18, "comments": 2, "shares": 1, "date": "May 29"} if is_connected else
             {"id": "ig_1", "text": "Elegance is the only beauty that never fades. ✨ Summer collections are live. Link in bio!", "likes": 182, "comments": 24, "shares": 18, "date": "May 29"},
-            {"id": "ig_2", "text": "Every color has a story. What's yours today? 🌈 #fashion #marketflow", "likes": 12, "comments": 1, "shares": 0, "date": "May 26"} if is_connected else
-            {"id": "ig_2", "text": "Every color has a story. What's yours today? 🌈 #fashion #marketflow", "likes": 124, "comments": 12, "shares": 5, "date": "May 26"},
+            {"id": "ig_2", "text": "Every color has a story. What's yours today? 🌈 #fashion #srikrish", "likes": 12, "comments": 1, "shares": 0, "date": "May 26"} if is_connected else
+            {"id": "ig_2", "text": "Every color has a story. What's yours today? 🌈 #fashion #srikrish", "likes": 124, "comments": 12, "shares": 5, "date": "May 26"},
             {"id": "ig_3", "text": "Woven with love, styled with confidence. 💚 Shop the new drops.", "likes": 21, "comments": 3, "shares": 2, "date": "May 23"} if is_connected else
             {"id": "ig_3", "text": "Woven with love, styled with confidence. 💚 Shop the new drops.", "likes": 210, "comments": 31, "shares": 22, "date": "May 23"}
         ]

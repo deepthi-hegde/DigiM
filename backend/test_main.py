@@ -6,7 +6,7 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "message": "MarketFlow AI Backend is running"}
+    assert response.json() == {"status": "ok", "message": "SriKrish AI Backend is running"}
 
 def test_campaign_generate_success():
     payload = {

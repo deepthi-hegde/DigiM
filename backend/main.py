@@ -14,7 +14,7 @@ from api.calendar import router as calendar_router
 import uuid
 import shutil
 
-app = FastAPI(title="MarketFlow AI Backend", version="1.0.0")
+app = FastAPI(title="SriKrish AI Backend", version="1.0.0")
 
 # Configure CORS so the Next.js frontend can communicate with it
 app.add_middleware(
@@ -705,6 +705,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         else:
             category_instruction = "Style: Engaging."
 
+        brand_name = payload.businessName.strip() if payload.businessName and payload.businessName.strip() and "marketflow" not in payload.businessName.lower() else "SriKrish"
         prompt_text = f"""
         You are an expert digital marketing copywriter. {few_shot_context}
         {asset_inventory_text}
@@ -717,7 +718,7 @@ def generate_campaign(payload: CampaignRequest, db: Session = Depends(get_db)):
         
         CRITICAL RULES FOR POST COPY:
         1. NO PLACEHOLDERS: Do NOT include any placeholder text (such as [Your Name], [Link], [Phone], [Insert Details Here], etc.). 
-           - Use the real brand name '{payload.businessName or "our brand"}' instead of brand placeholders.
+           - Use the real brand name '{brand_name}' instead of brand placeholders. CRITICAL: NEVER use 'MarketFlow' or 'Marketflow'. The company name is '{brand_name}'.
            - If a phone number is provided ('{payload.phoneNumber or ""}'), use it. If not, do NOT write a phone number placeholder.
            - Do not mention links unless a specific URL is provided.
         2. TONE & STYLE: Adhere strictly to the requested tone '{payload.tone}'. If shorten, keep it extremely brief. If elaborate, write a rich post.
@@ -1012,8 +1013,10 @@ def generate_ai_image(payload: ImageGenRequest):
         print(f"Generating image via Gemini for: {payload.prompt}")
 
         urls = []
+        import re
+        clean_img_prompt = re.sub(r"marketflow\s*(silks)?", "SriKrish", payload.prompt, flags=re.IGNORECASE)
         for _ in range(count):
-            prompt_text = f"Generate a high-quality professional marketing image for this description: {payload.prompt}"
+            prompt_text = f"Generate a high-quality professional marketing image for this description: {clean_img_prompt}"
             img_data = None
             
             # Try gemini-2.5-flash-image first, then fallback to gemini-3.1-flash-image
@@ -1291,7 +1294,7 @@ def assign_user_role(payload: UserRoleRequest, admin_email: str = "admin@digim.c
 
 @app.get("/")
 def health_check():
-    return {"status": "ok", "message": "MarketFlow AI Backend is running"}
+    return {"status": "ok", "message": "SriKrish AI Backend is running"}
 
 import threading
 import time
