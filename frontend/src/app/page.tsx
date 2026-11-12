@@ -5980,9 +5980,9 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   });
 
   const [userInfo, setUserInfo] = useState<{ name: string; email: string; initial: string }>({
-    name: 'Ravi Kumar',
+    name: '',
     email: '',
-    initial: 'R'
+    initial: ''
   });
 
   const [metaStatus, setMetaStatus] = useState<{ connected: boolean; page_name?: string } | null>(null);
@@ -6023,8 +6023,8 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         setBusinessInfo({ name, location: loc, initial });
       }
       const email = localStorage.getItem('user_email') || '';
-      const userName = (savedBiz ? JSON.parse(savedBiz).userName : '') || (email ? email.split('@')[0] : 'Ravi Kumar');
-      const userInitial = (userName.charAt(0) || 'R').toUpperCase();
+      const userName = (savedBiz ? JSON.parse(savedBiz).userName : '') || (email ? email.split('@')[0] : '');
+      const userInitial = userName ? (userName.charAt(0) || '').toUpperCase() : (email ? (email.charAt(0) || '').toUpperCase() : '');
       setUserInfo({ name: userName, email, initial: userInitial });
     } catch (err) {
       console.error("Error reading business profile", err);
@@ -6139,7 +6139,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           justifyContent: 'center'
         }}
       >
-        {userInfo.initial}
+        {userInfo.initial || '👤'}
       </button>
     </div>
 
@@ -6575,7 +6575,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               fontSize: '14px',
               flexShrink: 0
             }}>
-              {userInfo.initial}
+              {userInfo.initial || '👤'}
             </span>
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <b style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -6878,7 +6878,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               justifyContent: 'center',
               border: '2px solid var(--primary-color)'
             }}>
-              {userInfo.initial}
+              {userInfo.initial || '👤'}
             </span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>{userInfo.name}</div>
