@@ -196,3 +196,26 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 
+
+
+/* --- Navigation & Responsive Styles --- */
+.desktop-nav {
+  display: flex !important;
+}
+.mobile-nav {
+  display: none !important;
+}
+
+@media (max-width: 860px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-nav {
+    display: flex !important;
+  }
+  .main-dashboard-wrapper {
+    flex-direction: column !important;
+    gap: 16px !important;
+    padding-bottom: 84px !important;
+  }
+}

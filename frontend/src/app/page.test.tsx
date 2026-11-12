@@ -13,25 +13,37 @@ describe('Platforms Component', () => {
     delete (window as any).FB;
     delete (window as any).fbAsyncInit;
     process.env.NEXT_PUBLIC_META_APP_ID = "test_app_id";
+    window.showNotification = jest.fn();
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/meta/status')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ connected: false, page_name: '' })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({})
+      });
+    });
   });
 
   it('renders correctly', () => {
     render(<Platforms />);
     expect(screen.getByText('Connect Platforms')).toBeTruthy();
-    expect(screen.getByText('Facebook Page')).toBeTruthy();
+    expect(screen.getAllByText('Facebook Page')[0]).toBeTruthy();
     expect(screen.getByText('Instagram Business')).toBeTruthy();
   });
 
   it('handles FB.login missing (out of bounds)', async () => {
-    // Override alert to prevent console noise
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation(() => {});
-    
     render(<Platforms />);
     const connectFbButton = screen.getAllByText('Connect', { selector: 'button', exact: false })[0];
     fireEvent.click(connectFbButton);
     
-    expect(alertMock).toHaveBeenCalledWith('Facebook SDK is still loading. Please try again in a moment.');
-    alertMock.mockRestore();
+    expect(window.showNotification).toHaveBeenCalledWith(
+      'Facebook SDK is still loading. Please try again in a moment.',
+      'error'
+    );
   });
 
   it('handles FB login success', async () => {
@@ -43,8 +55,9 @@ describe('Platforms Component', () => {
       })
     };
 
-    (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url.includes("/api/meta/pages")) {
+    let isConnected = false;
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/meta/pages')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
@@ -52,10 +65,17 @@ describe('Platforms Component', () => {
           })
         });
       }
-      if (url.includes("/api/meta/connect")) {
+      if (url.includes('/api/meta/connect')) {
+        isConnected = true;
         return Promise.resolve({ ok: true });
       }
-      return Promise.reject(new Error("Unknown API Call: " + url));
+      if (url.includes('/api/meta/status')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ connected: isConnected, page_name: isConnected ? 'SriKrish' : '' })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
     render(<Platforms />);
@@ -83,7 +103,8 @@ describe('Platforms Component', () => {
         tenant_id: 1, 
         page_id: "123",
         page_name: "SriKrish",
-        access_token: "page_token"
+        access_token: "page_token",
+        user_access_token: "test_token"
       })
     }));
   });
@@ -92,18 +113,36 @@ describe('Platforms Component', () => {
 describe('CampaignDashboard Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.showNotification = jest.fn();
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/storage/assets') || url.includes('/api/campaigns')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([])
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({})
+      });
+    });
   });
 
   it('renders correctly', () => {
     render(<CampaignDashboard />);
     expect(screen.getByText('Campaign Setup')).toBeTruthy();
-    expect(screen.getByText('Fully AI-Managed Posting')).toBeTruthy();
+    expect(screen.getByText('Create and publish your next promotion')).toBeTruthy();
   });
 
   it('generates campaign text correctly', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ generated_text: "Here is your awesome ad!" })
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/campaign/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'success', generated_text: "Here is your awesome ad!" })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
     render(<CampaignDashboard />);
@@ -123,85 +162,96 @@ describe('CampaignDashboard Component', () => {
   });
 
   it('handles negative edge case: API error', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-    
-    // Create a new mock specifically for this test
-    global.fetch = jest.fn().mockRejectedValueOnce(new Error("API Error"));
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/campaign/generate')) {
+        return Promise.reject(new Error("API Error"));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
 
     render(<CampaignDashboard />);
+    const user = userEvent.setup();
+    const promptInput = screen.getByPlaceholderText(/e.g., Promote our new summer silk collection.../i);
+    await user.type(promptInput, "Test prompt");
     
     const generateButton = screen.getByText('✨ Generate AI Content');
     fireEvent.click(generateButton);
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error generating campaign');
+      expect(window.showNotification).toHaveBeenCalledWith('Error generating campaign content', 'error');
     });
-
-    consoleSpy.mockRestore();
-    alertSpy.mockRestore();
   });
 
   it('publishes generated campaign correctly', async () => {
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-    
-    // First, simulate generating the campaign
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ generated_text: "Here is your awesome ad!" })
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/campaign/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'success', generated_text: "Here is your awesome ad!" })
+        });
+      }
+      if (url.includes('/api/campaign/publish')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ message: "Published successfully!" })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
     render(<CampaignDashboard />);
+    const user = userEvent.setup();
+    const promptInput = screen.getByPlaceholderText(/e.g., Promote our new summer silk collection.../i);
+    await user.type(promptInput, "Test prompt");
+
     fireEvent.click(screen.getByText('✨ Generate AI Content'));
 
     await waitFor(() => {
       expect(screen.getByText(/Here is your awesome ad!/i)).toBeTruthy();
     });
 
-    // Now simulate publishing
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ message: "Published successfully!" })
-    });
-
-    const publishButton = screen.getByText('Approve & Publish to Meta');
+    const publishButton = screen.getByText(/Publish to Facebook|Publish to Meta/i);
     fireEvent.click(publishButton);
 
     expect(screen.getByText('Publishing...')).toBeTruthy();
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Published successfully! Published successfully!');
+      expect(window.showNotification).toHaveBeenCalledWith(
+        expect.stringContaining('Published successfully'),
+        'success'
+      );
     });
-    alertSpy.mockRestore();
   });
 
   it('handles publish error', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-    
-    // Generate campaign
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ generated_text: "Test ad text" })
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/campaign/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'success', generated_text: "Test ad text" })
+        });
+      }
+      if (url.includes('/api/campaign/publish')) {
+        return Promise.reject(new Error("Publish failed"));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
     render(<CampaignDashboard />);
+    const user = userEvent.setup();
+    const promptInput = screen.getByPlaceholderText(/e.g., Promote our new summer silk collection.../i);
+    await user.type(promptInput, "Test prompt");
+
     fireEvent.click(screen.getByText('✨ Generate AI Content'));
 
     await waitFor(() => {
       expect(screen.getByText(/Test ad text/i)).toBeTruthy();
     });
 
-    // Simulate publish failure
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Publish failed"));
-
-    fireEvent.click(screen.getByText('Approve & Publish to Meta'));
+    fireEvent.click(screen.getByText(/Publish to Facebook|Publish to Meta/i));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error publishing campaign');
+      expect(window.showNotification).toHaveBeenCalledWith('Error publishing campaign', 'error');
     });
-
-    consoleSpy.mockRestore();
-    alertSpy.mockRestore();
   });
 });

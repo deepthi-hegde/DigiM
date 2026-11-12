@@ -2451,7 +2451,7 @@ export function CampaignDashboard({
         }),
       });
       const data = await response.json();
-      if (data.status === 'success') {
+      if (data.status === 'success' || (response.ok && data.generated_text)) {
         setGeneratedText(data.generated_text);
         setVisualSuggestion(data.visual_suggestion);
         setCampaignId(data.id || null);
@@ -5014,15 +5014,35 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
   );
 }
 
-function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?: (campaign: any) => void; onNavigateToTab?: (tab: string) => void }) {
+function CalendarTab({
+  onSelectCampaign,
+  onNavigateToTab,
+  activeSubTab = 'upcoming',
+  onSubTabChange
+}: {
+  onSelectCampaign?: (campaign: any) => void;
+  onNavigateToTab?: (tab: string) => void;
+  activeSubTab?: 'upcoming' | 'drafts' | 'past';
+  onSubTabChange?: (sub: 'upcoming' | 'drafts' | 'past') => void;
+}) {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subTab, setSubTab] = useState<'upcoming' | 'drafts' | 'past'>(activeSubTab);
+
+  useEffect(() => {
+    if (activeSubTab) setSubTab(activeSubTab);
+  }, [activeSubTab]);
+
+  const handleSubChange = (newSub: 'upcoming' | 'drafts' | 'past') => {
+    setSubTab(newSub);
+    onSubTabChange?.(newSub);
+  };
 
   useEffect(() => {
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
     Promise.all([
-      fetch(`/api/campaigns?tenant_id=${savedTenantId}`).then(res => res.json()),
+      fetch('/api/campaigns?tenant_id=' + savedTenantId).then(res => res.json()),
       fetch('/api/calendar/events').then(res => res.json()).catch(() => [])
     ])
       .then(([campaignData, calendarData]) => {
@@ -5039,7 +5059,7 @@ function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?:
   if (loading) {
     return (
       <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', borderRadius: '16px' }}>
-        <p style={{ fontWeight: 600, color: 'var(--primary-color)' }}>Loading scheduling calendar...</p>
+        <p style={{ fontWeight: 600, color: 'var(--primary-color)' }}>Loading calendar & posts...</p>
       </div>
     );
   }
@@ -5057,7 +5077,6 @@ function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?:
   ];
 
   const daysGrid = [];
-  // Fill empty spaces before start of month
   for (let i = 0; i < firstDayIndex; i++) {
     daysGrid.push(null);
   }
@@ -5071,74 +5090,107 @@ function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?:
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '32px', borderRadius: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Campaign Queue & Calendar</h2>
-          <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>
-            Manage and monitor your saved drafts & scheduled posts for {monthNames[month]} {year}. Click any item to inspect/edit.
-          </p>
+      {/* Calendar Header with Unified Sub-navigation Tabs */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Calendar</h2>
+            <p style={{ color: 'var(--text-light)', fontSize: '13px', marginTop: '2px' }}>
+              Every post in one place: upcoming schedules, drafts in progress, and past published campaigns.
+            </p>
+          </div>
+        </div>
+
+        {/* Sub-Navigation Tabs */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '14px' }}>
+          <button
+            type="button"
+            onClick={() => handleSubChange('upcoming')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '10px',
+              border: 'none',
+              background: subTab === 'upcoming' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+              color: subTab === 'upcoming' ? '#050806' : 'var(--text-color)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span>📅 Upcoming</span>
+            {scheduledCampaigns.length > 0 && (
+              <span style={{
+                background: subTab === 'upcoming' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
+                color: subTab === 'upcoming' ? '#050806' : 'var(--primary-color)',
+                padding: '1px 6px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                {scheduledCampaigns.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubChange('drafts')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '10px',
+              border: 'none',
+              background: subTab === 'drafts' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+              color: subTab === 'drafts' ? '#050806' : 'var(--text-color)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span>💾 Drafts</span>
+            {unscheduledDrafts.length > 0 && (
+              <span style={{
+                background: subTab === 'drafts' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
+                color: subTab === 'drafts' ? '#050806' : 'var(--primary-color)',
+                padding: '1px 6px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                {unscheduledDrafts.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubChange('past')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '10px',
+              border: 'none',
+              background: subTab === 'past' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+              color: subTab === 'past' ? '#050806' : 'var(--text-color)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            📜 Past posts
+          </button>
         </div>
       </div>
 
-      {/* Unscheduled Saved Drafts Section */}
-      {unscheduledDrafts.length > 0 && (
-        <div style={{ marginBottom: '24px', background: 'rgba(82, 183, 136, 0.05)', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              💾 Saved Drafts ({unscheduledDrafts.length})
-            </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
-              Click any draft to edit or schedule
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
-            {unscheduledDrafts.map((draft) => (
-              <div
-                key={draft.id}
-                onClick={() => onSelectCampaign?.(draft)}
-                style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary-color)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.transform = 'none';
-                }}
-              >
-                {(draft.image_url || (draft.visual_suggestion && (draft.visual_suggestion.startsWith('/') || draft.visual_suggestion.startsWith('http')))) ? (
-                  <img src={draft.image_url || draft.visual_suggestion} alt="Draft" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
-                    📝
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {draft.prompt || draft.generated_text || "Saved Draft"}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: '4px' }}>{draft.category}</span>
-                    <span>• {draft.tone}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Weekday headers */}
+      {/* 1. UPCOMING VIEW */}
+      {subTab === 'upcoming' && (
+        <div>
+{/* Weekday headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 600, fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}
       </div>
@@ -5376,6 +5428,135 @@ function CalendarTab({ onSelectCampaign, onNavigateToTab }: { onSelectCampaign?:
           </div>
         )}
       </div>
+        </div>
+      )}
+
+      {/* 2. DRAFTS VIEW */}
+      {subTab === 'drafts' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)' }}>
+                Drafts ({unscheduledDrafts.length})
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>
+                Drafts save automatically. Pick up where you left off or click any draft to edit and schedule.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigateToTab?.('home')}
+              style={{
+                background: 'var(--primary-color)',
+                color: '#050806',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontWeight: 700,
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              + Create New Draft
+            </button>
+          </div>
+
+          {unscheduledDrafts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📝</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>No saved drafts yet</div>
+              <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '4px', maxWidth: '380px', margin: '8px auto 20px' }}>
+                Drafts save automatically when you design posts. Scheduling one moves it to Upcoming; once it’s out, it moves to Past.
+              </p>
+              <button
+                onClick={() => onNavigateToTab?.('home')}
+                style={{
+                  background: 'var(--primary-color)',
+                  color: '#050806',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 20px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                Create a post
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              {unscheduledDrafts.map((draft) => (
+                <div
+                  key={draft.id}
+                  onClick={() => onSelectCampaign?.(draft)}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '14px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary-color)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'none';
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    {(draft.image_url || (draft.visual_suggestion && (draft.visual_suggestion.startsWith('/') || draft.visual_suggestion.startsWith('http')))) ? (
+                      <img src={draft.image_url || draft.visual_suggestion} alt="Draft" style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>
+                        📝
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {draft.prompt || "Saved Draft"}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ background: 'rgba(82, 183, 136, 0.15)', color: 'var(--primary-color)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>
+                          {draft.category || "Post"}
+                        </span>
+                        <span>Tone: {draft.tone}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {draft.generated_text && (
+                    <div style={{ fontSize: '13px', color: 'var(--text-light)', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      "{draft.generated_text}"
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: 600 }}>Click to edit or schedule →</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>Draft #{draft.id}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. PAST POSTS VIEW */}
+      {subTab === 'past' && (
+        <div>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)' }}>Past Posts & Archive</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>
+              All your published and archived campaigns in one place. Posts older than 90 days are archived here and can be restored anytime.
+            </p>
+          </div>
+          <ArchivedPostsTab />
+        </div>
+      )}
     </div>
   );
 }
@@ -5780,14 +5961,46 @@ function ArchivedPostsTab({ onRefreshWarnings }: { onRefreshWarnings?: () => voi
 function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('activeTab') || 'campaigns';
+      const saved = localStorage.getItem('activeTab') || 'home';
+      if (saved === 'campaigns') return 'home';
+      if (saved === 'assets') return 'library';
+      if (saved === 'analytics') return 'results';
+      return saved;
     }
-    return 'campaigns';
+    return 'home';
   });
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (typeof window !== 'undefined') localStorage.setItem('activeTab', tab);
+  const [calendarSubTab, setCalendarSubTab] = useState<'upcoming' | 'drafts' | 'past'>('upcoming');
+  const [showMobileAvatarMenu, setShowMobileAvatarMenu] = useState(false);
+
+  const [businessInfo, setBusinessInfo] = useState<{ name: string; location: string; initial: string }>({
+    name: 'business_name',
+    location: '',
+    initial: 'B'
+  });
+
+  const [userInfo, setUserInfo] = useState<{ name: string; email: string; initial: string }>({
+    name: 'Ravi Kumar',
+    email: '',
+    initial: 'R'
+  });
+
+  const [metaStatus, setMetaStatus] = useState<{ connected: boolean; page_name?: string } | null>(null);
+  const [draftsCount, setDraftsCount] = useState<number>(0);
+
+  const handleTabChange = (tab: string, sub?: 'upcoming' | 'drafts' | 'past') => {
+    let resolvedTab = tab;
+    if (tab === 'campaigns') resolvedTab = 'home';
+    if (tab === 'assets') resolvedTab = 'library';
+    if (tab === 'analytics') resolvedTab = 'results';
+    if (tab === 'archived') {
+      resolvedTab = 'calendar';
+      setCalendarSubTab('past');
+    } else if (sub) {
+      setCalendarSubTab(sub);
+    }
+    setActiveTab(resolvedTab);
+    if (typeof window !== 'undefined') localStorage.setItem('activeTab', resolvedTab);
   };
 
   const [showWelcome, setShowWelcome] = useState(true);
@@ -5798,117 +6011,598 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [archivalWarnings, setArchivalWarnings] = useState<any[]>([]);
   const [storageStatus, setStorageStatus] = useState<any>(null);
 
-  const fetchWarnings = async () => {
+  // Load business & user profiles from onboarding data
+  useEffect(() => {
+    try {
+      const savedBiz = localStorage.getItem('businessProfile');
+      if (savedBiz) {
+        const parsed = JSON.parse(savedBiz);
+        const name = parsed.businessName && parsed.businessName.trim() ? parsed.businessName.trim() : 'business_name';
+        const loc = parsed.category || parsed.industry || '';
+        const initial = (name.charAt(0) || 'B').toUpperCase();
+        setBusinessInfo({ name, location: loc, initial });
+      }
+      const email = localStorage.getItem('user_email') || '';
+      const userName = (savedBiz ? JSON.parse(savedBiz).userName : '') || (email ? email.split('@')[0] : 'Ravi Kumar');
+      const userInitial = (userName.charAt(0) || 'R').toUpperCase();
+      setUserInfo({ name: userName, email, initial: userInitial });
+    } catch (err) {
+      console.error("Error reading business profile", err);
+    }
+  }, []);
+
+  const fetchDashboardData = async () => {
     try {
       const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const [wRes, sRes] = await Promise.all([
-        fetch(`/api/campaigns/archival-warnings?tenant_id=${savedTenantId}`),
-        fetch('/api/storage/status')
+      const [mRes, cRes, wRes, sRes] = await Promise.all([
+        fetch('/api/meta/status?tenant_id=' + savedTenantId).catch(() => null),
+        fetch('/api/campaigns?tenant_id=' + savedTenantId).catch(() => null),
+        fetch('/api/campaigns/archival-warnings?tenant_id=' + savedTenantId).catch(() => null),
+        fetch('/api/storage/status').catch(() => null)
       ]);
-      if (wRes.ok) {
+      if (mRes && mRes.ok) {
+        const mData = await mRes.json();
+        setMetaStatus(mData);
+      }
+      if (cRes && cRes.ok) {
+        const cData = await cRes.json();
+        if (Array.isArray(cData)) {
+          const drafts = cData.filter((c: any) => !c.scheduled_time && c.status === 'draft');
+          setDraftsCount(drafts.length);
+        }
+      }
+      if (wRes && wRes.ok) {
         const wData = await wRes.json();
         setArchivalWarnings(wData);
       }
-      if (sRes.ok) {
+      if (sRes && sRes.ok) {
         const sData = await sRes.json();
         setStorageStatus(sData);
       }
     } catch (err) {
-      console.error("Error fetching warnings", err);
+      console.error("Error fetching dashboard data", err);
     }
   };
 
   useEffect(() => {
-    fetchWarnings();
+    fetchDashboardData();
   }, []);
+
+  const isHomeActive = activeTab === 'home' || activeTab === 'campaigns';
+  const isCalendarActive = activeTab === 'calendar';
+  const isLibraryActive = activeTab === 'library' || activeTab === 'assets';
+  const isResultsActive = activeTab === 'results' || activeTab === 'analytics';
+  const isSettingsActive = activeTab === 'settings';
+  const isProfileActive = activeTab === 'profile';
+  const isAdminActive = activeTab === 'admin';
 
   return (
     <>
-    <div className="fade-in-up" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+    {/* Mobile Top Header */}
+    <div className="mobile-nav" style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      background: 'rgba(5, 8, 6, 0.95)',
+      backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid var(--glass-border)',
+      padding: '12px 16px',
+      display: 'none',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      marginBottom: '16px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={onGoHome}>
+        <span style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '10px',
+          background: 'var(--primary-color)',
+          color: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 800,
+          fontSize: '16px'
+        }}>D</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)', textTransform: 'capitalize' }}>
+            {isHomeActive ? 'Home' :
+             isCalendarActive ? 'Calendar' :
+             isLibraryActive ? 'Library' :
+             isResultsActive ? 'Results' :
+             isSettingsActive ? 'Settings' :
+             isProfileActive ? 'Profile' : 'DigiM'}
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+            {businessInfo.name}
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowMobileAvatarMenu(true)}
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          background: 'rgba(82, 183, 136, 0.2)',
+          border: '1.5px solid var(--primary-color)',
+          color: 'var(--primary-color)',
+          fontWeight: 700,
+          fontSize: '14px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {userInfo.initial}
+      </button>
+    </div>
+
+    {/* Main Container */}
+    <div className="fade-in-up main-dashboard-wrapper" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '28px', alignItems: 'flex-start' }}>
       {inspectCampaign && (
         <ScheduledPostInspectorModal
           campaign={inspectCampaign}
           onClose={() => setInspectCampaign(null)}
           onEditInDashboard={(c) => {
             setSelectedCampaignForEdit(c);
-            setActiveTab('campaigns');
+            handleTabChange('home');
           }}
           onDelete={(deletedId) => {
-            // Trigger calendar refresh by toggling tab or reload
             if (typeof window !== 'undefined') window.location.reload();
           }}
         />
       )}
-      {/* Sidebar */}
-      <div className="glass-panel" style={{ width: '250px', padding: '24px', position: 'sticky', top: '40px' }}>
+
+      {/* Web Sidebar (Creators IA) */}
+      <div className="desktop-nav glass-panel" style={{ width: '270px', padding: '20px 16px', position: 'sticky', top: '40px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* DigiM Brand Header */}
         <div
           onClick={onGoHome}
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px', cursor: 'pointer', transition: 'opacity 0.2s' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 6px 12px', cursor: 'pointer', transition: 'opacity 0.2s' }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-          title="Go back to Home Page"
+          title="DigiM"
         >
-          <img src="/logo.png" alt="DigiM Logo" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
-          <h3 style={{ fontSize: '18px', fontWeight: 800, background: 'linear-gradient(135deg, var(--primary-color) 0%, #2D6A4F 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>DigiM app</h3>
+          <span style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: 'var(--primary-color)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: '17px',
+            flexShrink: 0
+          }}>D</span>
+          <h3 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--text-color)', margin: 0 }}>DigiM</h3>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Business Switcher Card */}
+        <button
+          type="button"
+          onClick={() => handleTabChange('profile')}
+          title="View & Edit Shop Details"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            minHeight: '52px',
+            padding: '8px 12px',
+            borderRadius: '12px',
+            border: '1px solid var(--glass-border)',
+            background: 'rgba(255, 255, 255, 0.03)',
+            color: 'var(--text-color)',
+            textAlign: 'left',
+            marginBottom: '10px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            width: '100%'
+          }}
+        >
+          <span style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'rgba(82, 183, 136, 0.15)',
+            color: 'var(--primary-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: '14px',
+            flexShrink: 0
+          }}>
+            {businessInfo.initial}
+          </span>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <b style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {businessInfo.name}
+            </b>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {businessInfo.location || 'Shop details'}
+            </span>
+          </div>
+        </button>
+
+        {/* Create Post CTA Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCampaignForEdit(null);
+            handleTabChange('home');
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            minHeight: '44px',
+            borderRadius: '12px',
+            border: 'none',
+            background: 'var(--primary-color)',
+            color: '#050806',
+            fontSize: '14px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px var(--primary-glow)',
+            marginBottom: '12px',
+            transition: 'all 0.2s ease',
+            width: '100%'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Create post
+        </button>
+
+        {/* 4 Core Places */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          {/* Home */}
           <button
-            onClick={() => handleTabChange('campaigns')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'campaigns' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'campaigns' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'campaigns' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            type="button"
+            onClick={() => handleTabChange('home')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              background: isHomeActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isHomeActive ? 'var(--primary-color)' : 'var(--text-color)',
+              fontWeight: isHomeActive ? 700 : 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
-            Campaigns
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            <span style={{ flex: 1 }}>Home</span>
           </button>
+
+          {/* Calendar */}
           <button
-            onClick={() => handleTabChange('calendar')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'calendar' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'calendar' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'calendar' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            type="button"
+            onClick={() => handleTabChange('calendar', 'upcoming')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              background: isCalendarActive && calendarSubTab === 'upcoming' ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isCalendarActive ? 'var(--primary-color)' : 'var(--text-color)',
+              fontWeight: isCalendarActive ? 700 : 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            Calendar Queue
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            <span style={{ flex: 1 }}>Calendar</span>
           </button>
+
+          {/* Calendar Sub-Navigation (Expanded) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '28px', marginTop: '1px', marginBottom: '4px' }}>
+            <button
+              type="button"
+              onClick={() => handleTabChange('calendar', 'upcoming')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: isCalendarActive && calendarSubTab === 'upcoming' ? 'rgba(82, 183, 136, 0.12)' : 'transparent',
+                color: isCalendarActive && calendarSubTab === 'upcoming' ? 'var(--primary-color)' : 'var(--text-light)',
+                fontWeight: isCalendarActive && calendarSubTab === 'upcoming' ? 700 : 500,
+                fontSize: '13px',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <span>Upcoming</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('calendar', 'drafts')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: isCalendarActive && calendarSubTab === 'drafts' ? 'rgba(82, 183, 136, 0.12)' : 'transparent',
+                color: isCalendarActive && calendarSubTab === 'drafts' ? 'var(--primary-color)' : 'var(--text-light)',
+                fontWeight: isCalendarActive && calendarSubTab === 'drafts' ? 700 : 500,
+                fontSize: '13px',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <span>Drafts</span>
+              {draftsCount > 0 && (
+                <span style={{
+                  minWidth: '18px',
+                  height: '18px',
+                  padding: '0 5px',
+                  borderRadius: '9px',
+                  background: 'rgba(82, 183, 136, 0.25)',
+                  color: 'var(--primary-color)',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {draftsCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('calendar', 'past')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: isCalendarActive && calendarSubTab === 'past' ? 'rgba(82, 183, 136, 0.12)' : 'transparent',
+                color: isCalendarActive && calendarSubTab === 'past' ? 'var(--primary-color)' : 'var(--text-light)',
+                fontWeight: isCalendarActive && calendarSubTab === 'past' ? 700 : 500,
+                fontSize: '13px',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <span>Past posts</span>
+            </button>
+          </div>
+
+          {/* Library */}
           <button
-            onClick={() => handleTabChange('analytics')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'analytics' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'analytics' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'analytics' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            type="button"
+            onClick={() => handleTabChange('library')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              background: isLibraryActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isLibraryActive ? 'var(--primary-color)' : 'var(--text-color)',
+              fontWeight: isLibraryActive ? 700 : 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            Analytics
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            <span style={{ flex: 1 }}>Library</span>
           </button>
+
+          {/* Results */}
           <button
-            onClick={() => handleTabChange('assets')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'assets' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'assets' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'assets' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            type="button"
+            onClick={() => handleTabChange('results')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              background: isResultsActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isResultsActive ? 'var(--primary-color)' : 'var(--text-color)',
+              fontWeight: isResultsActive ? 700 : 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            Asset Library
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            <span style={{ flex: 1 }}>Results</span>
           </button>
+        </div>
+
+        {/* Disconnected Alert Banner */}
+        {metaStatus && !metaStatus.connected && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            padding: '12px',
+            borderRadius: '12px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#ef4444',
+            fontSize: '13px',
+            lineHeight: '18px',
+            marginTop: '8px',
+            marginBottom: '4px'
+          }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <span>⚠️</span>
+              <div>
+                <strong>Meta / Instagram disconnected.</strong>
+                <div style={{ fontSize: '11px', color: 'rgba(239,68,68,0.85)', marginTop: '2px' }}>
+                  Scheduled posts won’t go out.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('settings')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ef4444',
+                fontWeight: 700,
+                fontSize: '12px',
+                textAlign: 'left',
+                paddingLeft: '22px',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Reconnect →
+            </button>
+          </div>
+        )}
+
+        {/* Bottom Menu Tray */}
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--glass-border)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           <button
-            onClick={() => handleTabChange('archived')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'archived' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'archived' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'archived' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-            Archived Posts
-          </button>
-          <button
-            onClick={() => handleTabChange('profile')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'profile' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'profile' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'profile' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            Profile
-          </button>
-          <button
+            type="button"
             onClick={() => handleTabChange('settings')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'settings' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'settings' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'settings' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '9px 12px',
+              borderRadius: '10px',
+              background: isSettingsActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isSettingsActive ? 'var(--primary-color)' : 'var(--text-color)',
+              fontWeight: isSettingsActive ? 700 : 500,
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            Integrations
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span style={{ flex: 1 }}>Settings</span>
           </button>
-          <button
-            onClick={() => handleTabChange('admin')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', padding: '12px 16px', borderRadius: '12px', background: activeTab === 'admin' ? 'rgba(82, 183, 136, 0.1)' : 'transparent', color: activeTab === 'admin' ? 'var(--primary-color)' : 'var(--text-color)', fontWeight: activeTab === 'admin' ? 600 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+
+          <a
+            href="/facebook-setup-guide.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '9px 12px',
+              borderRadius: '10px',
+              color: 'var(--text-color)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              transition: 'all 0.2s'
+            }}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            Admin Panel
-          </button>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span style={{ flex: 1 }}>Help</span>
+          </a>
+
+          {/* User Row */}
+          <div
+            onClick={() => handleTabChange('profile')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              minHeight: '48px',
+              padding: '6px 8px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              marginTop: '4px'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            title="Profile and sign out"
+          >
+            <span style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              background: 'rgba(82, 183, 136, 0.2)',
+              color: 'var(--primary-color)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '14px',
+              flexShrink: 0
+            }}>
+              {userInfo.initial}
+            </span>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <b style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userInfo.name}
+              </b>
+              <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                Profile and sign out
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLogoutConfirm(true);
+              }}
+              title="Log Out"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-light)',
+                cursor: 'pointer',
+                padding: '4px'
+              }}
+            >
+              🚪
+            </button>
+          </div>
         </div>
       </div>
 
@@ -5921,11 +6615,11 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               <div>
                 <div style={{ fontWeight: 700, color: '#f59e0b', fontSize: '14px' }}>Auto-Archival Warning Notification</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-color)', marginTop: '2px' }}>
-                  {archivalWarnings.length} published post(s) will be automatically moved to your <strong>Archived Posts</strong> tab within 7 days (90-day retention policy).
+                  {archivalWarnings.length} published post(s) will be automatically moved to your <strong>Calendar › Past posts</strong> tab within 7 days (90-day retention policy).
                 </div>
               </div>
             </div>
-            <button onClick={() => handleTabChange('archived')} style={{ background: '#f59e0b', border: 'none', color: '#000000', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => handleTabChange('calendar', 'past')} style={{ background: '#f59e0b', border: 'none', color: '#000000', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
               View Archive
             </button>
           </div>
@@ -5938,40 +6632,44 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               <div>
                 <div style={{ fontWeight: 700, color: '#ef4444', fontSize: '14px' }}>Storage Quota Warning ({storageStatus.used_gb} GB / 5.0 GB Used)</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-color)', marginTop: '2px' }}>
-                  Your Google Cloud Storage usage is near the 5GB Always Free limit. Heavy media blobs for posts older than 180 days will be pruned to keep cloud costs $0.00.
+                  Your Google Cloud Storage usage is near the 5GB Always Free limit. Heavy media blobs for posts older than 180 days will be pruned to keep cloud costs /bin/zsh.00.
                 </div>
               </div>
             </div>
           </div>
         )}
+
         {showWelcome && (
           <div className="fade-in-up" style={{ background: 'rgba(82, 183, 136, 0.05)', border: '1px solid var(--primary-color)', borderRadius: '16px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 4px 12px var(--primary-glow)' }}>
             <div>
               <h4 style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>🎉 Welcome to DigiM app!</h4>
               <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.5 }}>
-                Your marketing command center is ready. Check out the <strong>Analytics</strong> tab to see your profile's performance, or head to the <strong>Campaigns</strong> tab to generate posts on autopilot.
+                Your marketing command center is ready. Check out the <strong>Results</strong> tab to see your profile's performance, or click <strong>Create post</strong> to generate posts on autopilot.
               </p>
             </div>
             <button onClick={() => setShowWelcome(false)} style={{ background: 'transparent', border: 'none', color: 'var(--primary-color)', fontSize: '20px', cursor: 'pointer', opacity: 0.6 }}>×</button>
           </div>
         )}
-        {activeTab === 'campaigns' && (
+
+        {/* Views */}
+        {isHomeActive && (
           <CampaignDashboard
             initialCampaign={selectedCampaignForEdit}
             onClearEdit={() => setSelectedCampaignForEdit(null)}
             onNavigateToTab={(tab) => handleTabChange(tab)}
           />
         )}
-        {activeTab === 'calendar' && (
+        {isCalendarActive && (
           <CalendarTab
-              onNavigateToTab={(tab) => handleTabChange(tab)}
+            activeSubTab={calendarSubTab}
+            onSubTabChange={setCalendarSubTab}
+            onNavigateToTab={(tab) => handleTabChange(tab)}
             onSelectCampaign={(c) => setInspectCampaign(c)}
           />
         )}
-        {activeTab === 'analytics' && <AnalyticsTab />}
-        {activeTab === 'assets' && <AssetsLibrary />}
-        {activeTab === 'archived' && <ArchivedPostsTab onRefreshWarnings={fetchWarnings} />}
-        {activeTab === 'profile' && (
+        {isResultsActive && <AnalyticsTab />}
+        {isLibraryActive && <AssetsLibrary />}
+        {isProfileActive && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <Onboarding isSettings={true} />
             <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -5992,10 +6690,252 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             </div>
           </div>
         )}
-        {activeTab === 'settings' && <Platforms isSettings={true} />}
-        {activeTab === 'admin' && <AdminPanel />}
+        {isSettingsActive && <Platforms isSettings={true} />}
+        {isAdminActive && <AdminPanel />}
       </div>
     </div>
+
+    {/* Mobile Bottom Tab Bar */}
+    <nav className="mobile-nav" aria-label="Main" style={{
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      minHeight: '64px',
+      background: 'rgba(5, 8, 6, 0.98)',
+      backdropFilter: 'blur(20px)',
+      borderTop: '1px solid var(--glass-border)',
+      display: 'none',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      zIndex: 100,
+      padding: '4px 8px'
+    }}>
+      <button
+        type="button"
+        onClick={() => handleTabChange('home')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          minWidth: '52px',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: isHomeActive ? 'var(--primary-color)' : 'var(--text-light)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        Home
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleTabChange('calendar', 'upcoming')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          minWidth: '52px',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: isCalendarActive ? 'var(--primary-color)' : 'var(--text-light)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Calendar
+      </button>
+
+      {/* Center Create Action */}
+      <button
+        type="button"
+        onClick={() => {
+          setSelectedCampaignForEdit(null);
+          handleTabChange('home');
+        }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: 'var(--primary-color)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <span style={{
+          width: '44px',
+          height: '32px',
+          borderRadius: '12px',
+          background: 'var(--primary-color)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#050806'
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </span>
+        Create
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleTabChange('library')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          minWidth: '52px',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: isLibraryActive ? 'var(--primary-color)' : 'var(--text-light)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Library
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleTabChange('results')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          minWidth: '52px',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: isResultsActive ? 'var(--primary-color)' : 'var(--text-light)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        Results
+      </button>
+    </nav>
+
+    {/* Mobile Avatar Menu Drawer */}
+    {showMobileAvatarMenu && (
+      <div
+        onClick={() => setShowMobileAvatarMenu(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end'
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="glass-panel"
+          style={{
+            background: 'var(--glass-bg)',
+            borderRadius: '24px 24px 0 0',
+            padding: '16px 20px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.6)',
+            borderBottom: 'none'
+          }}
+        >
+          {/* Drag Handle */}
+          <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.25)', alignSelf: 'center', marginBottom: '8px' }} />
+
+          {/* User & Store Card */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <span style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              background: 'rgba(82, 183, 136, 0.2)',
+              color: 'var(--primary-color)',
+              fontWeight: 800,
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid var(--primary-color)'
+            }}>
+              {userInfo.initial}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>{userInfo.name}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{businessInfo.name}</div>
+            </div>
+            <button onClick={() => setShowMobileAvatarMenu(false)} style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          </div>
+
+          {/* Menu Items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); handleTabChange('profile'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              👤 Profile
+            </button>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); handleTabChange('settings'); }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                🔗 Connected accounts
+              </div>
+              {metaStatus && !metaStatus.connected && (
+                <span style={{ fontSize: '11px', color: '#ef4444', background: 'rgba(239,68,68,0.15)', padding: '2px 8px', borderRadius: '6px' }}>Needs reconnecting</span>
+              )}
+            </button>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); handleTabChange('profile'); }}
+              style={{ display: 'flex', flexDirection: 'column', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '15px', fontWeight: 600 }}>🏪 Shop details</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Name, location, what you sell</span>
+            </button>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); handleTabChange('settings'); }}
+              style={{ display: 'flex', flexDirection: 'column', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '15px', fontWeight: 600 }}>⚙️ Settings</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Notifications, default audience</span>
+            </button>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); window.open('/facebook-setup-guide.html', '_blank'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              ❓ Help & Documentation
+            </button>
+            <button
+              onClick={() => { setShowMobileAvatarMenu(false); setShowLogoutConfirm(true); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
+            >
+              🚪 Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Logout Confirmation Modal */}
     {showLogoutConfirm && (
