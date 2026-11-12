@@ -30,23 +30,25 @@ def login_via_google(
         if not email:
             raise HTTPException(status_code=400, detail="Email not found in token payload")
     
-        # Look for existing tenant by email
-        tenant = db.query(Tenant).filter(Tenant.email == email).first()
+        # Look for existing tenant by email or Google SSO ID
+        tenant = db.query(Tenant).filter(
+            (Tenant.email == email) | ((Tenant.google_sso_id != None) & (Tenant.google_sso_id == google_id))
+        ).first()
         
         if not tenant:
-            # If demo tenant 1 exists and is unassigned or demo, claim it for this Google user
+            # If demo tenant 1 exists and has no linked Google account, claim it for the first user
             demo_tenant = db.query(Tenant).filter(Tenant.id == 1).first()
-            if demo_tenant and ("demo" in (demo_tenant.email or "").lower()):
+            if demo_tenant and not demo_tenant.google_sso_id:
                 tenant = demo_tenant
                 tenant.email = email
                 if name:
                     tenant.name = name
                 tenant.google_sso_id = google_id
             else:
-                # Create new tenant
+                # Create dedicated new commercial tenant
                 tenant = Tenant(
                     email=email,
-                    name=name or "Google User",
+                    name=name or "Business Owner",
                     google_sso_id=google_id,
                     is_active=True
                 )

@@ -101,6 +101,8 @@ function Login({ onNext }: { onNext: (skipOnboarding?: boolean) => void }) {
         const activeTId = data.tenant_id ? String(data.tenant_id) : '1';
         localStorage.setItem("tenant_id", activeTId);
         localStorage.setItem("user_logged_in", "true");
+        if (data.email) localStorage.setItem("user_email", data.email);
+        if (data.name) localStorage.setItem("user_name", data.name);
 
         // Check if tenant already has brand profile setup
         try {
@@ -6023,7 +6025,8 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         setBusinessInfo({ name, location: loc, initial });
       }
       const email = localStorage.getItem('user_email') || '';
-      const userName = (savedBiz ? JSON.parse(savedBiz).userName : '') || (email ? email.split('@')[0] : '');
+      const savedName = localStorage.getItem('user_name') || '';
+      const userName = (savedBiz ? JSON.parse(savedBiz).userName : '') || savedName || (email ? email.split('@')[0] : '');
       const userInitial = userName ? (userName.charAt(0) || '').toUpperCase() : (email ? (email.charAt(0) || '').toUpperCase() : '');
       setUserInfo({ name: userName, email, initial: userInitial });
     } catch (err) {
@@ -7054,6 +7057,8 @@ export default function App() {
           {step === 4 && <MainDashboard onGoHome={() => setStep(0)} onLogout={() => {
             localStorage.removeItem('user_logged_in');
             localStorage.removeItem('tenant_id');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_name');
             localStorage.removeItem('onboarding_completed');
             localStorage.removeItem('businessProfile');
             setStep(1);

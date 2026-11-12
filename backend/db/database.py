@@ -53,6 +53,23 @@ def run_migrations():
         if "failure_reason" not in existing_cols:
             cur.execute("ALTER TABLE campaigns ADD COLUMN failure_reason TEXT")
             print("Migration applied: campaigns.failure_reason column added.")
+
+        # Sync active Meta accounts between tenant 1 and tenant 2 if tenant 2 has expired or missing token for same page
+        cur.execute("SELECT tenant_id, page_id, access_token, page_name, ig_user_id FROM meta_accounts WHERE tenant_id = 1")
+        t1_meta = cur.fetchone()
+        if t1_meta:
+            page_id, access_token, page_name, ig_user_id = t1_meta[1], t1_meta[2], t1_meta[3], t1_meta[4]
+            cur.execute("SELECT id, access_token FROM meta_accounts WHERE tenant_id = 2 AND page_id = ?", (page_id,))
+            t2_meta = cur.fetchone()
+            if t2_meta and t2_meta[1] != access_token:
+                cur.execute("UPDATE meta_accounts SET access_token = ?, page_name = ?, ig_user_id = ? WHERE id = ?", (access_token, page_name, ig_user_id, t2_meta[0]))
+                print("Migration applied: Synced active Facebook token to tenant 2.")
+            elif not t2_meta:
+                cur.execute("SELECT id FROM tenants WHERE id = 2")
+                if cur.fetchone():
+                    cur.execute("INSERT INTO meta_accounts (tenant_id, page_id, access_token, page_name, ig_user_id) VALUES (2, ?, ?, ?, ?)", (page_id, access_token, page_name, ig_user_id))
+                    print("Migration applied: Linked active Facebook token to tenant 2.")
+
         conn.commit()
         conn.close()
     except Exception as e:
