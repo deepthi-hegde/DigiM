@@ -5960,6 +5960,1011 @@ function ArchivedPostsTab({ onRefreshWarnings }: { onRefreshWarnings?: () => voi
   );
 }
 
+
+export function SettingsView({ initialTab = 'shop_details', onLogout }: { initialTab?: string; onLogout?: () => void }) {
+  const [activeSubTab, setActiveSubTab] = useState<string>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) setActiveSubTab(initialTab);
+  }, [initialTab]);
+
+  // --- Shop Details State ---
+  const [businessName, setBusinessName] = useState('');
+  const [businessDescription, setBusinessDescription] = useState('');
+  const [industry, setIndustry] = useState('Clothing & Apparel');
+  const [category, setCategory] = useState('Clothing');
+  const [targetLocations, setTargetLocations] = useState('');
+  const [fullAddress, setFullAddress] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [brandColorPrimary, setBrandColorPrimary] = useState('#52B788');
+  const [isSavingShop, setIsSavingShop] = useState(false);
+
+  // --- Post Defaults State ---
+  const [postFacebook, setPostFacebook] = useState(true);
+  const [postInstagram, setPostInstagram] = useState(false);
+  const [targetGender, setTargetGender] = useState('All');
+  const [targetAgeMin, setTargetAgeMin] = useState(18);
+  const [targetAgeMax, setTargetAgeMax] = useState(60);
+  const [personaTone, setPersonaTone] = useState('casual');
+  const [aiImageStyle, setAiImageStyle] = useState('Flat illustration');
+  const [defaultFormat, setDefaultFormat] = useState('Post (1:1)');
+  const [hashtags, setHashtags] = useState<string[]>(['#ShopLocal', '#LocalBusiness', '#Trending']);
+  const [newHashtagInput, setNewHashtagInput] = useState('');
+  const [isSavingDefaults, setIsSavingDefaults] = useState(false);
+
+  // --- Profile State ---
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Meta status info
+  const [metaInfo, setMetaInfo] = useState<{ connected: boolean; tokenValid?: boolean; pageName?: string } | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+        const [profRes, metaRes] = await Promise.all([
+          fetch('/api/onboarding/brand-profile?tenant_id=' + savedTenantId).catch(() => null),
+          fetch('/api/meta/status?tenant_id=' + savedTenantId).catch(() => null)
+        ]);
+
+        if (profRes && profRes.ok) {
+          const data = await profRes.json();
+          if (data.business_name) setBusinessName(data.business_name);
+          if (data.business_description) setBusinessDescription(data.business_description);
+          if (data.industry) setIndustry(data.industry);
+          if (data.category) setCategory(data.category);
+          if (data.brand_color_primary) setBrandColorPrimary(data.brand_color_primary);
+          if (data.target_locations) setTargetLocations(data.target_locations);
+          if (data.target_gender) setTargetGender(data.target_gender);
+          if (data.target_age_min) setTargetAgeMin(data.target_age_min);
+          if (data.target_age_max) setTargetAgeMax(data.target_age_max);
+          if (data.persona_tone) setPersonaTone(data.persona_tone);
+          if (data.brand_url) setFullAddress(data.brand_url);
+        }
+
+        if (metaRes && metaRes.ok) {
+          const mData = await metaRes.json();
+          setMetaInfo({
+            connected: mData.connected,
+            tokenValid: mData.token_valid,
+            pageName: mData.page_name
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load settings data', err);
+      }
+
+      if (typeof window !== 'undefined') {
+        const email = localStorage.getItem('user_email') || '';
+        const savedName = localStorage.getItem('user_name') || '';
+        const savedBiz = localStorage.getItem('businessProfile');
+        let bizName = '';
+        if (savedBiz) {
+          try {
+            const p = JSON.parse(savedBiz);
+            bizName = p.userName || '';
+            if (p.businessName) setBusinessName(p.businessName);
+            if (p.category) setCategory(p.category);
+            if (p.brandColorPrimary) setBrandColorPrimary(p.brandColorPrimary);
+          } catch (e) {}
+        }
+        setProfileName(bizName || savedName || (email ? email.split('@')[0] : ''));
+        setProfileEmail(email);
+
+        const savedDefaults = localStorage.getItem('post_defaults');
+        if (savedDefaults) {
+          try {
+            const defs = JSON.parse(savedDefaults);
+            if (defs.hashtags) setHashtags(defs.hashtags);
+            if (defs.postFacebook !== undefined) setPostFacebook(defs.postFacebook);
+            if (defs.postInstagram !== undefined) setPostInstagram(defs.postInstagram);
+            if (defs.aiImageStyle) setAiImageStyle(defs.aiImageStyle);
+            if (defs.defaultFormat) setDefaultFormat(defs.defaultFormat);
+          } catch (e) {}
+        }
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleSaveShop = async () => {
+    setIsSavingShop(true);
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+      const payload = {
+        tenant_id: parseInt(savedTenantId, 10),
+        business_name: businessName,
+        business_description: businessDescription,
+        industry: industry,
+        category: category,
+        brand_color_primary: brandColorPrimary,
+        target_locations: targetLocations,
+        brand_url: fullAddress,
+        whatsapp_phone_number_id: whatsappNumber
+      };
+      const res = await fetch('/api/onboarding/brand-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        if (typeof window !== 'undefined') {
+          const savedBiz = localStorage.getItem('businessProfile');
+          const current = savedBiz ? JSON.parse(savedBiz) : {};
+          current.businessName = businessName;
+          current.industry = industry;
+          current.category = category;
+          current.brandColorPrimary = brandColorPrimary;
+          current.targetLocations = targetLocations;
+          localStorage.setItem('businessProfile', JSON.stringify(current));
+        }
+        notifySuccess('Shop details updated successfully! 🎉');
+      } else {
+        notifyError('Failed to save shop details.');
+      }
+    } catch (err) {
+      notifyError('Network error saving shop details.');
+    } finally {
+      setIsSavingShop(false);
+    }
+  };
+
+  const handleSaveDefaults = async () => {
+    setIsSavingDefaults(true);
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+      const payload = {
+        tenant_id: parseInt(savedTenantId, 10),
+        target_gender: targetGender,
+        target_age_min: targetAgeMin,
+        target_age_max: targetAgeMax,
+        persona_tone: personaTone
+      };
+      await fetch('/api/onboarding/brand-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('post_defaults', JSON.stringify({
+          hashtags,
+          postFacebook,
+          postInstagram,
+          aiImageStyle,
+          defaultFormat
+        }));
+      }
+      notifySuccess('Post defaults updated successfully! 🎉');
+    } catch (err) {
+      notifyError('Failed to save post defaults.');
+    } finally {
+      setIsSavingDefaults(false);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    setIsSavingProfile(true);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user_name', profileName);
+        const savedBiz = localStorage.getItem('businessProfile');
+        const current = savedBiz ? JSON.parse(savedBiz) : {};
+        current.userName = profileName;
+        localStorage.setItem('businessProfile', JSON.stringify(current));
+      }
+      notifySuccess('Profile updated successfully!');
+    } catch (err) {
+      notifyError('Failed to update profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const addHashtag = () => {
+    if (!newHashtagInput.trim()) return;
+    let tag = newHashtagInput.trim();
+    if (!tag.startsWith('#')) tag = '#' + tag;
+    if (!hashtags.includes(tag)) {
+      setHashtags([...hashtags, tag]);
+    }
+    setNewHashtagInput('');
+  };
+
+  const removeHashtag = (tagToRemove: string) => {
+    setHashtags(hashtags.filter(t => t !== tagToRemove));
+  };
+
+  const SETTINGS_TABS = [
+    { id: 'shop_details', label: 'Shop details', icon: '🏪' },
+    { id: 'connected_accounts', label: 'Connected accounts', icon: '🔗' },
+    { id: 'post_defaults', label: 'Post defaults', icon: '⚙️' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'plan_billing', label: 'Plan and billing', icon: '💳' },
+    { id: 'privacy_data', label: 'Privacy and data', icon: '🛡️' }
+  ];
+
+  const COLOR_SWATCHES = ['#52B788', '#0ea5e9', '#a855f7', '#f97316', '#1877f2', '#e11d48'];
+  const CATEGORY_CHIPS = ['Clothing', 'Food and sweets', 'Fashion', 'Jewelry', 'Electronics', 'Services', 'Retail'];
+  const TONE_CHIPS = [
+    { id: 'casual', label: 'Casual' },
+    { id: 'formal', label: 'Formal' },
+    { id: 'festive', label: 'Festive' },
+    { id: 'short', label: 'Short' }
+  ];
+  const IMAGE_STYLES = ['Flat illustration', 'Bold poster', 'Soft pastel', 'Photorealistic'];
+  const FORMAT_OPTIONS = ['Post (1:1)', 'Reel (9:16)', 'Story / Carousel (9:16)'];
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Settings Header */}
+      <div>
+        <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-color)' }}>Settings</h2>
+        <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-light)' }}>
+          Manage your business identity, connected channels, post defaults, and account details.
+        </p>
+      </div>
+
+      {/* Two Column Layout */}
+      <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        {/* Left Sub-Nav Tabs */}
+        <nav
+          aria-label="Settings Tabs"
+          style={{
+            width: '100%',
+            maxWidth: '240px',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}
+        >
+          {SETTINGS_TABS.map(tab => {
+            const isActive = activeSubTab === tab.id;
+            const hasMetaWarning = tab.id === 'connected_accounts' && metaInfo && (!metaInfo.connected || metaInfo.tokenValid === false);
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSubTab(tab.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '11px 14px',
+                  borderRadius: '12px',
+                  background: isActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+                  color: isActive ? 'var(--primary-color)' : 'var(--text-color)',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '14px',
+                  border: isActive ? '1px solid rgba(82, 183, 136, 0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'all 0.2s',
+                  position: 'relative'
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+                <span style={{ flex: 1 }}>{tab.label}</span>
+                {hasMetaWarning && (
+                  <span
+                    title="Attention required"
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      display: 'inline-block'
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right Content Panel */}
+        <div style={{ flex: '1 1 540px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* TAB 1: SHOP DETAILS */}
+          {activeSubTab === 'shop_details' && (
+            <div className="glass-panel" style={{ padding: '28px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>Shop details</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-light)' }}>
+                  Used in every post and by the AI. Customers can see your name, location, and contact numbers.
+                </p>
+              </div>
+
+              {/* Logo and Brand Colour */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Logo and colour</b>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <span
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '16px',
+                      background: 'rgba(82, 183, 136, 0.15)',
+                      border: '2px solid var(--primary-color)',
+                      color: 'var(--primary-color)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px',
+                      fontWeight: 800
+                    }}
+                  >
+                    {(businessName.charAt(0) || 'B').toUpperCase()}
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--glass-border)',
+                          color: 'var(--text-color)',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Upload logo
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={() => notifySuccess('Logo selected.')} />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => notifySuccess('Default logo restored.')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: '13px', cursor: 'pointer' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Square image, at least 400 × 400 px.</span>
+                  </div>
+                </div>
+
+                {/* Brand Colour Swatches */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Brand colour</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {COLOR_SWATCHES.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setBrandColorPrimary(color)}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '10px',
+                          background: color,
+                          border: brandColorPrimary === color ? '3px solid #ffffff' : '1px solid var(--glass-border)',
+                          boxShadow: brandColorPrimary === color ? '0 0 10px ' + color : 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        title={color}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={brandColorPrimary}
+                      onChange={(e) => setBrandColorPrimary(e.target.value)}
+                      style={{ width: '36px', height: '36px', borderRadius: '10px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                      title="Custom colour picker"
+                    />
+                  </div>
+                  <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Used in AI images and post banners.</span>
+                </div>
+              </div>
+
+              {/* Basics: Shop Name & What you sell */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Basics</b>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Shop name</label>
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="e.g. SriKrish Silks"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-color)',
+                      fontSize: '15px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>What you sell</label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {CATEGORY_CHIPS.map(chip => {
+                      const isSelected = category.toLowerCase() === chip.toLowerCase();
+                      return (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setCategory(chip)}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            background: isSelected ? 'rgba(82, 183, 136, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                            border: isSelected ? '1.5px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                            color: isSelected ? 'var(--primary-color)' : 'var(--text-color)',
+                            fontSize: '13px',
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {chip}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Location & Contact */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Location & Contact</b>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Area and city</label>
+                    <input
+                      type="text"
+                      value={targetLocations}
+                      onChange={(e) => setTargetLocations(e.target.value)}
+                      placeholder="e.g. MG Road, Bengaluru"
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--glass-border)',
+                        color: 'var(--text-color)',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>WhatsApp contact</label>
+                    <input
+                      type="text"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      placeholder="e.g. +91 98450 12345"
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--glass-border)',
+                        color: 'var(--text-color)',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Full address (optional)</label>
+                  <input
+                    type="text"
+                    value={fullAddress}
+                    onChange={(e) => setFullAddress(e.target.value)}
+                    placeholder="e.g. Shop 12, Main Market, Bengaluru 560001"
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-color)',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleSaveShop}
+                  disabled={isSavingShop}
+                  className="btn-primary"
+                  style={{ minWidth: '140px', padding: '12px 24px', fontSize: '14px', fontWeight: 700 }}
+                >
+                  {isSavingShop ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CONNECTED ACCOUNTS */}
+          {activeSubTab === 'connected_accounts' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <Platforms isSettings={true} />
+            </div>
+          )}
+
+          {/* TAB 3: POST DEFAULTS */}
+          {activeSubTab === 'post_defaults' && (
+            <div className="glass-panel" style={{ padding: '28px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>Post defaults</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-light)' }}>
+                  Every new post starts with these preferences. You can always adjust them for any individual post.
+                </p>
+              </div>
+
+              {/* Where to post */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Where to post</b>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: 'var(--text-color)' }}>
+                    <input
+                      type="checkbox"
+                      checked={postFacebook}
+                      onChange={(e) => setPostFacebook(e.target.checked)}
+                      style={{ accentColor: 'var(--primary-color)', width: '18px', height: '18px' }}
+                    />
+                    <span>📘 Facebook Page</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: 'var(--text-color)' }}>
+                    <input
+                      type="checkbox"
+                      checked={postInstagram}
+                      onChange={(e) => setPostInstagram(e.target.checked)}
+                      style={{ accentColor: 'var(--primary-color)', width: '18px', height: '18px' }}
+                    />
+                    <span>📸 Instagram</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Target Audience */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Target audience</b>
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {['All', 'Women', 'Men'].map(gender => {
+                    const isSelected = targetGender.toLowerCase() === gender.toLowerCase();
+                    return (
+                      <button
+                        key={gender}
+                        type="button"
+                        onClick={() => setTargetGender(gender)}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: '10px',
+                          background: isSelected ? 'rgba(82, 183, 136, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                          border: isSelected ? '1.5px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                          color: isSelected ? 'var(--primary-color)' : 'var(--text-color)',
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {gender}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '320px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                    Target age range: <strong>{targetAgeMin} to {targetAgeMax} years</strong>
+                  </span>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input
+                      type="range"
+                      min="18"
+                      max="40"
+                      value={targetAgeMin}
+                      onChange={(e) => setTargetAgeMin(parseInt(e.target.value, 10))}
+                      style={{ flex: 1, accentColor: 'var(--primary-color)' }}
+                    />
+                    <input
+                      type="range"
+                      min="41"
+                      max="75"
+                      value={targetAgeMax}
+                      onChange={(e) => setTargetAgeMax(parseInt(e.target.value, 10))}
+                      style={{ flex: 1, accentColor: 'var(--primary-color)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hashtags */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Hashtags added to every post</b>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>You can always remove them on individual posts.</span>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {hashtags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        background: 'rgba(82, 183, 136, 0.15)',
+                        color: 'var(--primary-color)',
+                        fontSize: '13px',
+                        fontWeight: 600
+                      }}
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeHashtag(tag)}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', padding: 0, fontSize: '14px', lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', maxWidth: '340px' }}>
+                  <input
+                    type="text"
+                    value={newHashtagInput}
+                    onChange={(e) => setNewHashtagInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addHashtag(); } }}
+                    placeholder="Add hashtag (e.g. #Sale)"
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-color)',
+                      fontSize: '13px',
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addHashtag}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: 'rgba(82, 183, 136, 0.2)',
+                      border: '1px solid var(--primary-color)',
+                      color: 'var(--primary-color)',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Writing & Images */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Writing & AI Style</b>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Caption tone</label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {TONE_CHIPS.map(tone => {
+                      const isSelected = personaTone.toLowerCase() === tone.id;
+                      return (
+                        <button
+                          key={tone.id}
+                          type="button"
+                          onClick={() => setPersonaTone(tone.id)}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            background: isSelected ? 'rgba(82, 183, 136, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                            border: isSelected ? '1.5px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                            color: isSelected ? 'var(--primary-color)' : 'var(--text-color)',
+                            fontSize: '13px',
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {tone.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>AI image style</label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {IMAGE_STYLES.map(style => {
+                      const isSelected = aiImageStyle === style;
+                      return (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => setAiImageStyle(style)}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            background: isSelected ? 'rgba(82, 183, 136, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                            border: isSelected ? '1.5px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                            color: isSelected ? 'var(--primary-color)' : 'var(--text-color)',
+                            fontSize: '13px',
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {style}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleSaveDefaults}
+                  disabled={isSavingDefaults}
+                  className="btn-primary"
+                  style={{ minWidth: '140px', padding: '12px 24px', fontSize: '14px', fontWeight: 700 }}
+                >
+                  {isSavingDefaults ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: NOTIFICATIONS (BLANK per user instruction) */}
+          {activeSubTab === 'notifications' && (
+            <div className="glass-panel" style={{ padding: '60px 24px', borderRadius: '16px', textAlign: 'center', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Intentionally blank per user specification */}
+            </div>
+          )}
+
+          {/* TAB 5: PROFILE */}
+          {activeSubTab === 'profile' && (
+            <div className="glass-panel" style={{ padding: '28px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>Profile</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-light)' }}>
+                  How you appear to your team, approvers, and business collaborators.
+                </p>
+              </div>
+
+              {/* Avatar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <span
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'rgba(82, 183, 136, 0.2)',
+                    border: '2px solid var(--primary-color)',
+                    color: 'var(--primary-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: '24px'
+                  }}
+                >
+                  {(profileName.charAt(0) || profileEmail.charAt(0) || '👤').toUpperCase()}
+                </span>
+                <div>
+                  <b style={{ fontSize: '16px', color: 'var(--text-color)' }}>{profileName || 'User'}</b>
+                  <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{profileEmail || 'Signed in via Google'}</div>
+                </div>
+              </div>
+
+              {/* Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Your name</label>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="Your Name"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-color)',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Email</label>
+                  <input
+                    type="email"
+                    value={profileEmail}
+                    disabled
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-light)',
+                      fontSize: '14px',
+                      cursor: 'not-allowed'
+                    }}
+                  />
+                  <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                    Managed dynamically by your Google account, which you use to sign in.
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Phone number (optional)</label>
+                  <input
+                    type="text"
+                    value={profilePhone}
+                    onChange={(e) => setProfilePhone(e.target.value)}
+                    placeholder="e.g. +91 98450 12345"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-color)',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                    className="btn-primary"
+                    style={{ padding: '10px 20px', fontSize: '13px' }}
+                  >
+                    {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sign Out Action */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <div>
+                  <b style={{ fontSize: '15px', color: '#f87171' }}>Sign out of DigiM</b>
+                  <div style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>
+                    Sign out of this browser. Your campaigns, connected accounts, and settings stay safely saved.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: PLAN AND BILLING (BLANK per user instruction) */}
+          {activeSubTab === 'plan_billing' && (
+            <div className="glass-panel" style={{ padding: '60px 24px', borderRadius: '16px', textAlign: 'center', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Intentionally blank per user specification */}
+            </div>
+          )}
+
+          {/* TAB 7: PRIVACY AND DATA (LINKS ONLY per user instruction) */}
+          {activeSubTab === 'privacy_data' && (
+            <div className="glass-panel" style={{ padding: '28px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-color)' }}>Privacy and data</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-light)' }}>
+                  Policies, terms of service, and public data deletion instructions.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid var(--glass-border)', borderRadius: '12px', overflow: 'hidden' }}>
+                {/* Privacy policy link */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                  <div>
+                    <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Privacy policy</b>
+                    <div style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>How DigiM uses and protects your data</div>
+                  </div>
+                  <a
+                    href="/privacy.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-color)', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}
+                  >
+                    Open ↗
+                  </a>
+                </div>
+
+                {/* Terms of service link */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                  <div>
+                    <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Terms of service</b>
+                    <div style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>The rules and conditions for using DigiM</div>
+                  </div>
+                  <a
+                    href="/privacy.html#terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-color)', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}
+                  >
+                    Open ↗
+                  </a>
+                </div>
+
+                {/* Data deletion instructions link */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'rgba(255, 255, 255, 0.02)' }}>
+                  <div>
+                    <b style={{ fontSize: '15px', color: 'var(--text-color)' }}>Data deletion instructions</b>
+                    <div style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>Public instructions required by Meta for data deletion requests</div>
+                  </div>
+                  <a
+                    href="/privacy.html#data-deletion"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-color)', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}
+                  >
+                    Open ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -6673,27 +7678,11 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         {isResultsActive && <AnalyticsTab />}
         {isLibraryActive && <AssetsLibrary />}
         {isProfileActive && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <Onboarding isSettings={true} />
-            <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>Sign Out</div>
-                  <div style={{ color: 'var(--text-light)', fontSize: '13px' }}>You will be returned to the login screen. Your data stays saved.</div>
-                </div>
-                <button
-                  onClick={() => setShowLogoutConfirm(true)}
-                  style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
-                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)')}
-                  onMouseOut={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
-                >
-                  🚪 Log Out
-                </button>
-              </div>
-            </div>
-          </div>
+          <SettingsView initialTab="profile" onLogout={() => setShowLogoutConfirm(true)} />
         )}
-        {isSettingsActive && <Platforms isSettings={true} />}
+        {isSettingsActive && (
+          <SettingsView initialTab="shop_details" onLogout={() => setShowLogoutConfirm(true)} />
+        )}
         {isAdminActive && <AdminPanel />}
       </div>
     </div>
