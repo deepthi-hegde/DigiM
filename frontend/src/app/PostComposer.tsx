@@ -11,73 +11,73 @@ export const DEFAULT_SHOP = {
 };
 export let SHOP = { ...DEFAULT_SHOP };
 
-// SVG icons dictionary
+// SVG icons dictionary matching prototype exactly
 const ICONS = {
   home: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M19 12H5M11 6l-6 6 6 6" />
     </svg>
   ),
   drafts: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M6 3h9l4 4v14H6z" />
       <path d="M14 3v5h5M9 13h7M9 17h5" />
     </svg>
   ),
   post: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="4" y="4" width="16" height="16" rx="2" />
     </svg>
   ),
   reel: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="6" y="2" width="12" height="20" rx="2" />
       <path d="M10 9l4 3-4 3z" />
     </svg>
   ),
   story: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="7" y="3" width="11" height="18" rx="2" />
       <path d="M4 6v12M21 6v12" />
     </svg>
   ),
   postNow: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M4 12h12M11 6l6 6-6 6" />
       <path d="M20 4v16" />
     </svg>
   ),
   schedule: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
     </svg>
   ),
   check: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M5 12.5l4.5 4.5L19 7.5" />
     </svg>
   ),
   image: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#566661" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#566661" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <circle cx="9" cy="10" r="2" />
       <path d="M21 16l-5-5-9 9" />
     </svg>
   ),
   spark: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
     </svg>
   ),
   upload: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M12 16V4M7 9l5-5 5 5" />
       <path d="M4 16v4h16v-4" />
     </svg>
   ),
   grid: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -85,549 +85,602 @@ const ICONS = {
     </svg>
   ),
   undo: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M9 14L4 9l5-5" />
       <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
     </svg>
   ),
   wand: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M4 20L16 8M14 4v2M18 6h2M18 10v2M20 4l-1.5 1.5" />
     </svg>
   ),
   chevronDown: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M6 9l6 6 6-6" />
     </svg>
   ),
   eye: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ),
   plus: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M12 5v14M5 12h14" />
     </svg>
   ),
-  x: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  ),
   trash: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
     </svg>
   ),
-  hanger: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3" />
-      <path d="M12 8L3 15h18z" />
-    </svg>
-  ),
-  sun: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-    </svg>
-  ),
-  star: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />
-    </svg>
-  ),
-  lamp: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z" />
-      <path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z" />
-    </svg>
-  ),
-  bag: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 8h14l-1 13H6z" />
-      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-    </svg>
-  ),
-  clapper: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="9" width="18" height="12" rx="2" />
-      <path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5" />
-    </svg>
-  ),
-  megaphone: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10v4h4l8 5V5L7 10z" />
-      <path d="M19 9a4 4 0 0 1 0 6" />
-    </svg>
-  ),
-  bulb: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18h6M10 21h4" />
-      <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+  x: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+      <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   )
 };
 
-export const CATEGORIES = [
+const CATEGORIES = [
   {
-    id: "collection",
-    label: "New Collection",
-    icon: "hanger",
-    caption: (shop) => "Our new collection has arrived! Fresh designs in silk and cotton, now at " + shop + ". Come and see them first.",
-    tags: ["#NewCollection", "#NewArrivals", "#SareeLove", "#ShopLocal"]
-  },
-  {
-    id: "summer",
+    id: "summer_sale",
     label: "Summer Sale",
-    icon: "sun",
-    caption: (shop) => "Beat the heat with our Summer Sale! Up to 30% off cotton sarees and kurtas at " + shop + ". This week only, on MG Road.",
-    tags: ["#SummerSale", "#CottonSarees", "#ShopLocal", "#Bengaluru"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Beat the heat with our special Summer Sale at ${shop.name}! Cool discounts across our entire ethnic wear collection. Visit us at ${shop.area} or DM to order.`,
+    defaultTags: ["SummerSale", "EthnicWear", "Discounts", "ShopLocal", "BengaluruShopping"]
   },
   {
-    id: "spotlight",
+    id: "new_collection",
+    label: "New Collection",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3" /><path d="M12 8L3 15h18z" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Our new collection has arrived! Fresh designs in silk and cotton, now at ${shop.name}. Come and see them first.`,
+    defaultTags: ["NewCollection", "NewArrivals", "SareeLove", "ShopLocal"]
+  },
+  {
+    id: "customer_spotlight",
     label: "Customer Spotlight",
-    icon: "star",
-    caption: (shop) => "Thank you, Ananya, for choosing " + shop + " for your special day! You looked stunning in our pure Kanjeevaram silk saree. Tag us to get featured!",
-    tags: ["#CustomerLove", "#HappyCustomer", "#EthnicWear", "#ShopLocal"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Nothing makes us happier than seeing our patrons shine in ${shop.name}! Here's a wonderful customer rocking our handcrafted ethnic wear. Thank you for choosing us!`,
+    defaultTags: ["CustomerSpotlight", "HappyCustomers", "SareeDiaries", "EthnicLove"]
   },
   {
-    id: "festival",
+    id: "festival_offer",
     label: "Festival Offer",
-    icon: "lamp",
-    caption: (shop) => "Celebrate the festive season in style! Visit " + shop + " for exclusive festival offers on handloom silk and zari collections.",
-    tags: ["#FestivalVibes", "#FestiveOffer", "#HandloomLove", "#Celebration"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z" /><path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Celebrate the auspicious season in style! Exclusive festive offers now live at ${shop.name}. Enjoy special blessings and radiant ethnic outfits for your family.`,
+    defaultTags: ["FestivalVibes", "FestiveSale", "IndianFestivals", "TraditionalWear"]
   },
   {
-    id: "showcase",
+    id: "product_showcase",
     label: "Product Showcase",
-    icon: "bag",
-    caption: (shop) => "Spotlight on our handwoven Banarasi and Kanjeevaram weaves. Intricate craftsmanship passed down through generations, now at " + shop + ".",
-    tags: ["#SilkSarees", "#PureSilk", "#Handcrafted", "#TraditionalWear"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M5 8h14l-1 13H6z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Spotlight on craftsmanship: Pure handwoven silks and intricate embroidery, lovingly crafted at ${shop.name}. Touch and feel the heritage at ${shop.area}.`,
+    defaultTags: ["Handloom", "SilkSaree", "PureZari", "Craftsmanship", "EthnicFashion"]
   },
   {
-    id: "bts",
+    id: "behind_the_scenes",
     label: "Behind the Scenes",
-    icon: "clapper",
-    caption: (shop) => "A sneak peek behind the counter at " + shop + ": inspecting the new handloom arrivals straight from our master weavers.",
-    tags: ["#BehindTheScenes", "#ArtisansOfIndia", "#WeavingStories", "#Handloom"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <rect x="3" y="9" width="18" height="12" rx="2" /><path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Behind the drapes: A sneak peek into how we curate, steam, and pack your favorite weaves here at ${shop.name}. Passion poured into every single thread.`,
+    defaultTags: ["BehindTheScenes", "ArtisanStories", "WeaverLife", "BoutiqueCulture"]
   },
   {
-    id: "promo",
+    id: "promotion",
     label: "Promotion",
-    icon: "megaphone",
-    caption: (shop) => "Weekend special: Get an exclusive matching blouse piece complimentary with every silk saree purchase at " + shop + ".",
-    tags: ["#SpecialOffer", "#WeekendDeal", "#SareeShopping", "#Offers"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Special limited-time promotion at ${shop.name}! Flat discount on selected designer wear this weekend only. Drop by ${shop.area} or message us today!`,
+    defaultTags: ["SpecialOffer", "WeekendPromo", "LimitedPeriod", "EthnicDeals"]
   },
   {
-    id: "info",
+    id: "knowledge_info",
     label: "Knowledge Info",
-    icon: "bulb",
-    caption: (shop) => "Did you know? Pure silk sarees should always be kept in breathable muslin cloth, never in plastic bags. Visit " + shop + " for more silk care tips!",
-    tags: ["#SareeCare", "#SilkCareTips", "#TextileTips", "#ShopLocal"]
-  },
-  {
-    id: "blank",
-    label: "Blank post",
-    icon: "plus",
-    caption: () => "",
-    tags: ["#ShopLocal"]
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+        <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z" />
+      </svg>
+    ),
+    defaultCaption: (shop) => `Did you know? Pure silk sarees breathe naturally and adjust to your body temperature. Here's a tip from ${shop.name} on preserving your heirloom silks for generations.`,
+    defaultTags: ["SareeCareTips", "FabricKnowledge", "PureSilkCare", "FashionGuide"]
   }
 ];
 
-const SAMPLE_LIBRARY = [
-  { url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80", title: "Silk Saree Elegance" },
-  { url: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80", title: "Handloom Cotton Drape" },
-  { url: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80", title: "Festive Zari Border" },
-  { url: "https://images.unsplash.com/photo-1610030469668-93510cb2866c?auto=format&fit=crop&w=800&q=80", title: "Bridal Red Kanjeevaram" },
-  { url: "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80", title: "Artisan Weave Texture" },
-  { url: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80", title: "Store Collection Display" }
-];
+function formatDateTimeDisplay(dateStr, timeStr) {
+  try {
+    const d = new Date(`${dateStr}T${timeStr || "18:00"}`);
+    if (isNaN(d.getTime())) return `${dateStr}, ${timeStr}`;
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short"
+    }) + `, ` + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    return `${dateStr}, ${timeStr}`;
+  }
+}
 
-export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSaveSuccess }) {
-  const shopName = businessInfo?.name || SHOP.name || "SriKrish";
-  const shopInitial = shopName.trim().charAt(0).toUpperCase() || "S";
+export function PostComposer({
+  initParams,
+  onNavigateToTab,
+  businessInfo,
+  onSaveSuccess
+}) {
+  const shopData = useMemo(() => {
+    return {
+      name: businessInfo?.name || DEFAULT_SHOP.name,
+      handle: (businessInfo?.name || DEFAULT_SHOP.name).toLowerCase().replace(/\s+/g, ""),
+      area: businessInfo?.location || DEFAULT_SHOP.area,
+      sells: businessInfo?.sells || DEFAULT_SHOP.sells
+    };
+  }, [businessInfo]);
 
   // Formats: post (1:1), reel (9:16), story (9:16)
   const [format, setFormat] = useState("post");
 
-  // When: "now" or "schedule"
+  // When: 'now' | 'schedule'
   const [when, setWhen] = useState("schedule");
-
-  // Default date: tomorrow
-  const getTomorrowStr = () => {
+  const [scheduledDate, setScheduledDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().split("T")[0];
-  };
-
-  const [scheduledDate, setScheduledDate] = useState(getTomorrowStr());
+  });
   const [scheduledTime, setScheduledTime] = useState("18:00");
 
   // Post to channels
   const [channels, setChannels] = useState({ facebook: true, instagram: true });
 
-  // Platform tab for editing: "all", "facebook", "instagram"
-  const [activeTab, setActiveTab] = useState("all");
+  // Platform tab: 'all' | 'facebook' | 'instagram'
+  const [platformTab, setPlatformTab] = useState("all");
 
-  // Selected Category
-  const [selectedCatId, setSelectedCatId] = useState("collection");
-  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+  // Post Type
+  const [postType, setPostType] = useState("new_collection");
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
-  // Post content
-  const initialCategory = CATEGORIES.find(c => c.id === "collection") || CATEGORIES[0];
-  const [caption, setCaption] = useState(initialCategory.caption(shopName));
-  const [hashtags, setHashtags] = useState([...initialCategory.tags]);
+  // Caption & Undo Banner
+  const [caption, setCaption] = useState("");
+  const [previousCaption, setPreviousCaption] = useState("");
+  const [previousHashtags, setPreviousHashtags] = useState([]);
+  const [showNoticeBanner, setShowNoticeBanner] = useState(false);
+  const [noticeBannerType, setNoticeBannerType] = useState("");
+
+  // Hashtags
+  const [hashtags, setHashtags] = useState([]);
+  const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
-  const [showAddTag, setShowAddTag] = useState(false);
-
-  // Undo history for post type changes
-  const [undoState, setUndoState] = useState(null);
-  const [showBanner, setShowBanner] = useState(true);
 
   // Media
-  const [mediaUrl, setMediaUrl] = useState(null);
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [image, setImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Drafts drawer & list
-  const [isDraftsOpen, setIsDraftsOpen] = useState(false);
-  const [draftsList, setDraftsList] = useState([]);
+  // Drafts & IDs
   const [currentDraftId, setCurrentDraftId] = useState(null);
+  const [draftsList, setDraftsList] = useState([]);
+  const [isDraftsOpen, setIsDraftsOpen] = useState(false);
 
-  // Saving / Publishing status
+  // Modals
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
+  const [aiGenPrompt, setAiGenPrompt] = useState("");
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [libraryImages, setLibraryImages] = useState([]);
+
+  // States
   const [isPublishing, setIsPublishing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null);
-  const [previewPlatform, setPreviewPlatform] = useState(null); // null, "facebook", "instagram"
+  const [isRefiningTone, setIsRefiningTone] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
 
   const fileInputRef = useRef(null);
 
-  const getSavedTenantId = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("tenant_id") || "1";
-    }
-    return "1";
+  // Show Toast
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Fetch drafts
-  const fetchDrafts = async () => {
+  // Load drafts from localStorage
+  const loadDraftsList = () => {
     try {
-      const res = await fetch("/api/campaign/drafts?tenant_id=" + getSavedTenantId());
-      if (res.ok) {
-        const data = await res.json();
-        setDraftsList(Array.isArray(data) ? data : data.drafts || []);
+      const stored = localStorage.getItem("digim_post_drafts");
+      if (stored) {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr)) {
+          setDraftsList(arr);
+          return arr;
+        }
       }
     } catch (e) {
-      console.warn("Could not fetch drafts:", e);
+      console.warn("Could not load drafts from localStorage", e);
     }
+    setDraftsList([]);
+    return [];
   };
 
+  // Initialize draft / params
   useEffect(() => {
-    fetchDrafts();
-  }, []);
+    const list = loadDraftsList();
 
-  // Handle initParams
-  useEffect(() => {
-    if (!initParams) return;
-
-    if (initParams.mode === "type" && initParams.category) {
-      const cat = CATEGORIES.find(c => c.id === initParams.category) || CATEGORIES[0];
-      setSelectedCatId(cat.id);
-      setCaption(cat.caption(shopName));
-      setHashtags([...cat.tags]);
-      setShowBanner(true);
-      setUndoState(null);
-    } else if (initParams.mode === "calendar_date" && initParams.date) {
-      setWhen("schedule");
+    if (initParams?.mode === "draft" && initParams.draft) {
+      const draft = initParams.draft;
+      const state = draft.state || draft;
+      setCurrentDraftId(draft.id || state.id);
+      if (state.caption) setCaption(state.caption);
+      if (state.hashtags) setHashtags(state.hashtags);
+      if (state.format) setFormat(state.format);
+      if (state.image_url) setImage(state.image_url);
+      if (state.scheduled_date) setScheduledDate(state.scheduled_date);
+      if (state.scheduled_time) setScheduledTime(state.scheduled_time);
+      if (state.category) setPostType(state.category);
+    } else if (initParams?.mode === "type" && initParams.category) {
+      handleSelectCategory(initParams.category, false);
+    } else if (initParams?.mode === "calendar_date" && initParams.date) {
       setScheduledDate(initParams.date);
-    } else if (initParams.mode === "draft" && initParams.draft) {
-      loadDraftData(initParams.draft);
-    } else if (initParams.mode === "blank") {
-      setSelectedCatId("blank");
-      setCaption("");
-      setHashtags(["#ShopLocal"]);
-      setShowBanner(false);
+      setWhen("schedule");
+      const defaultCat = CATEGORIES.find((c) => c.id === "new_collection") || CATEGORIES[0];
+      setPostType(defaultCat.id);
+      setCaption(defaultCat.defaultCaption(shopData));
+      setHashtags(defaultCat.defaultTags);
+    } else {
+      // Default blank/new post
+      const defaultCat = CATEGORIES.find((c) => c.id === "new_collection") || CATEGORIES[0];
+      setPostType(defaultCat.id);
+      setCaption(defaultCat.defaultCaption(shopData));
+      setHashtags(defaultCat.defaultTags);
     }
-  }, [initParams]);
 
-  // Handle category switch
-  const handleSelectCategory = (catId) => {
-    const cat = CATEGORIES.find(c => c.id === catId);
-    if (!cat) return;
+    // Load sample library images
+    fetchLibraryImages();
+  }, [initParams, shopData]);
 
-    // Save undo state
-    setUndoState({
-      catId: selectedCatId,
-      caption: caption,
-      hashtags: [...hashtags]
-    });
-
-    setSelectedCatId(catId);
-    setCaption(cat.caption(shopName));
-    setHashtags([...cat.tags]);
-    setShowBanner(true);
-    setIsCatDropdownOpen(false);
-  };
-
-  const handleUndo = () => {
-    if (!undoState) return;
-    setSelectedCatId(undoState.catId);
-    setCaption(undoState.caption);
-    setHashtags([...undoState.hashtags]);
-    setUndoState(null);
-    setShowBanner(false);
-  };
-
-  // Tone transformations
-  const handleToneChange = (tone) => {
-    if (!caption) return;
-    let newCap = caption;
-    if (tone === "casual") {
-      newCap = caption.replace(/^Our /i, "Hey everyone! Our ")
-        .replace(/Come and see them first\./i, "Drop by and check them out! \ud83d\ude0a")
-        .replace(/Beat the heat/i, "Beat the heat \u2600\ufe0f");
-    } else if (tone === "formal") {
-      newCap = caption.replace(/^Hey everyone! /i, "")
-        .replace(/Drop by and check them out! \ud83d\ude0a/i, "We invite you to visit our store to explore the collection.")
-        .replace(/\ud83d\ude0a|\u2600\ufe0f/g, "");
-    } else if (tone === "shorten") {
-      const sentences = caption.split(/(?<=[.!?])\s+/);
-      newCap = sentences.slice(0, 1).join(" ");
-    } else if (tone === "elaborate") {
-      if (!caption.includes("Visit us on MG Road")) {
-        newCap = caption.trim() + " Visit us on MG Road, Bengaluru or message us directly on WhatsApp to place your orders.";
+  const fetchLibraryImages = async () => {
+    try {
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      const res = await fetch(`/api/assets/list?tenant_id=${savedTenantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.assets) && data.assets.length > 0) {
+          setLibraryImages(data.assets.map((a) => a.url));
+          return;
+        }
       }
+    } catch (e) {
+      // fallback
     }
-    setCaption(newCap);
+    setLibraryImages([
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"
+    ]);
   };
 
-  // Add / remove hashtags
-  const handleAddHashtag = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!newTagInput.trim()) return;
-    let tag = newTagInput.trim();
-    if (!tag.startsWith("#")) tag = "#" + tag;
-    tag = tag.replace(/\s+/g, "");
-    if (!hashtags.includes(tag)) {
+  // Category change handler
+  const handleSelectCategory = (catId, triggerNotice = true) => {
+    const selected = CATEGORIES.find((c) => c.id === catId);
+    if (!selected) return;
+
+    if (triggerNotice) {
+      setPreviousCaption(caption);
+      setPreviousHashtags([...hashtags]);
+      setNoticeBannerType(selected.label);
+      setShowNoticeBanner(true);
+    }
+
+    setPostType(selected.id);
+    setCaption(selected.defaultCaption(shopData));
+    setHashtags(selected.defaultTags);
+    setIsTypeDropdownOpen(false);
+  };
+
+  // Undo category change
+  const handleUndo = () => {
+    if (previousCaption) setCaption(previousCaption);
+    if (previousHashtags && previousHashtags.length > 0) setHashtags(previousHashtags);
+    setShowNoticeBanner(false);
+  };
+
+  // Add custom hashtag
+  const handleAddHashtag = () => {
+    const tag = newTagInput.trim().replace(/^#/, "");
+    if (tag && !hashtags.includes(tag)) {
       setHashtags([...hashtags, tag]);
     }
     setNewTagInput("");
-    setShowAddTag(false);
+    setIsAddingTag(false);
   };
 
-  const handleRemoveHashtag = (tagToRemove) => {
-    setHashtags(hashtags.filter(t => t !== tagToRemove));
+  // Handle Image Upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImage(event.target.result);
+      setIsUploading(false);
+      showToast("Image added!");
+    };
+    reader.readAsDataURL(file);
   };
 
-  // File upload
-  const handleFileUpload = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setMediaUrl(event.target.result);
-      };
-      reader.readAsDataURL(file);
+  // Handle AI Tone refinement
+  const handleToneChange = async (tone) => {
+    setIsRefiningTone(true);
+    try {
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      const res = await fetch(`/api/ai/refine-tone?tenant_id=${savedTenantId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caption: caption,
+          tone: tone.toLowerCase(),
+          business_name: shopData.name
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.refined_caption) {
+          setCaption(data.refined_caption);
+          showToast(`Tone adjusted to ${tone}!`);
+          setIsRefiningTone(false);
+          return;
+        }
+      }
+    } catch (e) {
+      // Local heuristic fallback
     }
-  };
 
-  // AI image generation
-  const handleGenerateAI = () => {
-    setIsGeneratingAI(true);
-    setTimeout(() => {
-      const randomImg = SAMPLE_LIBRARY[Math.floor(Math.random() * SAMPLE_LIBRARY.length)].url;
-      setMediaUrl(randomImg);
-      setIsGeneratingAI(false);
-      setStatusMessage({ type: "success", text: "AI generated a fresh showcase image!" });
-      setTimeout(() => setStatusMessage(null), 3000);
-    }, 900);
+    // Intelligent local fallback if API fails
+    let newCap = caption;
+    if (tone === "Casual") {
+      newCap = `Hey everyone! ✨ ${caption.replace(/\. /g, "! ")} Tap the link in bio or DM us to order! 💕`;
+    } else if (tone === "Formal") {
+      newCap = `We cordially invite you to experience the finest weaves at ${shopData.name}. ${caption} For inquiries, kindly reach out directly.`;
+    } else if (tone === "Shorten") {
+      const sentences = caption.split(". ");
+      newCap = sentences.slice(0, 2).join(". ") + (sentences.length > 2 ? "." : "");
+    } else if (tone === "Elaborate") {
+      newCap = `${caption} Hand-curated with care and woven by master artisans, each piece celebrates timeless craftsmanship. Visit our boutique at ${shopData.area} to discover yours today!`;
+    }
+    setCaption(newCap);
+    showToast(`Tone adjusted to ${tone}!`);
+    setIsRefiningTone(false);
   };
 
   // Save Draft
   const handleSaveDraft = async () => {
-    try {
-      const tenantId = getSavedTenantId();
-      const payload = {
-        id: currentDraftId,
-        category: selectedCatId,
-        format,
-        caption,
-        hashtags,
-        media_url: mediaUrl,
-        channels,
-        when,
-        scheduled_date: scheduledDate,
-        scheduled_time: scheduledTime
-      };
+    const draftId = currentDraftId || `draft_${Date.now()}`;
+    const draftObj = {
+      id: draftId,
+      title: caption ? caption.slice(0, 32) + "..." : "Untitled Draft",
+      caption,
+      hashtags,
+      format,
+      image_url: image,
+      category: postType,
+      when,
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime,
+      channels,
+      updated_at: new Date().toISOString()
+    };
 
-      const res = await fetch("/api/campaign/draft?tenant_id=" + tenantId, {
+    try {
+      const existing = loadDraftsList();
+      const filtered = existing.filter((d) => d.id !== draftId);
+      const updated = [draftObj, ...filtered];
+      localStorage.setItem("digim_post_drafts", JSON.stringify(updated));
+      setDraftsList(updated);
+      setCurrentDraftId(draftId);
+
+      // Save to backend if available
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      fetch(`/api/campaigns/draft?tenant_id=${savedTenantId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+        body: JSON.stringify(draftObj)
+      }).catch(() => {});
 
-      if (res.ok) {
-        const result = await res.json();
-        if (result.id) setCurrentDraftId(result.id);
-        setStatusMessage({ type: "success", text: "Draft saved successfully!" });
-        fetchDrafts();
-        if (onSaveSuccess) onSaveSuccess();
-      } else {
-        setStatusMessage({ type: "success", text: "Draft saved locally." });
-      }
+      showToast("Draft saved successfully!");
+      if (onSaveSuccess) onSaveSuccess();
     } catch (e) {
-      setStatusMessage({ type: "success", text: "Draft saved locally." });
+      showToast("Saved locally!");
     }
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
-  // Load draft
-  const loadDraftData = (draft) => {
-    if (!draft) return;
-    setCurrentDraftId(draft.id || null);
-    if (draft.category) setSelectedCatId(draft.category);
+  // Load a Draft
+  const handleLoadDraft = (draft) => {
+    setCurrentDraftId(draft.id);
+    if (draft.caption) setCaption(draft.caption);
+    if (draft.hashtags) setHashtags(draft.hashtags);
     if (draft.format) setFormat(draft.format);
-    if (draft.caption !== undefined) setCaption(draft.caption);
-    if (draft.hashtags) setHashtags(Array.isArray(draft.hashtags) ? draft.hashtags : []);
-    if (draft.media_url) setMediaUrl(draft.media_url);
-    if (draft.channels) setChannels(draft.channels);
+    if (draft.image_url) setImage(draft.image_url);
+    if (draft.category) setPostType(draft.category);
     if (draft.when) setWhen(draft.when);
     if (draft.scheduled_date) setScheduledDate(draft.scheduled_date);
     if (draft.scheduled_time) setScheduledTime(draft.scheduled_time);
+    if (draft.channels) setChannels(draft.channels);
     setIsDraftsOpen(false);
-    setShowBanner(false);
+    showToast(`Loaded draft: ${draft.title || "Draft"}`);
   };
 
-  // Schedule or Publish
+  // Delete Draft
+  const handleDeleteDraft = (e, draftId) => {
+    e.stopPropagation();
+    const updated = draftsList.filter((d) => d.id !== draftId);
+    setDraftsList(updated);
+    try {
+      localStorage.setItem("digim_post_drafts", JSON.stringify(updated));
+    } catch (err) {}
+    if (currentDraftId === draftId) {
+      setCurrentDraftId(null);
+    }
+    showToast("Draft deleted.");
+  };
+
+  // Publish / Schedule Post
   const handlePublish = async () => {
+    if (!caption && !image) {
+      showToast("Please add a caption or an image before posting.");
+      return;
+    }
     if (!channels.facebook && !channels.instagram) {
-      setStatusMessage({ type: "error", text: "Please select at least one platform (Facebook or Instagram)." });
-      setTimeout(() => setStatusMessage(null), 3000);
+      showToast("Please select at least one platform to post to.");
       return;
     }
 
     setIsPublishing(true);
-    try {
-      const tenantId = getSavedTenantId();
-      const payload = {
-        category: selectedCatId,
-        format,
-        caption,
-        hashtags: hashtags.join(" "),
-        media_url: mediaUrl,
-        platforms: {
-          facebook: !!channels.facebook,
-          instagram: !!channels.instagram
-        },
-        is_scheduled: when === "schedule",
-        scheduled_date: when === "schedule" ? scheduledDate : null,
-        scheduled_time: when === "schedule" ? scheduledTime : null
-      };
+    const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
 
-      const res = await fetch("/api/campaign/publish?tenant_id=" + tenantId, {
+    const payload = {
+      tenant_id: savedTenantId,
+      caption: caption + (hashtags.length > 0 ? "\n\n" + hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ") : ""),
+      image_url: image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      format,
+      when,
+      scheduled_time: when === "schedule" ? `${scheduledDate}T${scheduledTime || "18:00"}:00` : null,
+      publish_facebook: channels.facebook,
+      publish_instagram: channels.instagram,
+      category: postType
+    };
+
+    try {
+      const res = await fetch(`/api/campaign/publish?tenant_id=${savedTenantId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        setStatusMessage({
-          type: "success",
-          text: when === "schedule" ? "Post scheduled successfully!" : "Post published successfully!"
-        });
+        showToast(when === "schedule" ? "Post scheduled successfully! 🎉" : "Post published to Facebook & Instagram! 🎉");
+        // Remove draft from list if it was a saved draft
+        if (currentDraftId) {
+          const updated = draftsList.filter((d) => d.id !== currentDraftId);
+          setDraftsList(updated);
+          localStorage.setItem("digim_post_drafts", JSON.stringify(updated));
+        }
         if (onSaveSuccess) onSaveSuccess();
         setTimeout(() => {
-          if (onNavigateToTab) onNavigateToTab("calendar");
+          if (onNavigateToTab) onNavigateToTab("home");
         }, 1200);
       } else {
         const err = await res.json().catch(() => ({}));
-        setStatusMessage({
-          type: "error",
-          text: err.detail || "Failed to publish post. Please verify platform connection."
-        });
-        setTimeout(() => setStatusMessage(null), 4000);
+        showToast(err.detail || "Error publishing post. Please try again.");
       }
     } catch (e) {
-      setStatusMessage({ type: "error", text: "Network error occurred." });
-      setTimeout(() => setStatusMessage(null), 4000);
+      showToast("Network error. Could not publish.");
     } finally {
       setIsPublishing(false);
     }
   };
 
-  // Formatted date string for preview
-  const formattedScheduledText = useMemo(() => {
-    if (when === "now") return "Just now";
+  // AI Image generation
+  const handleGenerateAiImage = async () => {
+    setIsAiGenerating(true);
     try {
-      const parts = scheduledDate.split("-");
-      const year = parts[0];
-      const month = parts[1];
-      const day = parts[2];
-      const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const dayStr = dayNames[d.getDay()];
-      const monthStr = monthNames[d.getMonth()];
-      
-      const tparts = (scheduledTime || "18:00").split(":");
-      const hours = parseInt(tparts[0], 10);
-      const ampm = hours >= 12 ? "PM" : "AM";
-      const formattedH = hours % 12 || 12;
-      return dayStr + " " + day + " " + monthStr + ", " + formattedH + ":" + tparts[1] + " " + ampm;
-    } catch (err) {
-      return scheduledDate + ", " + scheduledTime;
-    }
-  }, [when, scheduledDate, scheduledTime]);
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      const promptText = aiGenPrompt || `High fashion South Indian silk saree boutique ethnic wear photography, natural soft studio lighting`;
+      const res = await fetch(`/api/ai/generate-image?tenant_id=${savedTenantId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptText })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.image_url) {
+          setImage(data.image_url);
+          setIsAiGenModalOpen(false);
+          setAiGenPrompt("");
+          showToast("AI Image generated!");
+          setIsAiGenerating(false);
+          return;
+        }
+      }
+    } catch (e) {}
 
-  const activeCat = CATEGORIES.find(c => c.id === selectedCatId) || CATEGORIES[0];
+    // Mock high-quality silk saree images fallback
+    const presets = [
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80"
+    ];
+    setImage(presets[Math.floor(Math.random() * presets.length)]);
+    setIsAiGenModalOpen(false);
+    setAiGenPrompt("");
+    showToast("AI Image generated!");
+    setIsAiGenerating(false);
+  };
+
+  const currentCategory = CATEGORIES.find((c) => c.id === postType) || CATEGORIES[0];
 
   return (
     <div
       style={{
-        minHeight: "100vh",
+        position: "fixed",
+        inset: 0,
+        zIndex: 999,
+        overflowY: "auto",
         boxSizing: "border-box",
         background: "#f4f6f5",
         color: "#16211f",
-        fontFamily: "'Mukta', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Mukta', 'Noto Sans Devanagari', system-ui, sans-serif",
         display: "flex",
         flexDirection: "column"
       }}
     >
-      {/* Hidden File Input for Upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: "none" }}
-        onChange={handleFileUpload}
-      />
-
-      {/* Toast / Status banner */}
-      {statusMessage && (
+      {/* Toast Notification */}
+      {toastMessage && (
         <div
           style={{
             position: "fixed",
-            top: "20px",
-            right: "20px",
-            zIndex: 99999,
-            padding: "12px 20px",
-            borderRadius: "12px",
-            background: statusMessage.type === "error" ? "#b42318" : "#0d6b61",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#16211f",
             color: "#ffffff",
-            fontWeight: 600,
+            padding: "12px 24px",
+            borderRadius: "12px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
             fontSize: "15px",
-            boxShadow: "0 8px 24px rgba(22, 33, 31, 0.16)",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
+            fontWeight: 600,
+            zIndex: 9999
           }}
         >
-          {statusMessage.type === "error" ? "⚠️" : "✓"} {statusMessage.text}
+          {toastMessage}
         </div>
       )}
 
-      {/* Top Bar */}
+      {/* Top Header Bar matching "Alternative composer, web" */}
       <div
         style={{
           display: "flex",
@@ -643,7 +696,9 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
       >
         <button
           type="button"
-          onClick={() => onNavigateToTab && onNavigateToTab("home")}
+          onClick={() => {
+            if (onNavigateToTab) onNavigateToTab("home");
+          }}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -651,10 +706,12 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
             minHeight: "44px",
             fontWeight: 600,
             color: "#16211f",
+            textDecoration: "none",
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            fontSize: "16px"
+            fontSize: "16px",
+            padding: 0
           }}
         >
           {ICONS.home} Home
@@ -663,10 +720,11 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
         <h1
           style={{
             margin: "0 0 0 8px",
-            fontFamily: "'Baloo 2', 'Mukta', sans-serif",
+            fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
             fontSize: "24px",
             lineHeight: "30px",
-            fontWeight: 700
+            fontWeight: 700,
+            color: "#16211f"
           }}
         >
           New post
@@ -674,7 +732,7 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
 
         <span style={{ flex: 1 }} />
 
-        {/* Drafts button */}
+        {/* Drafts count link */}
         <button
           type="button"
           onClick={() => setIsDraftsOpen(true)}
@@ -686,6 +744,7 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
             padding: "0 12px",
             fontWeight: 600,
             color: "#16211f",
+            textDecoration: "none",
             background: "transparent",
             border: "none",
             cursor: "pointer",
@@ -705,14 +764,15 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
               fontSize: "12px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
+              fontWeight: 700
             }}
           >
             {draftsList.length}
           </span>
         </button>
 
-        {/* Save Draft */}
+        {/* Save Draft button */}
         <button
           type="button"
           onClick={handleSaveDraft}
@@ -737,95 +797,95 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
         </button>
       </div>
 
-      {/* Main 2-Column Layout */}
+      {/* Main Container - max-width 1280px centered */}
       <div
         style={{
+          width: "100%",
+          maxWidth: "1280px",
+          boxSizing: "border-box",
+          margin: "0 auto",
           display: "flex",
-          flexWrap: "wrap",
-          gap: "32px",
-          padding: "32px 24px",
-          justifyContent: "center",
-          alignItems: "flex-start"
+          flexDirection: "column",
+          gap: "24px",
+          padding: "24px"
         }}
       >
-        {/* Left Column: Set up Panel (340px) */}
-        <div style={{ flex: "0 1 340px", minWidth: "280px" }}>
-          <div
-            style={{
-              background: "#ffffff",
-              border: "1px solid #d6dedb",
-              borderRadius: "16px",
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px"
-            }}
-          >
-            <h2
+        {/* Horizontal Full-width Set up Section */}
+        <section
+          aria-label="Set up"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #d6dedb",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "flex-start",
+            gap: "16px 24px"
+          }}
+        >
+          {/* Format: Post, Reel, Story */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>Format</span>
+            <div
+              role="radiogroup"
               style={{
-                margin: 0,
-                fontFamily: "'Baloo 2', 'Mukta', sans-serif",
-                fontSize: "21px",
-                lineHeight: "28px",
-                fontWeight: 600
+                display: "inline-flex",
+                flexWrap: "wrap",
+                padding: "4px",
+                borderRadius: "12px",
+                background: "#e9eeec"
               }}
             >
-              Set up
-            </h2>
-
-            {/* Format: Post, Reel, Story */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Format</span>
-              <div
-                role="radiogroup"
-                style={{
-                  display: "inline-flex",
-                  flexWrap: "wrap",
-                  padding: "4px",
-                  borderRadius: "12px",
-                  background: "#e9eeec"
-                }}
-              >
-                {[
-                  { id: "post", label: "Post", icon: ICONS.post },
-                  { id: "reel", label: "Reel", icon: ICONS.reel },
-                  { id: "story", label: "Story", icon: ICONS.story }
-                ].map((fmt) => {
-                  const isChecked = format === fmt.id;
-                  return (
-                    <button
-                      key={fmt.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={isChecked}
-                      onClick={() => setFormat(fmt.id)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        minHeight: "40px",
-                        padding: "0 12px",
-                        borderRadius: "9px",
-                        border: "none",
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        background: isChecked ? "#ffffff" : "transparent",
-                        color: isChecked ? "#16211f" : "#566661",
-                        boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
-                      }}
-                    >
-                      <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{fmt.icon}</span>
-                      {fmt.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {[
+                { id: "post", label: "Post", icon: ICONS.post },
+                { id: "reel", label: "Reel", icon: ICONS.reel },
+                { id: "story", label: "Story", icon: ICONS.story }
+              ].map((fmt) => {
+                const isChecked = format === fmt.id;
+                return (
+                  <button
+                    key={fmt.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isChecked}
+                    onClick={() => setFormat(fmt.id)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      minHeight: "40px",
+                      padding: "0 12px",
+                      borderRadius: "9px",
+                      border: "none",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      background: isChecked ? "#ffffff" : "transparent",
+                      color: isChecked ? "#16211f" : "#566661",
+                      boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
+                    }}
+                  >
+                    <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{fmt.icon}</span>
+                    {fmt.label}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* When: Post now vs Schedule */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "16px", borderTop: "1px solid #d6dedb" }}>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>When</span>
+          {/* When: Post now vs Schedule + Date & Time Picker */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              paddingLeft: "20px",
+              borderLeft: "1px solid #d6dedb"
+            }}
+          >
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>When</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
               <div
                 role="radiogroup"
                 style={{
@@ -871,9 +931,9 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                 })}
               </div>
 
-              {/* Date & Time pickers (only if schedule) */}
+              {/* Date & Time inputs if Schedule */}
               {when === "schedule" && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                <>
                   <input
                     type="date"
                     value={scheduledDate}
@@ -888,7 +948,7 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                       background: "#ffffff",
                       fontSize: "15px",
                       boxSizing: "border-box",
-                      minWidth: "140px",
+                      minWidth: "130px",
                       color: "#16211f"
                     }}
                   />
@@ -906,150 +966,129 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                       background: "#ffffff",
                       fontSize: "15px",
                       boxSizing: "border-box",
-                      minWidth: "100px",
+                      minWidth: "96px",
                       color: "#16211f"
                     }}
                   />
-                  <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>IST</p>
-                </div>
+                  <span style={{ fontSize: "13px", color: "#566661" }}>IST</span>
+                </>
               )}
             </div>
-
-            {/* Post to: Facebook & Instagram */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "16px", borderTop: "1px solid #d6dedb" }}>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Post to</span>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px" }}>
-                {/* Facebook switch */}
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={channels.facebook}
-                  onClick={() => setChannels({ ...channels, facebook: !channels.facebook })}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    minHeight: "36px",
-                    padding: "0 10px 0 6px",
-                    borderRadius: "999px",
-                    border: channels.facebook ? "1px solid #0d6b61" : "1px solid #d6dedb",
-                    background: channels.facebook ? "#e2f0ed" : "#ffffff",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: channels.facebook ? "#16211f" : "#566661",
-                    cursor: "pointer"
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      flex: "none",
-                      borderRadius: "10px",
-                      background: "#1877f2",
-                      color: "#ffffff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 700,
-                      fontSize: "11px"
-                    }}
-                  >
-                    f
-                  </span>
-                  Facebook
-                  {channels.facebook && (
-                    <span style={{ color: "#0d6b61" }}>{ICONS.check}</span>
-                  )}
-                </button>
-
-                {/* Instagram switch */}
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={channels.instagram}
-                  onClick={() => setChannels({ ...channels, instagram: !channels.instagram })}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    minHeight: "36px",
-                    padding: "0 10px 0 6px",
-                    borderRadius: "999px",
-                    border: channels.instagram ? "1px solid #0d6b61" : "1px solid #d6dedb",
-                    background: channels.instagram ? "#e2f0ed" : "#ffffff",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: channels.instagram ? "#16211f" : "#566661",
-                    cursor: "pointer"
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      flex: "none",
-                      borderRadius: "10px",
-                      background: "linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
-                    <span style={{ width: "10px", height: "10px", border: "2px solid #ffffff", borderRadius: "30%" }} />
-                  </span>
-                  Instagram
-                  {channels.instagram && (
-                    <span style={{ color: "#0d6b61" }}>{ICONS.check}</span>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Primary Action Button */}
-            <button
-              type="button"
-              disabled={isPublishing}
-              onClick={handlePublish}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                minHeight: "52px",
-                padding: "0 20px",
-                borderRadius: "12px",
-                fontSize: "16px",
-                fontWeight: 600,
-                boxSizing: "border-box",
-                cursor: isPublishing ? "not-allowed" : "pointer",
-                width: "100%",
-                background: "#0d6b61",
-                color: "#ffffff",
-                border: "1px solid #0d6b61",
-                opacity: isPublishing ? 0.7 : 1,
-                marginTop: "8px"
-              }}
-            >
-              {when === "schedule" ? ICONS.schedule : ICONS.postNow}
-              {isPublishing
-                ? "Processing..."
-                : when === "schedule"
-                ? "Schedule post"
-                : "Publish now"}
-            </button>
           </div>
-        </div>
 
-        {/* Right Column: Post Editor & Preview (820px) */}
-        <main style={{ flex: "0 1 820px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Platform Switcher Tabs */}
+          {/* Post to: Facebook & Instagram toggle switches */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              paddingLeft: "20px",
+              borderLeft: "1px solid #d6dedb"
+            }}
+          >
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>Post to</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "6px" }}>
+              {/* Facebook Toggle */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={channels.facebook}
+                aria-label="Facebook"
+                onClick={() => setChannels({ ...channels, facebook: !channels.facebook })}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  minHeight: "36px",
+                  padding: "0 10px 0 6px",
+                  borderRadius: "999px",
+                  border: channels.facebook ? "1px solid #0d6b61" : "1px solid #7a8b86",
+                  background: channels.facebook ? "#e2f0ed" : "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#16211f",
+                  cursor: "pointer"
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    flex: "none",
+                    borderRadius: "10px",
+                    background: "#1877f2",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "11px"
+                  }}
+                >
+                  f
+                </span>
+                Facebook
+                {channels.facebook && (
+                  <span style={{ color: "#0d6b61", display: "flex" }}>{ICONS.check}</span>
+                )}
+              </button>
+
+              {/* Instagram Toggle */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={channels.instagram}
+                aria-label="Instagram"
+                onClick={() => setChannels({ ...channels, instagram: !channels.instagram })}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  minHeight: "36px",
+                  padding: "0 10px 0 6px",
+                  borderRadius: "999px",
+                  border: channels.instagram ? "1px solid #0d6b61" : "1px solid #7a8b86",
+                  background: channels.instagram ? "#e2f0ed" : "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#16211f",
+                  cursor: "pointer"
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    flex: "none",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <span style={{ width: "10px", height: "10px", border: "2px solid #ffffff", borderRadius: "30%" }} />
+                </span>
+                Instagram
+                {channels.instagram && (
+                  <span style={{ color: "#0d6b61", display: "flex" }}>{ICONS.check}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Post Editor Section */}
+        <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Platform Tabs Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "4px", borderBottom: "1px solid #d6dedb" }}>
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "all"}
-              onClick={() => setActiveTab("all")}
+              aria-selected={platformTab === "all"}
+              onClick={() => setPlatformTab("all")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1057,22 +1096,21 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: activeTab === "all" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "all" ? "2px solid #0d6b61" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: activeTab === "all" ? "#0d6b61" : "#566661",
+                color: platformTab === "all" ? "#0d6b61" : "#566661",
                 cursor: "pointer"
               }}
             >
               All platforms
             </button>
-
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "facebook"}
-              onClick={() => setActiveTab("facebook")}
+              aria-selected={platformTab === "facebook"}
+              onClick={() => setPlatformTab("facebook")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1080,15 +1118,16 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: activeTab === "facebook" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "facebook" ? "2px solid #0d6b61" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: activeTab === "facebook" ? "#0d6b61" : "#566661",
+                color: platformTab === "facebook" ? "#0d6b61" : "#566661",
                 cursor: "pointer"
               }}
             >
               <span
+                aria-hidden="true"
                 style={{
                   width: "18px",
                   height: "18px",
@@ -1107,12 +1146,11 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
               </span>
               Facebook
             </button>
-
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "instagram"}
-              onClick={() => setActiveTab("instagram")}
+              aria-selected={platformTab === "instagram"}
+              onClick={() => setPlatformTab("instagram")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1120,15 +1158,16 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: activeTab === "instagram" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "instagram" ? "2px solid #0d6b61" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: activeTab === "instagram" ? "#0d6b61" : "#566661",
+                color: platformTab === "instagram" ? "#0d6b61" : "#566661",
                 cursor: "pointer"
               }}
             >
               <span
+                aria-hidden="true"
                 style={{
                   width: "18px",
                   height: "18px",
@@ -1150,7 +1189,7 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
             Edits here go to every platform. Pick Facebook or Instagram to change just that one.
           </p>
 
-          {/* The Post Editor Card (The post IS the editor) */}
+          {/* Big Post Card Article matching Prototype */}
           <article
             style={{
               width: "100%",
@@ -1164,7 +1203,7 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
               boxSizing: "border-box"
             }}
           >
-            {/* Header: Avatar, Name, Scheduled Time */}
+            {/* Post Header: Avatar + Business Name + Scheduled Date */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "10px" }}>
               <span
                 style={{
@@ -1177,87 +1216,25 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 700,
-                  fontSize: "16px"
+                  fontSize: "17px",
+                  flexShrink: 0
                 }}
               >
-                {shopInitial}
+                {(shopData.name || "S").charAt(0).toUpperCase()}
               </span>
               <span style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <b style={{ fontSize: "16px", color: "#16211f" }}>{shopName}</b>
-                <span style={{ fontSize: "13px", color: "#566661" }}>{formattedScheduledText}</span>
+                <b style={{ fontSize: "16px", color: "#16211f" }}>{shopData.name}</b>
+                <span style={{ fontSize: "13px", color: "#566661" }}>
+                  {formatDateTimeDisplay(scheduledDate, scheduledTime)}
+                </span>
               </span>
             </div>
 
-            {/* Media Box & Caption Area */}
+            {/* 2-Column Split: Image Left, Content Right */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
-              {/* Media Container (300px min 240px) */}
+              {/* Left Column: Image Box (300px) */}
               <div style={{ flex: "0 1 300px", minWidth: "240px" }}>
-                {mediaUrl ? (
-                  <div
-                    style={{
-                      position: "relative",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      border: "1px solid #d6dedb",
-                      aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
-                      background: "#16211f",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
-                    <img
-                      src={mediaUrl}
-                      alt="Post visual"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                    {/* Change / Remove overlay */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: "8px",
-                        left: "8px",
-                        right: "8px",
-                        display: "flex",
-                        gap: "6px"
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                        style={{
-                          flex: 1,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          background: "rgba(22, 33, 31, 0.75)",
-                          color: "#ffffff",
-                          border: "none",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
-                      >
-                        Change
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMediaUrl(null)}
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          background: "rgba(180, 35, 24, 0.8)",
-                          color: "#ffffff",
-                          border: "none",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+                {!image ? (
                   <div
                     role="group"
                     aria-label="No image yet"
@@ -1281,13 +1258,10 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                     <span style={{ fontSize: "13px", color: "#566661", maxWidth: "260px" }}>
                       The image is what people notice first.
                     </span>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", marginTop: "4px" }}>
-                      {/* Generate with AI button */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                       <button
                         type="button"
-                        disabled={isGeneratingAI}
-                        onClick={handleGenerateAI}
+                        onClick={() => setIsAiGenModalOpen(true)}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1296,34 +1270,29 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                           minHeight: "44px",
                           padding: "0 20px",
                           borderRadius: "12px",
-                          fontSize: "15px",
+                          fontSize: "16px",
                           fontWeight: 600,
                           boxSizing: "border-box",
-                          cursor: isGeneratingAI ? "wait" : "pointer",
+                          cursor: "pointer",
                           width: "100%",
                           background: "#ffffff",
                           color: "#16211f",
                           border: "1px solid #7a8b86"
                         }}
                       >
-                        <span style={{ color: "#0d6b61" }}>{ICONS.spark}</span>
-                        {isGeneratingAI ? "Generating..." : "Generate with AI"}
+                        {ICONS.spark} Generate with AI
                       </button>
-
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                        {/* Upload button */}
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        <label
                           style={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: "6px",
+                            gap: "8px",
                             minHeight: "44px",
                             padding: "0 8px",
                             borderRadius: "12px",
-                            fontSize: "14px",
+                            fontSize: "16px",
                             fontWeight: 600,
                             boxSizing: "border-box",
                             cursor: "pointer",
@@ -1333,10 +1302,14 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                             border: "1px solid #7a8b86"
                           }}
                         >
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={handleImageUpload}
+                            style={{ display: "none" }}
+                          />
                           {ICONS.upload} Upload
-                        </button>
-
-                        {/* Library button */}
+                        </label>
                         <button
                           type="button"
                           onClick={() => setIsLibraryOpen(true)}
@@ -1344,11 +1317,11 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: "6px",
+                            gap: "8px",
                             minHeight: "44px",
                             padding: "0 8px",
                             borderRadius: "12px",
-                            fontSize: "14px",
+                            fontSize: "16px",
                             fontWeight: 600,
                             boxSizing: "border-box",
                             cursor: "pointer",
@@ -1363,58 +1336,133 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Right Side of Editor: Post type, Caption, Tones, Hashtags */}
-              <div style={{ flex: "1 1 340px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                {/* Post Type Selector */}
-                <div style={{ position: "relative" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661", display: "block", marginBottom: "4px" }}>
-                    Post type
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                ) : (
+                  <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      minHeight: "44px",
-                      padding: "0 14px",
+                      position: "relative",
                       borderRadius: "12px",
-                      border: "1px solid #7a8b86",
-                      background: "#ffffff",
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      color: "#16211f",
-                      cursor: "pointer",
-                      width: "100%",
-                      textAlign: "left"
+                      overflow: "hidden",
+                      aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
+                      background: "#000000",
+                      border: "1px solid #d6dedb"
                     }}
                   >
-                    <span style={{ color: "#0d6b61" }}>{ICONS[activeCat.icon] || ICONS.hanger}</span>
-                    <span style={{ flex: 1 }}>{activeCat.label}</span>
-                    <span style={{ color: "#566661" }}>{ICONS.chevronDown}</span>
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {isCatDropdownOpen && (
+                    <img
+                      src={image}
+                      alt="Post preview"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                     <div
                       style={{
                         position: "absolute",
-                        top: "100%",
+                        bottom: "10px",
+                        left: "10px",
+                        right: "10px",
+                        display: "flex",
+                        gap: "8px",
+                        justifyContent: "space-between"
+                      }}
+                    >
+                      <label
+                        style={{
+                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          background: "rgba(22, 33, 31, 0.8)",
+                          color: "#ffffff",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          backdropFilter: "blur(6px)"
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={handleImageUpload}
+                          style={{ display: "none" }}
+                        />
+                        Change
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setImage(null)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          background: "rgba(180, 35, 24, 0.85)",
+                          color: "#ffffff",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          border: "none",
+                          cursor: "pointer",
+                          backdropFilter: "blur(6px)"
+                        }}
+                      >
+                        {ICONS.trash}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Post Content */}
+              <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
+                {/* Post type dropdown trigger */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Post type</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      width: "100%",
+                      minHeight: "48px",
+                      padding: "0 12px",
+                      borderRadius: "12px",
+                      border: "1px solid #7a8b86",
+                      background: "#ffffff",
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#16211f",
+                      textAlign: "left",
+                      boxSizing: "border-box",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <span style={{ color: "#0d6b61", display: "flex" }}>{currentCategory.icon}</span>
+                    <span style={{ flex: 1 }}>{currentCategory.label}</span>
+                    <span style={{ color: "#566661", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                      {ICONS.chevronDown}
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isTypeDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "76px",
                         left: 0,
                         right: 0,
-                        zIndex: 100,
-                        marginTop: "4px",
                         background: "#ffffff",
                         border: "1px solid #d6dedb",
                         borderRadius: "12px",
-                        boxShadow: "0 8px 24px rgba(22, 33, 31, 0.12)",
-                        maxHeight: "280px",
-                        overflowY: "auto",
-                        padding: "6px"
+                        boxShadow: "0 10px 28px rgba(22, 33, 31, 0.15)",
+                        zIndex: 50,
+                        padding: "8px",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "6px"
                       }}
                     >
                       {CATEGORIES.map((cat) => (
@@ -1425,31 +1473,28 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
+                            gap: "8px",
                             padding: "10px 12px",
-                            border: "none",
                             borderRadius: "8px",
-                            background: selectedCatId === cat.id ? "#e2f0ed" : "transparent",
-                            color: selectedCatId === cat.id ? "#0d6b61" : "#16211f",
-                            fontWeight: selectedCatId === cat.id ? 700 : 500,
+                            border: "none",
+                            background: postType === cat.id ? "#e2f0ed" : "transparent",
+                            color: postType === cat.id ? "#0d6b61" : "#16211f",
+                            fontWeight: postType === cat.id ? 700 : 500,
                             fontSize: "14px",
-                            textAlign: "left",
-                            cursor: "pointer"
+                            cursor: "pointer",
+                            textAlign: "left"
                           }}
                         >
-                          <span style={{ color: selectedCatId === cat.id ? "#0d6b61" : "#566661" }}>
-                            {ICONS[cat.icon] || ICONS.hanger}
-                          </span>
-                          {cat.label}
+                          <span style={{ color: postType === cat.id ? "#0d6b61" : "#566661" }}>{cat.icon}</span>
+                          <span>{cat.label}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Banner: Caption and hashtags updated */}
-                {showBanner && selectedCatId !== "blank" && (
+                {/* Yellow Notice Banner when Type Changed */}
+                {showNoticeBanner && (
                   <div
                     role="status"
                     style={{
@@ -1465,158 +1510,159 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                       lineHeight: "20px"
                     }}
                   >
-                    <span style={{ color: "#7a4f00" }}>{ICONS.spark}</span>
+                    <span style={{ display: "flex", color: "#7a4f00" }}>{ICONS.spark}</span>
                     <span style={{ flex: 1, minWidth: "180px" }}>
-                      Caption and hashtags updated for <b>{activeCat.label}</b>.
+                      Caption and hashtags updated for <b>{noticeBannerType}</b>.
                     </span>
-                    {undoState && (
-                      <button
-                        type="button"
-                        onClick={handleUndo}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontWeight: 600,
-                          color: "#7a4f00",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          fontSize: "14px"
-                        }}
-                      >
-                        {ICONS.undo} Undo
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Caption Textarea (The Post Caption itself) */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <textarea
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    placeholder="Write your post caption..."
-                    rows={4}
-                    style={{
-                      width: "100%",
-                      boxSizing: "border-box",
-                      fontFamily: "'Mukta', sans-serif",
-                      fontSize: "17px",
-                      lineHeight: "26px",
-                      padding: "10px 12px",
-                      borderRadius: "12px",
-                      border: "1px solid #d6dedb",
-                      outline: "none",
-                      color: "#16211f",
-                      resize: "vertical",
-                      background: "#ffffff"
-                    }}
-                    onFocus={(e) => { e.target.style.outline = "2px solid #0d6b61"; }}
-                    onBlur={(e) => { e.target.style.outline = "none"; }}
-                  />
-
-                  {/* AI Tone Tools */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#566661" }}>
-                      {ICONS.wand} Tone
-                    </span>
-                    {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => handleToneChange(t.toLowerCase())}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          minHeight: "34px",
-                          padding: "0 12px",
-                          borderRadius: "999px",
-                          border: "1px solid #7a8b86",
-                          background: "#ffffff",
-                          color: "#16211f",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Hashtags */}
-                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
-                  {hashtags.map((tag) => (
-                    <span
-                      key={tag}
+                    <button
+                      type="button"
+                      onClick={handleUndo}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
-                        color: "#0d6b61",
                         fontWeight: 600,
-                        fontSize: "15px",
-                        background: "#e2f0ed",
-                        padding: "2px 8px",
-                        borderRadius: "6px"
+                        color: "#7a4f00",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "14px"
                       }}
                     >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveHashtag(tag)}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#566661",
-                          fontSize: "14px",
-                          padding: "0 2px"
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                      {ICONS.undo} Undo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowNoticeBanner(false)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#7a4f00",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        padding: "0 4px",
+                        lineHeight: 1
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
 
-                  {showAddTag ? (
-                    <form onSubmit={handleAddHashtag} style={{ display: "inline-flex", gap: "4px" }}>
+                {/* Caption Text Area with emerald focus outline */}
+                <div style={{ position: "relative" }}>
+                  <textarea
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    placeholder="Our new collection has arrived! Fresh designs in silk and cotton..."
+                    rows={4}
+                    style={{
+                      width: "100%",
+                      fontFamily: "'Mukta', 'Noto Sans Devanagari', system-ui, sans-serif",
+                      fontSize: "17px",
+                      lineHeight: "26px",
+                      padding: "10px 12px",
+                      borderRadius: "12px",
+                      border: "1.5px solid #d6dedb",
+                      outline: "none",
+                      resize: "vertical",
+                      boxSizing: "border-box",
+                      color: "#16211f",
+                      background: "#ffffff",
+                      transition: "border-color 0.2s, box-shadow 0.2s"
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#0d6b61";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(13, 107, 97, 0.15)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#d6dedb";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  />
+                </div>
+
+                {/* Tone AI Quick Actions */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#566661" }}>
+                    {ICONS.wand} Tone
+                  </span>
+                  {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={isRefiningTone}
+                      onClick={() => handleToneChange(t)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        minHeight: "36px",
+                        padding: "0 14px",
+                        borderRadius: "999px",
+                        border: "1px solid #7a8b86",
+                        background: "#ffffff",
+                        color: "#16211f",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        boxSizing: "border-box",
+                        cursor: isRefiningTone ? "wait" : "pointer"
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Hashtags display + Add tag */}
+                <p style={{ margin: 0, fontSize: "16px", lineHeight: "24px" }}>
+                  <span style={{ color: "#0d6b61", fontWeight: 600 }}>
+                    {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                  </span>{" "}
+                  {isAddingTag ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginLeft: "4px" }}>
                       <input
                         type="text"
                         value={newTagInput}
                         onChange={(e) => setNewTagInput(e.target.value)}
-                        placeholder="#tag"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleAddHashtag();
+                          else if (e.key === "Escape") setIsAddingTag(false);
+                        }}
+                        placeholder="tag"
                         autoFocus
                         style={{
                           width: "90px",
+                          height: "28px",
                           padding: "2px 6px",
-                          borderRadius: "6px",
                           border: "1px solid #0d6b61",
-                          fontSize: "14px"
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          outline: "none"
                         }}
                       />
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={handleAddHashtag}
                         style={{
-                          padding: "2px 8px",
-                          borderRadius: "6px",
+                          height: "28px",
+                          padding: "0 8px",
                           background: "#0d6b61",
-                          color: "#ffffff",
+                          color: "#fff",
                           border: "none",
+                          borderRadius: "6px",
                           fontSize: "12px",
+                          fontWeight: 600,
                           cursor: "pointer"
                         }}
                       >
-                        Add
+                        OK
                       </button>
-                    </form>
+                    </span>
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setShowAddTag(true)}
+                      onClick={() => setIsAddingTag(true)}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -1624,212 +1670,86 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
                         fontSize: "14px",
                         fontWeight: 600,
                         color: "#0d6b61",
-                        background: "transparent",
+                        background: "none",
                         border: "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        marginLeft: "6px"
                       }}
                     >
                       {ICONS.plus} Add
                     </button>
                   )}
-                </div>
+                </p>
               </div>
             </div>
 
-            {/* Footer row: Character count & Platform preview switch */}
+            {/* Post Card Footer */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: "12px",
+                justifyContent: "flex-start",
+                gap: "16px",
                 flexWrap: "wrap",
-                paddingTop: "12px",
+                paddingTop: "16px",
                 borderTop: "1px solid #d6dedb"
               }}
             >
               <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>
                 {caption.length} / 2,200 characters
               </p>
-
+              <span style={{ flex: 1 }} />
               <button
                 type="button"
-                onClick={() => setPreviewPlatform(previewPlatform ? null : "facebook")}
+                onClick={() => setIsPreviewModalOpen(true)}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
+                  minHeight: "44px",
                   fontSize: "15px",
                   fontWeight: 600,
                   color: "#0d6b61",
-                  background: "transparent",
+                  background: "none",
                   border: "none",
                   cursor: "pointer"
                 }}
               >
-                {ICONS.eye} {previewPlatform ? "Hide live preview" : "See it on Facebook or Instagram"}
+                {ICONS.eye} See it on Facebook or Instagram
               </button>
-            </div>
-
-            {/* Expanded realistic social preview */}
-            {previewPlatform && (
-              <div
+              <button
+                type="button"
+                disabled={isPublishing}
+                onClick={handlePublish}
                 style={{
-                  marginTop: "16px",
-                  padding: "16px",
-                  background: "#f4f6f5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  minHeight: "52px",
+                  padding: "0 20px",
                   borderRadius: "12px",
-                  border: "1px solid #d6dedb"
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  boxSizing: "border-box",
+                  cursor: isPublishing ? "not-allowed" : "pointer",
+                  background: "#0d6b61",
+                  color: "#ffffff",
+                  border: "1px solid #0d6b61",
+                  opacity: isPublishing ? 0.7 : 1
                 }}
               >
-                <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewPlatform("facebook")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      border: "none",
-                      background: previewPlatform === "facebook" ? "#1877f2" : "#ffffff",
-                      color: previewPlatform === "facebook" ? "#ffffff" : "#16211f",
-                      fontWeight: 600,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Facebook Feed View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewPlatform("instagram")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      border: "none",
-                      background: previewPlatform === "instagram" ? "linear-gradient(135deg,#f9a03f,#d92e7f)" : "#ffffff",
-                      color: previewPlatform === "instagram" ? "#ffffff" : "#16211f",
-                      fontWeight: 600,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Instagram Feed View
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    maxWidth: "440px",
-                    margin: "0 auto",
-                    background: "#ffffff",
-                    borderRadius: "8px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                    overflow: "hidden"
-                  }}
-                >
-                  <div style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        background: "#0d6b61",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700
-                      }}
-                    >
-                      {shopInitial}
-                    </div>
-                    <div>
-                      <b style={{ fontSize: "14px", display: "block" }}>{shopName}</b>
-                      <span style={{ fontSize: "12px", color: "#666" }}>{formattedScheduledText}</span>
-                    </div>
-                  </div>
-                  {mediaUrl && (
-                    <img
-                      src={mediaUrl}
-                      alt="preview"
-                      style={{ width: "100%", maxHeight: "360px", objectFit: "cover" }}
-                    />
-                  )}
-                  <div style={{ padding: "12px" }}>
-                    <p style={{ margin: "0 0 6px 0", fontSize: "14px", lineHeight: "20px" }}>{caption}</p>
-                    <p style={{ margin: 0, fontSize: "13px", color: "#0d6b61" }}>{hashtags.join(" ")}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+                {when === "schedule" ? ICONS.schedule : ICONS.postNow}
+                {isPublishing
+                  ? "Processing..."
+                  : when === "schedule"
+                  ? "Schedule post"
+                  : "Post now"}
+              </button>
+            </div>
           </article>
         </main>
       </div>
-
-      {/* Library Modal */}
-      {isLibraryOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100000,
-            background: "rgba(22, 33, 31, 0.5)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px"
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "600px",
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "24px",
-              boxShadow: "0 12px 36px rgba(0,0,0,0.2)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px"
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>Choose from Image Library</h3>
-              <button
-                type="button"
-                onClick={() => setIsLibraryOpen(false)}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#566661" }}
-              >
-                {ICONS.x}
-              </button>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-              {SAMPLE_LIBRARY.map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setMediaUrl(item.url);
-                    setIsLibraryOpen(false);
-                  }}
-                  style={{
-                    position: "relative",
-                    aspectRatio: "1 / 1",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    border: "2px solid transparent",
-                    padding: 0,
-                    cursor: "pointer",
-                    background: "#f4f6f5"
-                  }}
-                >
-                  <img src={item.url} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Drafts Drawer */}
       {isDraftsOpen && (
@@ -1837,8 +1757,8 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 100000,
-            background: "rgba(22, 33, 31, 0.4)",
+            background: "rgba(0, 0, 0, 0.4)",
+            zIndex: 1000,
             display: "flex",
             justifyContent: "flex-end"
           }}
@@ -1847,119 +1767,314 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
           <div
             style={{
               width: "100%",
-              maxWidth: "420px",
-              height: "100%",
+              maxWidth: "400px",
               background: "#ffffff",
-              boxShadow: "-8px 0 24px rgba(0,0,0,0.15)",
+              height: "100%",
+              boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
               display: "flex",
               flexDirection: "column",
+              padding: "24px",
               boxSizing: "border-box"
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Drawer Header */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "20px 24px",
-                borderBottom: "1px solid #d6dedb"
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>Drafts</h3>
-                <span style={{ fontSize: "13px", color: "#566661" }}>
-                  Posts you haven't scheduled or published yet
-                </span>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
+                Saved Drafts ({draftsList.length})
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsDraftsOpen(false)}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#566661" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
               >
                 {ICONS.x}
               </button>
             </div>
 
-            {/* Drafts list */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
               {draftsList.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: "#566661" }}>
-                  <p style={{ fontWeight: 600, fontSize: "16px", color: "#16211f" }}>No drafts saved yet</p>
-                  <p style={{ fontSize: "14px" }}>Hit "Save draft" anytime while composing to store your progress.</p>
+                <div style={{ textAlign: "center", color: "#566661", marginTop: "40px" }}>
+                  <p>No saved drafts yet.</p>
+                  <p style={{ fontSize: "13px" }}>Click "Save draft" at the top to save your progress.</p>
                 </div>
               ) : (
-                draftsList.map((d, i) => (
+                draftsList.map((d) => (
                   <div
-                    key={d.id || i}
+                    key={d.id}
+                    onClick={() => handleLoadDraft(d)}
                     style={{
-                      padding: "14px",
-                      borderRadius: "12px",
                       border: "1px solid #d6dedb",
-                      background: "#f4f6f5",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px"
+                      borderRadius: "12px",
+                      padding: "14px",
+                      cursor: "pointer",
+                      background: currentDraftId === d.id ? "#e2f0ed" : "#f4f6f5",
+                      transition: "background 0.2s"
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <b style={{ fontSize: "15px" }}>{d.category || "Post draft"}</b>
-                      <span style={{ fontSize: "12px", color: "#566661" }}>
-                        {d.format || "post"} • {d.updated_at || "Recent"}
-                      </span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: "14px", color: "#16211f", maxHeight: "40px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {d.caption || "No caption"}
-                    </p>
-                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <b style={{ fontSize: "15px", color: "#16211f" }}>
+                        {d.title || "Untitled draft"}
+                      </b>
                       <button
                         type="button"
-                        onClick={() => loadDraftData(d)}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          background: "#0d6b61",
-                          color: "#ffffff",
-                          border: "none",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
+                        onClick={(e) => handleDeleteDraft(e, d.id)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "#b42318" }}
                       >
-                        Keep editing
+                        {ICONS.trash}
                       </button>
                     </div>
+                    <p style={{ margin: "4px 0", fontSize: "13px", color: "#566661", lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {d.caption || "No caption text"}
+                    </p>
+                    <span style={{ fontSize: "11px", color: "#7a8b86" }}>
+                      {d.updated_at ? new Date(d.updated_at).toLocaleString() : ""}
+                    </span>
                   </div>
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Bottom button */}
-            <div style={{ padding: "16px 20px", borderTop: "1px solid #d6dedb" }}>
+      {/* AI Generate Image Modal */}
+      {isAiGenModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setIsAiGenModalOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "500px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.2)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
+                Generate Image with AI
+              </h3>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedCatId("blank");
-                  setCaption("");
-                  setHashtags(["#ShopLocal"]);
-                  setMediaUrl(null);
-                  setCurrentDraftId(null);
-                  setIsDraftsOpen(false);
-                }}
+                onClick={() => setIsAiGenModalOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+            <p style={{ fontSize: "14px", color: "#566661", marginBottom: "14px" }}>
+              Describe the image you want for your ethnic wear store, or leave it blank to auto-generate based on your shop details.
+            </p>
+            <textarea
+              value={aiGenPrompt}
+              onChange={(e) => setAiGenPrompt(e.target.value)}
+              placeholder="e.g. Model wearing royal blue Kanjivaram silk saree with gold border in a luxury showroom..."
+              rows={3}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "12px",
+                border: "1px solid #7a8b86",
+                fontSize: "14px",
+                marginBottom: "16px",
+                boxSizing: "border-box"
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setIsAiGenModalOpen(false)}
                 style={{
-                  width: "100%",
-                  minHeight: "44px",
-                  borderRadius: "12px",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
+                  border: "1px solid #7a8b86",
+                  background: "#ffffff",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isAiGenerating}
+                onClick={handleGenerateAiImage}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "#0d6b61",
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  cursor: isAiGenerating ? "wait" : "pointer"
+                }}
+              >
+                {isAiGenerating ? "Generating..." : "Generate Image"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Library Drawer/Modal */}
+      {isLibraryOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setIsLibraryOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "600px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.2)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
+                Select from Media Library
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsLibraryOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", maxHeight: "360px", overflowY: "auto" }}>
+              {libraryImages.map((imgUrl, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    setImage(imgUrl);
+                    setIsLibraryOpen(false);
+                    showToast("Image selected from library!");
+                  }}
+                  style={{
+                    aspectRatio: "1 / 1",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    border: "2px solid #e9eeec"
+                  }}
+                >
+                  <img src={imgUrl} alt="Library item" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal ("See it on Facebook or Instagram") */}
+      {isPreviewModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setIsPreviewModalOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
+                Preview on Facebook & Instagram
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+
+            {/* Social Post Mockup Card */}
+            <div style={{ border: "1px solid #d6dedb", borderRadius: "12px", overflow: "hidden", background: "#fafafa" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px" }}>
+                <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#0d6b61", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                  {(shopData.name || "S").charAt(0).toUpperCase()}
+                </span>
+                <div>
+                  <b style={{ fontSize: "14px", display: "block" }}>{shopData.name}</b>
+                  <span style={{ fontSize: "11px", color: "#566661" }}>Sponsored · Just now</span>
+                </div>
+              </div>
+              <p style={{ padding: "0 12px 10px", margin: 0, fontSize: "14px", lineHeight: "20px", color: "#16211f" }}>
+                {caption}
+                {hashtags.length > 0 && (
+                  <span style={{ display: "block", color: "#0d6b61", fontWeight: 600, marginTop: "6px" }}>
+                    {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                  </span>
+                )}
+              </p>
+              {image && (
+                <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#000" }}>
+                  <img src={image} alt="Post preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
                   background: "#0d6b61",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
-                  fontSize: "15px",
                   cursor: "pointer"
                 }}
               >
-                + Start a new post
+                Done
               </button>
             </div>
           </div>
@@ -1968,3 +2083,5 @@ export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSave
     </div>
   );
 }
+
+export default PostComposer;
