@@ -401,3 +401,75 @@ def test_google_login_creates_isolated_tenant_without_piggybacking():
     # Verify no tokens leaked to tenant 2 or 3
     assert db.query(MetaAccount).filter_by(tenant_id=2).first() is None
     assert db.query(MetaAccount).filter_by(tenant_id=3).first() is None
+
+
+def test_meta_instagram_scheduling_and_publishing_pipeline(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount, Campaign
+    from db.database import get_db
+    import datetime
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # 1. Setup tenant & Meta account with Instagram
+    t = Tenant(id=20, name="Auto Hub", email="autohub@test.com")
+    m = MetaAccount(tenant_id=20, page_id="fb_page_20", page_name="Auto Page", access_token="tok_meta_20", ig_user_id="ig_auto_20")
+    db.add(t)
+    db.add(m)
+    db.commit()
+
+    # 2. Check status returns connected + has_instagram
+    res_status = client.get("/api/meta/status?tenant_id=20")
+    assert res_status.status_code == 200
+    assert res_status.json()["connected"] is True
+    assert res_status.json()["has_instagram"] is True
+
+    # 3. Schedule post with Instagram enabled
+    future = (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat()
+    sched_payload = {
+        "message": "Future Promo!",
+        "image_url": "https://example.com/car.jpg",
+        "publish_to_instagram": True,
+        "scheduled_time": future,
+        "tenant_id": 20
+    }
+    res_sched = client.post("/api/campaign/publish", json=sched_payload)
+    assert res_sched.status_code == 200
+    assert res_sched.json()["status"] == "scheduled"
+
+    # Verify persisted in DB
+    camp = db.query(Campaign).filter_by(tenant_id=20).first()
+    assert camp.status == "scheduled"
+    assert camp.publish_to_instagram is True
+
+    # 4. Direct publish to FB + IG
+    monkeypatch.setattr("main.publish_to_facebook", lambda req: {"id": "fb_ok_20"})
+    monkeypatch.setattr("api.meta.publish_to_instagram", lambda req: {"id": "ig_ok_20"})
+
+    live_payload = {
+        "message": "Instant Flash Sale!",
+        "image_url": "https://example.com/car_instant.jpg",
+        "publish_to_instagram": True,
+        "tenant_id": 20
+    }
+    res_live = client.post("/api/campaign/publish", json=live_payload)
+    assert res_live.status_code == 200
+    assert res_live.json()["status"] == "success"
+    assert res_live.json()["fb_response"]["id"] == "fb_ok_20"
+    assert res_live.json()["ig_response"]["id"] == "ig_ok_20"
+
+    app.dependency_overrides.clear()
