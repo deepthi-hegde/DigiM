@@ -4487,6 +4487,19 @@ export function CampaignDashboard({
 
         {/* Right Header Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {onNavigateToTab && (
+            <ComposerBtn
+              kind="text"
+              size="sm"
+              icon="chevron-left"
+              onClick={() => {
+                if (onClearEdit) onClearEdit();
+                onNavigateToTab('home');
+              }}
+            >
+              Back to Home
+            </ComposerBtn>
+          )}
           <span style={{ fontSize: '12px', color: 'var(--text-light)', marginRight: '4px' }}>
             {lastSavedDraftTime ? `Saved to Drafts ${lastSavedDraftTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Saves to Drafts as you type'}
           </span>
@@ -7993,7 +8006,7 @@ export function SettingsView({ initialTab = 'shop_details', onLogout }: { initia
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. SriKrish Silks"
+                    placeholder="e.g. SriKrish"
                     style={{
                       width: '100%',
                       padding: '12px 14px',
@@ -8580,6 +8593,623 @@ export function SettingsView({ initialTab = 'shop_details', onLogout }: { initia
 }
 
 
+// ----------------------------------------------------------------------------
+// HomeView Component (DigiM Home Page)
+// ----------------------------------------------------------------------------
+export function HomeView({
+  campaigns,
+  metaStatus,
+  userInfo,
+  businessInfo,
+  onStartTopic,
+  onStartImage,
+  onEditDraft,
+  onOpenCalendar,
+  onReconnectMeta,
+  draftsCount,
+  upcomingCount
+}: {
+  campaigns: any[];
+  metaStatus: { connected: boolean; page_name?: string } | null;
+  userInfo: { name: string; email: string; initial: string };
+  businessInfo: { name: string; location: string; initial: string };
+  onStartTopic: (topic: string) => void;
+  onStartImage: () => void;
+  onEditDraft: (draft: any) => void;
+  onOpenCalendar: (subTab?: 'upcoming' | 'drafts' | 'past') => void;
+  onReconnectMeta: () => void;
+  draftsCount: number;
+  upcomingCount: number;
+}) {
+  const [currentDateStr, setCurrentDateStr] = useState('');
+  const [greeting, setGreeting] = useState('Good evening');
+
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const g = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    setGreeting(g);
+    setCurrentDateStr(
+      now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      })
+    );
+  }, []);
+
+  const drafts = campaigns
+    .filter((c: any) => !c.scheduled_time && c.status === 'draft')
+    .slice(0, 3);
+
+  const upcoming = campaigns
+    .filter((c: any) => c.scheduled_time && c.status !== 'archived')
+    .sort((a: any, b: any) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime())
+    .slice(0, 3);
+
+  const formatRelativeTime = (dateStr?: string) => {
+    if (!dateStr) return 'Edited recently';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Edited recently';
+    const diffDays = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Edited today';
+    if (diffDays === 1) return 'Edited yesterday';
+    return `Edited ${diffDays} days ago`;
+  };
+
+  const formatScheduledTime = (dateStr?: string) => {
+    if (!dateStr) return 'Scheduled';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Scheduled';
+    const isToday = d.toDateString() === new Date().toDateString();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Today, ${timeStr}`;
+    const dateStrShort = d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+    return `${dateStrShort}, ${timeStr}`;
+  };
+
+  const SWATCH_COLORS = ['#12867a', '#a8245a', '#e0a526', '#3b82f6', '#8b5cf6'];
+
+  const TOPIC_CHIPS = [
+    {
+      name: 'Summer Sale',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </svg>
+      )
+    },
+    {
+      name: 'New Collection',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3" />
+          <path d="M12 8L3 15h18z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Customer Spotlight',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Festival Offer',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z" />
+          <path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Product Showcase',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M5 8h14l-1 13H6z" />
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+        </svg>
+      )
+    },
+    {
+      name: 'Behind the Scenes',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <rect x="3" y="9" width="18" height="12" rx="2" />
+          <path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5" />
+        </svg>
+      )
+    },
+    {
+      name: 'Promotions',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M3 10v4h4l8 5V5L7 10z" />
+          <path d="M19 9a4 4 0 0 1 0 6" />
+        </svg>
+      )
+    },
+    {
+      name: 'Knowledge Info',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M9 18h6M10 21h4" />
+          <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+        </svg>
+      )
+    }
+  ];
+
+  const displayName = userInfo.name || businessInfo.name || 'Ravi';
+
+  return (
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* ── 1. GREETING & DATE HEADER ────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontSize: '14px', color: 'var(--text-light, #566661)' }}>
+          {currentDateStr || 'Today'}
+        </span>
+        <h1 style={{
+          margin: 0,
+          fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+          fontSize: '32px',
+          lineHeight: '38px',
+          fontWeight: 700,
+          color: 'var(--text-color, #16211f)'
+        }}>
+          {greeting}, {displayName}
+        </h1>
+      </div>
+
+      {/* ── 2. WHAT DO YOU WANT TO POST TODAY? (QUICK COMPOSER CARD) ────────── */}
+      <div style={{
+        background: 'var(--surface-color, #ffffff)',
+        border: '1px solid var(--glass-border, #d6dedb)',
+        borderRadius: '16px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '18px',
+        boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <h2 style={{
+            margin: 0,
+            fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+            fontSize: '24px',
+            lineHeight: '30px',
+            fontWeight: 700,
+            color: 'var(--text-color, #16211f)'
+          }}>
+            What do you want to post today?
+          </h2>
+          <p style={{ margin: 0, fontSize: '14px', lineHeight: '20px', color: 'var(--text-light, #566661)' }}>
+            Pick a type and we’ll write the first draft for you.
+          </p>
+        </div>
+
+        {/* Topic Chips */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {TOPIC_CHIPS.map((chip) => (
+            <button
+              key={chip.name}
+              type="button"
+              onClick={() => onStartTopic(chip.name)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                minHeight: '38px',
+                padding: '0 16px',
+                borderRadius: '999px',
+                border: '1px solid var(--border-color, #7a8b86)',
+                background: 'var(--surface-color, #ffffff)',
+                color: 'var(--text-color, #16211f)',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary-color, #0d6b61)';
+                e.currentTarget.style.color = 'var(--primary-color, #0d6b61)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color, #7a8b86)';
+                e.currentTarget.style.color = 'var(--text-color, #16211f)';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              {chip.icon}
+              {chip.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Start from image action */}
+        <div style={{ display: 'flex', alignItems: 'center', margin: '4px 0 0 -8px' }}>
+          <button
+            type="button"
+            onClick={onStartImage}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              minHeight: '40px',
+              padding: '0 12px',
+              borderRadius: '10px',
+              fontFamily: "'Mukta', system-ui, sans-serif",
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: 'none',
+              color: 'var(--primary-color, #0d6b61)',
+              border: 'none',
+              transition: 'opacity 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <circle cx="9" cy="10" r="2" />
+              <path d="M21 16l-5-5-9 9" />
+            </svg>
+            Start from an image instead
+          </button>
+        </div>
+      </div>
+
+      {/* ── 3. ALERT BANNER (ONLY WHEN DISCONNECTED) ─────────────────────────── */}
+      {!metaStatus?.connected && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            flexWrap: 'wrap',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            background: '#fdecea',
+            color: '#b42318',
+            border: '1px solid rgba(180, 35, 24, 0.2)'
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span style={{ flex: 1, minWidth: '240px', fontSize: '15px', lineHeight: '22px' }}>
+            <strong style={{ fontWeight: 700 }}>Instagram stopped working.</strong>{' '}
+            {upcomingCount > 0 ? `${upcomingCount} scheduled posts won’t go out until you reconnect.` : "Scheduled posts won’t go out until you reconnect."}
+          </span>
+          <button
+            type="button"
+            onClick={onReconnectMeta}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              minHeight: '40px',
+              padding: '0 18px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: '#ffffff',
+              color: '#b42318',
+              border: '1px solid #b42318',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4" />
+            </svg>
+            Reconnect Instagram
+          </button>
+        </div>
+      )}
+
+      {/* ── 4. TWO-COLUMN WORKSPACE: DRAFTS & UPCOMING ────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '20px',
+        alignItems: 'start'
+      }}>
+        {/* PICK UP WHERE YOU LEFT OFF (DRAFTS) */}
+        <div style={{
+          background: 'var(--surface-color, #ffffff)',
+          border: '1px solid var(--glass-border, #d6dedb)',
+          borderRadius: '16px',
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <h2 style={{
+              margin: 0,
+              fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+              fontSize: '20px',
+              lineHeight: '26px',
+              fontWeight: 600,
+              color: 'var(--text-color, #16211f)'
+            }}>
+              Pick up where you left off
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenCalendar('drafts')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--primary-color, #0d6b61)',
+                cursor: 'pointer'
+              }}
+            >
+              All drafts ({draftsCount})
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {drafts.length === 0 ? (
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light, #566661)', fontSize: '14px' }}>
+                No drafts yet. Posts you start will save automatically here.
+              </div>
+            ) : (
+              drafts.map((draft: any, idx: number) => {
+                const title = draft.name || draft.topic || draft.category || 'Untitled Draft';
+                const mediaUrl = draft.media_url || (draft.media_urls && draft.media_urls[0]) || draft.image_url;
+                return (
+                  <div
+                    key={draft.id || idx}
+                    onClick={() => onEditDraft(draft)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      minHeight: '64px',
+                      padding: '10px 0',
+                      borderBottom: idx < drafts.length - 1 ? '1px solid var(--glass-border, #d6dedb)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease'
+                    }}
+                  >
+                    {mediaUrl ? (
+                      <img
+                        src={mediaUrl}
+                        alt=""
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          flexShrink: 0
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          background: SWATCH_COLORS[idx % SWATCH_COLORS.length],
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          fontSize: '18px'
+                        }}
+                      >
+                        {title.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <b style={{
+                        fontSize: '15px',
+                        fontWeight: 600,
+                        color: 'var(--text-color, #16211f)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {title}
+                      </b>
+                      <span style={{ fontSize: '13px', color: 'var(--text-light, #566661)' }}>
+                        {draft.post_type || 'Post'}, {draft.channels || 'Facebook and Instagram'} · {formatRelativeTime(draft.updated_at || draft.created_at)}
+                      </span>
+                    </div>
+
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-light, #566661)', flexShrink: 0 }}>
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* COMING UP (SCHEDULED POSTS) */}
+        <div style={{
+          background: 'var(--surface-color, #ffffff)',
+          border: '1px solid var(--glass-border, #d6dedb)',
+          borderRadius: '16px',
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <h2 style={{
+              margin: 0,
+              fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+              fontSize: '20px',
+              lineHeight: '26px',
+              fontWeight: 600,
+              color: 'var(--text-color, #16211f)'
+            }}>
+              Coming up
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenCalendar('upcoming')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--primary-color, #0d6b61)',
+                cursor: 'pointer'
+              }}
+            >
+              Open Calendar
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {upcoming.length === 0 ? (
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light, #566661)', fontSize: '14px' }}>
+                No scheduled posts yet. Schedule your first post to see it here!
+              </div>
+            ) : (
+              upcoming.map((post: any, idx: number) => {
+                const title = post.name || post.topic || post.category || 'Scheduled Post';
+                const mediaUrl = post.media_url || (post.media_urls && post.media_urls[0]) || post.image_url;
+                const isMetaIssue = !metaStatus?.connected;
+
+                return (
+                  <div
+                    key={post.id || idx}
+                    onClick={() => onOpenCalendar('upcoming')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      minHeight: '64px',
+                      padding: '10px 0',
+                      borderBottom: idx < upcoming.length - 1 ? '1px solid var(--glass-border, #d6dedb)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {mediaUrl ? (
+                      <img
+                        src={mediaUrl}
+                        alt=""
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          flexShrink: 0
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          background: SWATCH_COLORS[(idx + 2) % SWATCH_COLORS.length],
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          fontSize: '18px'
+                        }}
+                      >
+                        {title.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <b style={{
+                        fontSize: '15px',
+                        fontWeight: 600,
+                        color: 'var(--text-color, #16211f)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {title}
+                      </b>
+                      <span style={{ fontSize: '13px', color: 'var(--text-light, #566661)' }}>
+                        {formatScheduledTime(post.scheduled_time)} · {post.channels || 'Facebook and Instagram'}
+                      </span>
+                    </div>
+
+                    {isMetaIssue ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#fdecea',
+                        color: '#b42318',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        flexShrink: 0
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M12 7v6M12 16.5v.5" />
+                        </svg>
+                        Won’t post
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#e2f0ed',
+                        color: '#0d6b61',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        flexShrink: 0
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M12 7v5l3 2" />
+                        </svg>
+                        Scheduled
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -8596,9 +9226,9 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [showMobileAvatarMenu, setShowMobileAvatarMenu] = useState(false);
 
   const [businessInfo, setBusinessInfo] = useState<{ name: string; location: string; initial: string }>({
-    name: 'business_name',
-    location: '',
-    initial: 'B'
+    name: 'SriKrish',
+    location: 'MG Road, Bengaluru',
+    initial: 'S'
   });
 
   const [userInfo, setUserInfo] = useState<{ name: string; email: string; initial: string }>({
@@ -8609,10 +9239,12 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
 
   const [metaStatus, setMetaStatus] = useState<{ connected: boolean; page_name?: string } | null>(null);
   const [draftsCount, setDraftsCount] = useState<number>(0);
+  const [upcomingCount, setUpcomingCount] = useState<number>(0);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
 
   const handleTabChange = (tab: string, sub?: 'upcoming' | 'drafts' | 'past') => {
     let resolvedTab = tab;
-    if (tab === 'campaigns') resolvedTab = 'home';
+    if (tab === 'campaigns') resolvedTab = 'create';
     if (tab === 'assets') resolvedTab = 'library';
     if (tab === 'analytics') resolvedTab = 'results';
     if (tab === 'archived') {
@@ -8639,7 +9271,8 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
       const savedBiz = localStorage.getItem('businessProfile');
       if (savedBiz) {
         const parsed = JSON.parse(savedBiz);
-        const name = parsed.businessName && parsed.businessName.trim() ? parsed.businessName.trim() : 'business_name';
+        const isMf = parsed.businessName && parsed.businessName.toLowerCase().includes('marketflow');
+        const name = parsed.businessName && parsed.businessName.trim() && !isMf ? parsed.businessName.trim() : 'SriKrish';
         const loc = parsed.category || parsed.industry || '';
         const initial = (name.charAt(0) || 'B').toUpperCase();
         setBusinessInfo({ name, location: loc, initial });
@@ -8670,8 +9303,11 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
       if (cRes && cRes.ok) {
         const cData = await cRes.json();
         if (Array.isArray(cData)) {
+          setCampaigns(cData);
           const drafts = cData.filter((c: any) => !c.scheduled_time && c.status === 'draft');
           setDraftsCount(drafts.length);
+          const upcoming = cData.filter((c: any) => c.scheduled_time && c.status !== 'archived');
+          setUpcomingCount(upcoming.length);
         }
       }
       if (wRes && wRes.ok) {
@@ -8691,7 +9327,8 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
     fetchDashboardData();
   }, []);
 
-  const isHomeActive = activeTab === 'home' || activeTab === 'campaigns';
+  const isHomeActive = activeTab === 'home';
+  const isCreateActive = activeTab === 'create' || activeTab === 'campaigns';
   const isCalendarActive = activeTab === 'calendar';
   const isLibraryActive = activeTab === 'library' || activeTab === 'assets';
   const isResultsActive = activeTab === 'results' || activeTab === 'analytics';
@@ -8732,6 +9369,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)', textTransform: 'capitalize' }}>
             {isHomeActive ? 'Home' :
+             isCreateActive ? 'Create Post' :
              isCalendarActive ? 'Calendar' :
              isLibraryActive ? 'Library' :
              isResultsActive ? 'Results' :
@@ -8860,7 +9498,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           type="button"
           onClick={() => {
             setSelectedCampaignForEdit(null);
-            handleTabChange('home');
+            handleTabChange('create');
           }}
           style={{
             display: 'flex',
@@ -8940,6 +9578,23 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             <span style={{ flex: 1 }}>Calendar</span>
+            {upcomingCount > 0 && (
+              <span style={{
+                minWidth: '20px',
+                height: '20px',
+                padding: '0 6px',
+                borderRadius: '999px',
+                background: 'rgba(82, 183, 136, 0.2)',
+                color: 'var(--primary-color)',
+                fontSize: '11px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {upcomingCount}
+              </span>
+            )}
           </button>
 
           {/* Calendar Sub-Navigation (Expanded) */}
@@ -8950,6 +9605,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: '6px 10px',
                 borderRadius: '8px',
                 background: isCalendarActive && calendarSubTab === 'upcoming' ? 'rgba(82, 183, 136, 0.12)' : 'transparent',
@@ -8963,6 +9619,23 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               }}
             >
               <span>Upcoming</span>
+              {upcomingCount > 0 && (
+                <span style={{
+                  minWidth: '18px',
+                  height: '18px',
+                  padding: '0 5px',
+                  borderRadius: '9px',
+                  background: 'rgba(82, 183, 136, 0.25)',
+                  color: 'var(--primary-color)',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {upcomingCount}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -9276,6 +9949,34 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
 
         {/* Views */}
         {isHomeActive && (
+          <HomeView
+            campaigns={campaigns}
+            metaStatus={metaStatus}
+            userInfo={userInfo}
+            businessInfo={businessInfo}
+            draftsCount={draftsCount}
+            upcomingCount={upcomingCount}
+            onStartTopic={(topic) => {
+              setSelectedCampaignForEdit({ prompt: `Promote our ${topic}...`, category: topic, topic });
+              handleTabChange('create');
+            }}
+            onStartImage={() => {
+              setSelectedCampaignForEdit(null);
+              handleTabChange('create');
+            }}
+            onEditDraft={(draft) => {
+              setSelectedCampaignForEdit(draft);
+              handleTabChange('create');
+            }}
+            onOpenCalendar={(subTab) => {
+              handleTabChange('calendar', subTab);
+            }}
+            onReconnectMeta={() => {
+              handleTabChange('settings');
+            }}
+          />
+        )}
+        {isCreateActive && (
           <CampaignDashboard
             initialCampaign={selectedCampaignForEdit}
             onClearEdit={() => setSelectedCampaignForEdit(null)}
@@ -9365,7 +10066,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         type="button"
         onClick={() => {
           setSelectedCampaignForEdit(null);
-          handleTabChange('home');
+          handleTabChange('create');
         }}
         style={{
           display: 'flex',
@@ -9374,7 +10075,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           gap: '2px',
           fontSize: '11px',
           fontWeight: 700,
-          color: 'var(--primary-color)',
+          color: isCreateActive ? 'var(--primary-color)' : 'var(--text-light)',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer'
