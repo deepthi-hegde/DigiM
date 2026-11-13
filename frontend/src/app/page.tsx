@@ -8668,7 +8668,7 @@ export function HomeView({
     return `${dateStrShort}, ${timeStr}`;
   };
 
-  const SWATCH_COLORS = ['#12867a', '#a8245a', '#e0a526', '#3b82f6', '#8b5cf6'];
+  const SWATCH_COLORS = ['#2D6A4F', '#742a2a', '#b45309', '#1d4ed8', '#581c87'];
 
   const TOPIC_CHIPS = [
     {
@@ -8747,53 +8747,49 @@ export function HomeView({
   const displayName = userInfo.name || businessInfo.name || 'Ravi';
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="fade-in-up" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* ── 1. GREETING & DATE HEADER ────────────────────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <span style={{ fontSize: '14px', color: 'var(--text-light, #566661)' }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 500, letterSpacing: '0.02em' }}>
           {currentDateStr || 'Today'}
         </span>
         <h1 style={{
           margin: 0,
-          fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
-          fontSize: '32px',
-          lineHeight: '38px',
-          fontWeight: 700,
-          color: 'var(--text-color, #16211f)'
+          fontSize: '30px',
+          lineHeight: '36px',
+          fontWeight: 800,
+          color: 'var(--text-color)',
+          letterSpacing: '-0.02em'
         }}>
           {greeting}, {displayName}
         </h1>
       </div>
 
       {/* ── 2. WHAT DO YOU WANT TO POST TODAY? (QUICK COMPOSER CARD) ────────── */}
-      <div style={{
-        background: 'var(--surface-color, #ffffff)',
-        border: '1px solid var(--glass-border, #d6dedb)',
-        borderRadius: '16px',
-        padding: '24px',
+      <div className="glass-panel" style={{
+        padding: '28px',
+        borderRadius: '20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '18px',
-        boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+        gap: '20px'
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <h2 style={{
             margin: 0,
-            fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
-            fontSize: '24px',
-            lineHeight: '30px',
-            fontWeight: 700,
-            color: 'var(--text-color, #16211f)'
+            fontSize: '22px',
+            lineHeight: '28px',
+            fontWeight: 800,
+            color: 'var(--text-color)'
           }}>
             What do you want to post today?
           </h2>
-          <p style={{ margin: 0, fontSize: '14px', lineHeight: '20px', color: 'var(--text-light, #566661)' }}>
+          <p style={{ margin: 0, fontSize: '14px', lineHeight: '20px', color: 'var(--text-light)' }}>
             Pick a type and we’ll write the first draft for you.
           </p>
         </div>
 
         {/* Topic Chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {TOPIC_CHIPS.map((chip) => (
             <button
               key={chip.name}
@@ -8806,22 +8802,24 @@ export function HomeView({
                 minHeight: '38px',
                 padding: '0 16px',
                 borderRadius: '999px',
-                border: '1px solid var(--border-color, #7a8b86)',
-                background: 'var(--surface-color, #ffffff)',
-                color: 'var(--text-color, #16211f)',
+                border: '1px solid rgba(82, 183, 136, 0.25)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--text-color)',
                 fontSize: '14px',
                 fontWeight: 600,
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary-color, #0d6b61)';
-                e.currentTarget.style.color = 'var(--primary-color, #0d6b61)';
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+                e.currentTarget.style.color = 'var(--primary-color)';
+                e.currentTarget.style.background = 'rgba(82, 183, 136, 0.12)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-color, #7a8b86)';
-                e.currentTarget.style.color = 'var(--text-color, #16211f)';
+                e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.25)';
+                e.currentTarget.style.color = 'var(--text-color)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
                 e.currentTarget.style.transform = 'none';
               }}
             >
@@ -8832,28 +8830,30 @@ export function HomeView({
         </div>
 
         {/* Start from image action */}
-        <div style={{ display: 'flex', alignItems: 'center', margin: '4px 0 0 -8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
           <button
             type="button"
             onClick={onStartImage}
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              minHeight: '40px',
-              padding: '0 12px',
+              padding: '6px 12px',
               borderRadius: '10px',
-              fontFamily: "'Mukta', system-ui, sans-serif",
-              fontSize: '15px',
+              fontSize: '14px',
               fontWeight: 600,
               cursor: 'pointer',
-              background: 'none',
-              color: 'var(--primary-color, #0d6b61)',
+              background: 'transparent',
+              color: 'var(--primary-color)',
               border: 'none',
-              transition: 'opacity 0.15s ease'
+              transition: 'all 0.15s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(82, 183, 136, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -8876,18 +8876,18 @@ export function HomeView({
             flexWrap: 'wrap',
             padding: '16px 20px',
             borderRadius: '16px',
-            background: '#fdecea',
-            color: '#b42318',
-            border: '1px solid rgba(180, 35, 24, 0.2)'
+            background: 'rgba(220, 38, 38, 0.12)',
+            border: '1px solid rgba(220, 38, 38, 0.35)',
+            color: '#fca5a5'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span style={{ flex: 1, minWidth: '240px', fontSize: '15px', lineHeight: '22px' }}>
-            <strong style={{ fontWeight: 700 }}>Instagram stopped working.</strong>{' '}
+          <span style={{ flex: 1, minWidth: '240px', fontSize: '14px', lineHeight: '20px' }}>
+            <strong style={{ fontWeight: 700, color: '#ffffff' }}>Instagram stopped working.</strong>{' '}
             {upcomingCount > 0 ? `${upcomingCount} scheduled posts won’t go out until you reconnect.` : "Scheduled posts won’t go out until you reconnect."}
           </span>
           <button
@@ -8897,21 +8897,21 @@ export function HomeView({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              minHeight: '40px',
-              padding: '0 18px',
+              minHeight: '38px',
+              padding: '0 16px',
               borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 600,
+              fontSize: '13px',
+              fontWeight: 700,
               cursor: 'pointer',
-              background: '#ffffff',
-              color: '#b42318',
-              border: '1px solid #b42318',
+              background: 'rgba(220, 38, 38, 0.25)',
+              color: '#ffffff',
+              border: '1px solid rgba(220, 38, 38, 0.6)',
               transition: 'all 0.15s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.4)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.25)'}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4" />
             </svg>
             Reconnect Instagram
@@ -8923,28 +8923,24 @@ export function HomeView({
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '20px',
+        gap: '24px',
         alignItems: 'start'
       }}>
         {/* PICK UP WHERE YOU LEFT OFF (DRAFTS) */}
-        <div style={{
-          background: 'var(--surface-color, #ffffff)',
-          border: '1px solid var(--glass-border, #d6dedb)',
-          borderRadius: '16px',
-          padding: '20px',
+        <div className="glass-panel" style={{
+          padding: '24px',
+          borderRadius: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
-          boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+          gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <h2 style={{
               margin: 0,
-              fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
-              fontSize: '20px',
-              lineHeight: '26px',
-              fontWeight: 600,
-              color: 'var(--text-color, #16211f)'
+              fontSize: '18px',
+              lineHeight: '24px',
+              fontWeight: 800,
+              color: 'var(--text-color)'
             }}>
               Pick up where you left off
             </h2>
@@ -8955,9 +8951,9 @@ export function HomeView({
                 background: 'none',
                 border: 'none',
                 padding: 0,
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'var(--primary-color, #0d6b61)',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: 'var(--primary-color)',
                 cursor: 'pointer'
               }}
             >
@@ -8967,7 +8963,7 @@ export function HomeView({
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {drafts.length === 0 ? (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light, #566661)', fontSize: '14px' }}>
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px' }}>
                 No drafts yet. Posts you start will save automatically here.
               </div>
             ) : (
@@ -8983,11 +8979,14 @@ export function HomeView({
                       alignItems: 'center',
                       gap: '12px',
                       minHeight: '64px',
-                      padding: '10px 0',
-                      borderBottom: idx < drafts.length - 1 ? '1px solid var(--glass-border, #d6dedb)' : 'none',
+                      padding: '12px 6px',
+                      borderBottom: idx < drafts.length - 1 ? '1px solid var(--glass-border)' : 'none',
                       cursor: 'pointer',
+                      borderRadius: '10px',
                       transition: 'background 0.15s ease'
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     {mediaUrl ? (
                       <img
@@ -8996,7 +8995,7 @@ export function HomeView({
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
+                          borderRadius: '10px',
                           objectFit: 'cover',
                           flexShrink: 0
                         }}
@@ -9006,14 +9005,15 @@ export function HomeView({
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
+                          borderRadius: '10px',
                           background: SWATCH_COLORS[idx % SWATCH_COLORS.length],
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
                           flexShrink: 0,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#ffffff',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           fontSize: '18px'
                         }}
                       >
@@ -9021,23 +9021,23 @@ export function HomeView({
                       </span>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <b style={{
                         fontSize: '15px',
                         fontWeight: 600,
-                        color: 'var(--text-color, #16211f)',
+                        color: 'var(--text-color)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
                         {title}
                       </b>
-                      <span style={{ fontSize: '13px', color: 'var(--text-light, #566661)' }}>
+                      <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>
                         {draft.post_type || 'Post'}, {draft.channels || 'Facebook and Instagram'} · {formatRelativeTime(draft.updated_at || draft.created_at)}
                       </span>
                     </div>
 
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-light, #566661)', flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-light)', flexShrink: 0 }}>
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </div>
@@ -9048,24 +9048,20 @@ export function HomeView({
         </div>
 
         {/* COMING UP (SCHEDULED POSTS) */}
-        <div style={{
-          background: 'var(--surface-color, #ffffff)',
-          border: '1px solid var(--glass-border, #d6dedb)',
-          borderRadius: '16px',
-          padding: '20px',
+        <div className="glass-panel" style={{
+          padding: '24px',
+          borderRadius: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
-          boxShadow: 'var(--card-shadow, 0 2px 8px rgba(0,0,0,0.04))'
+          gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <h2 style={{
               margin: 0,
-              fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
-              fontSize: '20px',
-              lineHeight: '26px',
-              fontWeight: 600,
-              color: 'var(--text-color, #16211f)'
+              fontSize: '18px',
+              lineHeight: '24px',
+              fontWeight: 800,
+              color: 'var(--text-color)'
             }}>
               Coming up
             </h2>
@@ -9076,9 +9072,9 @@ export function HomeView({
                 background: 'none',
                 border: 'none',
                 padding: 0,
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'var(--primary-color, #0d6b61)',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: 'var(--primary-color)',
                 cursor: 'pointer'
               }}
             >
@@ -9088,7 +9084,7 @@ export function HomeView({
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {upcoming.length === 0 ? (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light, #566661)', fontSize: '14px' }}>
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px' }}>
                 No scheduled posts yet. Schedule your first post to see it here!
               </div>
             ) : (
@@ -9106,10 +9102,14 @@ export function HomeView({
                       alignItems: 'center',
                       gap: '12px',
                       minHeight: '64px',
-                      padding: '10px 0',
-                      borderBottom: idx < upcoming.length - 1 ? '1px solid var(--glass-border, #d6dedb)' : 'none',
-                      cursor: 'pointer'
+                      padding: '12px 6px',
+                      borderBottom: idx < upcoming.length - 1 ? '1px solid var(--glass-border)' : 'none',
+                      cursor: 'pointer',
+                      borderRadius: '10px',
+                      transition: 'background 0.15s ease'
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     {mediaUrl ? (
                       <img
@@ -9118,7 +9118,7 @@ export function HomeView({
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
+                          borderRadius: '10px',
                           objectFit: 'cover',
                           flexShrink: 0
                         }}
@@ -9128,14 +9128,15 @@ export function HomeView({
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
+                          borderRadius: '10px',
                           background: SWATCH_COLORS[(idx + 2) % SWATCH_COLORS.length],
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
                           flexShrink: 0,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#ffffff',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           fontSize: '18px'
                         }}
                       >
@@ -9143,18 +9144,18 @@ export function HomeView({
                       </span>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <b style={{
                         fontSize: '15px',
                         fontWeight: 600,
-                        color: 'var(--text-color, #16211f)',
+                        color: 'var(--text-color)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
                         {title}
                       </b>
-                      <span style={{ fontSize: '13px', color: 'var(--text-light, #566661)' }}>
+                      <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>
                         {formatScheduledTime(post.scheduled_time)} · {post.channels || 'Facebook and Instagram'}
                       </span>
                     </div>
@@ -9165,11 +9166,12 @@ export function HomeView({
                         alignItems: 'center',
                         gap: '4px',
                         padding: '3px 8px',
-                        borderRadius: '6px',
-                        background: '#fdecea',
-                        color: '#b42318',
+                        borderRadius: '8px',
+                        background: 'rgba(220, 38, 38, 0.15)',
+                        border: '1px solid rgba(220, 38, 38, 0.35)',
+                        color: '#f87171',
                         fontSize: '12px',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         flexShrink: 0
                       }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -9184,11 +9186,12 @@ export function HomeView({
                         alignItems: 'center',
                         gap: '4px',
                         padding: '3px 8px',
-                        borderRadius: '6px',
-                        background: '#e2f0ed',
-                        color: '#0d6b61',
+                        borderRadius: '8px',
+                        background: 'rgba(82, 183, 136, 0.15)',
+                        border: '1px solid rgba(82, 183, 136, 0.3)',
+                        color: 'var(--primary-color)',
                         fontSize: '12px',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         flexShrink: 0
                       }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
