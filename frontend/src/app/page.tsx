@@ -8815,45 +8815,47 @@ export function HomeView({
           </p>
         </div>
 
-        {/* Topic Chips */}
+        {/* Topic Chips matching DigiM design tokens */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {TOPIC_CHIPS.map((chip) => (
-            <button
-              key={chip.name}
-              type="button"
-              onClick={() => onStartTopic(chip.id || chip.name)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                minHeight: '38px',
-                padding: '0 16px',
-                borderRadius: '999px',
-                border: '1px solid rgba(82, 183, 136, 0.25)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                color: 'var(--text-color)',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
-                e.currentTarget.style.color = 'var(--primary-color)';
-                e.currentTarget.style.background = 'rgba(82, 183, 136, 0.12)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.25)';
-                e.currentTarget.style.color = 'var(--text-color)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                e.currentTarget.style.transform = 'none';
-              }}
-            >
-              {chip.icon}
-              {chip.name}
-            </button>
-          ))}
+          {TOPIC_CHIPS.map((chip) => {
+            const isHighlighted = chip.id === 'collection' || chip.name === 'New Collection';
+            return (
+              <button
+                key={chip.name}
+                type="button"
+                onClick={() => onStartTopic(chip.id || chip.name)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '40px',
+                  padding: '0 18px',
+                  borderRadius: '999px',
+                  border: isHighlighted ? '1.5px solid var(--primary, #2f6b2f)' : '1px solid var(--border, #979a96)',
+                  background: isHighlighted ? 'var(--tint, #e6ede6)' : 'var(--surface, #ffffff)',
+                  color: isHighlighted ? 'var(--primary, #2f6b2f)' : 'var(--ink, #171f16)',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(23, 31, 22, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary, #2f6b2f)';
+                  e.currentTarget.style.color = 'var(--primary, #2f6b2f)';
+                  e.currentTarget.style.background = 'var(--tint, #e6ede6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = isHighlighted ? 'var(--primary, #2f6b2f)' : 'var(--border, #979a96)';
+                  e.currentTarget.style.color = isHighlighted ? 'var(--primary, #2f6b2f)' : 'var(--ink, #171f16)';
+                  e.currentTarget.style.background = isHighlighted ? 'var(--tint, #e6ede6)' : 'var(--surface, #ffffff)';
+                }}
+              >
+                {chip.icon}
+                {chip.name}
+              </button>
+            );
+          })}
         </div>
 
         {/* Start from image action */}
@@ -8903,19 +8905,19 @@ export function HomeView({
             flexWrap: 'wrap',
             padding: '16px 20px',
             borderRadius: '16px',
-            background: 'rgba(220, 38, 38, 0.12)',
-            border: '1px solid rgba(220, 38, 38, 0.35)',
-            color: '#fca5a5'
+            background: 'var(--dtint, #f8e9e8)',
+            border: '1px solid rgba(180, 35, 24, 0.15)',
+            color: 'var(--danger, #b42318)'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--danger, #b42318)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span style={{ flex: 1, minWidth: '240px', fontSize: '14px', lineHeight: '20px' }}>
-            <strong style={{ fontWeight: 700, color: '#ffffff' }}>Instagram stopped working.</strong>{' '}
-            {upcomingCount > 0 ? `${upcomingCount} scheduled posts won’t go out until you reconnect.` : "Scheduled posts won’t go out until you reconnect."}
+          <span style={{ flex: 1, minWidth: '240px', fontSize: '15px', lineHeight: '22px', color: 'var(--danger, #b42318)' }}>
+            <strong style={{ fontWeight: 800, color: 'var(--danger, #b42318)' }}>Instagram stopped working.</strong>{' '}
+            {upcomingCount > 0 ? `${upcomingCount} posts won’t go out.` : "Scheduled posts won’t go out."}
           </span>
           <button
             type="button"
@@ -8923,25 +8925,28 @@ export function HomeView({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
-              minHeight: '38px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontSize: '13px',
+              minHeight: '44px',
+              padding: '0 24px',
+              borderRadius: '12px',
+              fontSize: '15px',
               fontWeight: 700,
               cursor: 'pointer',
-              background: 'rgba(220, 38, 38, 0.25)',
-              color: '#ffffff',
-              border: '1px solid rgba(220, 38, 38, 0.6)',
+              background: 'var(--surface, #ffffff)',
+              color: 'var(--danger, #b42318)',
+              border: '1.5px solid var(--danger, #b42318)',
+              boxShadow: '0 1px 3px rgba(180, 35, 24, 0.1)',
               transition: 'all 0.15s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.4)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.25)'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#fdecea';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface, #ffffff)';
+            }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4" />
-            </svg>
-            Reconnect Instagram
+            Reconnect
           </button>
         </div>
       )}
