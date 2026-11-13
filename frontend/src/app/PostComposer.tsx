@@ -1,104 +1,1970 @@
 // @ts-nocheck
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+"use client";
 
+import React, { useState, useEffect, useRef, useMemo } from "react";
 
-export const DEFAULT_SHOP = { name: "SriKrish", handle: "srikrish", area: "MG Road, Bengaluru", sells: "sarees and ethnic wear" };
+export const DEFAULT_SHOP = {
+  name: "SriKrish",
+  handle: "srikrish",
+  area: "MG Road, Bengaluru",
+  sells: "sarees and ethnic wear"
+};
 export let SHOP = { ...DEFAULT_SHOP };
-const P={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',hanger:'<path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3"/><path d="M12 8L3 15h18z"/>',star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',gift:'<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8S10 3 7.5 4.5 9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z"/>',lamp:'<path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z"/><path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z"/>',box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',bag:'<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',clapper:'<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5"/>',megaphone:'<path d="M3 10v4h4l8 5V5L7 10z"/><path d="M19 9a4 4 0 0 1 0 6"/>',bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',plus:'<path d="M12 5v14M5 12h14"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',send:'<path d="M4 12h12M11 6l6 6-6 6"/><path d="M20 4v16"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',monitor:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',left:'<path d="M15 18l-6-6 6-6"/>',right:'<path d="M9 6l6 6-6 6"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',play:'<path d="M8 5v14l11-7z"/>',heart:'<path d="M12 20s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z"/>',msg:'<path d="M4 5h16v11H9l-5 4z"/>',share:'<path d="M4 12v7h16v-7M12 3v12M7 8l5-5 5 5"/>',bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5.5 5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',alert:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',square:'<rect x="4" y="4" width="16" height="16" rx="2"/>',film:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 9l4 3-4 3z"/>',layers:'<rect x="7" y="3" width="11" height="18" rx="2"/><path d="M4 6v12M21 6v12"/>',refresh:'<path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/>',wand:'<path d="M4 20L16 8M14 4v2M18 6h2M18 10v2M20 4l-1.5 1.5"/>',hash:'<path d="M5 9h15M4 15h15M10 3L8 21M16 3l-2 18"/>',drafts:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',arrowLeft:'<path d="M19 12H5M11 6l-6 6 6 6"/>'};function Icon({name:e,size:a=20,className:n="",strokeWidth:l=2}){return React.createElement("svg",{width:a,height:a,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:l,strokeLinecap:"round",strokeLinejoin:"round","aria-hidden":"true",className:"flex-none "+n,dangerouslySetInnerHTML:{__html:P[e]}})}const CATEGORIES=[{id:"summer",label:"Summer Sale",icon:"sun",caption:`Beat the heat with our Summer Sale! Up to 30% off cotton sarees and kurtas at ${SHOP.name}. This week only, on MG Road.`,tags:["#SummerSale","#CottonSarees","#ShopLocal","#Bengaluru"]},{id:"collection",label:"New Collection",icon:"hanger",caption:`Our new collection has arrived! Fresh designs in silk and cotton, now at ${SHOP.name}. Come and see them first.`,tags:["#NewCollection","#NewArrivals","#SareeLove","#ShopLocal"]},{id:"spotlight",label:"Customer Spotlight",icon:"star",caption:"Thank you, [customer name], for choosing us for your big day. You looked wonderful! Tag us in your photos to be featured next.",tags:["#CustomerLove","#HappyCustomers","#ShopLocal"]},{id:"festival",label:"Festival Offer",icon:"lamp",caption:`Celebrate the festive season with us! Special prices on silk sarees all week at ${SHOP.name}. Wishing you and your family joy.`,tags:["#FestiveOffer","#FestiveSeason","#SilkSarees","#ShopLocal"]},{id:"showcase",label:"Product Showcase",icon:"bag",caption:`Meet our [product name]: [one line about what makes it special]. Available now at ${SHOP.name} for \u20B9[price].`,tags:["#ProductShowcase","#SilkSaree","#Handloom","#ShopLocal"]},{id:"bts",label:"Behind the Scenes",icon:"clapper",caption:"A peek behind the counter: this is how we fold, pack and check every saree before it reaches you. Small shop, big care.",tags:["#BehindTheScenes","#SmallBusiness","#ShopLocal"]},{id:"promo",label:"Promotions",icon:"megaphone",caption:`Special offer at ${SHOP.name}: [offer details]. Valid till [end date]. Show this post at the counter to claim it.`,tags:["#Offer","#Discount","#ShopLocal","#Bengaluru"]},{id:"info",label:"Knowledge Info",icon:"bulb",caption:"How to tell real silk from synthetic: rub the fabric gently. Real silk warms up and feels soft, never slippery. Ask us in store, we\u2019re happy to show you.",tags:["#SareeTips","#SilkCare","#DidYouKnow","#ShopLocal"]}],FORMATS=[{id:"post",label:"Post",detail:"Square 1:1",icon:"square",ratio:"1 / 1",w:1080,h:1080},{id:"reel",label:"Reel",detail:"Video 9:16",icon:"film",ratio:"9 / 16",w:1080,h:1920},{id:"story",label:"Story / Carousel",detail:"Slides 9:16",icon:"layers",ratio:"9 / 16",w:1080,h:1920}],TONES=[{id:"casual",label:"Casual",instruction:"more casual, warm and friendly, like a shop owner talking to regular customers"},{id:"formal",label:"Formal",instruction:"more formal and polished, without exclamation marks or slang"},{id:"shorten",label:"Shorten",instruction:"shorter: about half the length, keeping the key offer or message"},{id:"elaborate",label:"Elaborate",instruction:"a little longer: add one or two helpful sentences of detail or a clear call to action"}],LIMITS={facebook:{caption:63206,tags:30},instagram:{caption:2200,tags:30}},PNAME={facebook:"Facebook",instagram:"Instagram"},uri=e=>"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(e),svg=(e,a)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="${e}"/>${a}</svg>`,LIBRARY=[{id:"saree",name:"Silk saree",src:uri(svg("#f6e3c9",`<g>${Array.from({length:9},(e,a)=>`<path d="M${230+a*60} 170 L${200+a*68} 760 L${268+a*68} 760 L${290+a*60} 170 Z" fill="${a%2?"#8a1a45":"#a8245a"}"/>`).join("")}</g><path d="M200 760 L812 760 L820 850 L192 850 Z" fill="#e0a526"/><g fill="#8a1a45">${Array.from({length:10},(e,a)=>`<path d="M${230+a*60} 805 c10 -24 30 -24 30 0 c0 14 -16 22 -30 0z"/>`).join("")}</g><rect x="226" y="150" width="548" height="28" rx="6" fill="#e0a526"/><g fill="#f4c96b">${[[330,330],[450,420],[570,300],[650,520],[380,560],[520,640],[700,380]].map(([e,a])=>`<circle cx="${e}" cy="${a}" r="12"/>`).join("")}</g>`))},{id:"sweets",name:"Sweets box",src:uri(svg("#fde6cc",'<rect x="180" y="420" width="640" height="380" rx="24" fill="#c0392b"/><rect x="180" y="420" width="640" height="70" fill="#a03024"/><g fill="#f2b33d"><circle cx="300" cy="380" r="70"/><circle cx="440" cy="360" r="70"/><circle cx="580" cy="370" r="70"/><circle cx="710" cy="385" r="66"/></g><g fill="#fff3d6" opacity=".7"><circle cx="280" cy="360" r="10"/><circle cx="420" cy="340" r="10"/><circle cx="560" cy="350" r="10"/><circle cx="690" cy="365" r="10"/></g><rect x="460" y="420" width="80" height="380" fill="#e8c35a"/>'))},{id:"shop",name:"Shop front",src:uri(svg("#dff1ee",`<rect x="160" y="300" width="680" height="560" fill="#ffffff"/><g>${[0,1,2,3,4,5,6,7].map(e=>`<rect x="${160+e*85}" y="240" width="85" height="120" fill="${e%2?"#ffffff":"#0d6b61"}"/>`).join("")}</g><rect x="420" y="560" width="160" height="300" fill="#0d6b61"/><rect x="200" y="440" width="180" height="180" fill="#f2a516" opacity=".85"/><rect x="620" y="440" width="180" height="180" fill="#f2a516" opacity=".85"/><rect x="120" y="860" width="760" height="20" fill="#16211f"/>`))},{id:"diya",name:"Festival diyas",src:uri(svg("#2b1638",`<g>${[[300,640],[500,600],[700,640]].map(([e,a])=>`<path d="M${e-110} ${a} C${e-90} ${a+110} ${e+90} ${a+110} ${e+110} ${a} Z" fill="#d9822b"/><path d="M${e} ${a-10} C${e-40} ${a-80} ${e-10} ${a-140} ${e} ${a-180} C${e+10} ${a-140} ${e+40} ${a-80} ${e} ${a-10} Z" fill="#ffcf4a"/><circle cx="${e}" cy="${a-60}" r="90" fill="#ffcf4a" opacity=".12"/>`).join("")}</g><g fill="#ffcf4a" opacity=".6"><circle cx="160" cy="220" r="6"/><circle cx="820" cy="180" r="6"/><circle cx="560" cy="160" r="5"/><circle cx="360" cy="260" r="4"/></g>`))},{id:"gift",name:"Gift box",src:uri(svg("#fbe9ef",'<rect x="250" y="420" width="500" height="400" rx="16" fill="#0d6b61"/><rect x="220" y="340" width="560" height="120" rx="16" fill="#12867a"/><rect x="465" y="340" width="70" height="480" fill="#f2a516"/><path d="M500 340 C420 220 300 260 350 330 Z M500 340 C580 220 700 260 650 330 Z" fill="#f2a516"/>'))},{id:"rack",name:"Clothing rack",src:uri(svg("#eef0f7",`<rect x="140" y="200" width="720" height="16" fill="#16211f"/><rect x="150" y="200" width="14" height="680" fill="#16211f"/><rect x="836" y="200" width="14" height="680" fill="#16211f"/>${["#9c1f4f","#e0a526","#0d6b61","#3d5a98","#d9822b"].map((e,a)=>`<path d="M${240+a*120} 216 l-60 80 v420 h120 v-420 z" fill="${e}"/>`).join("")}`))},{id:"sunny",name:"Summer sun",src:uri(svg("#bfe6f4",`<circle cx="500" cy="420" r="190" fill="#f9c23c"/><g stroke="#f9c23c" stroke-width="26" stroke-linecap="round">${Array.from({length:12},(e,a)=>{const n=a*Math.PI/6;return`<line x1="${500+Math.cos(n)*240}" y1="${420+Math.sin(n)*240}" x2="${500+Math.cos(n)*310}" y2="${420+Math.sin(n)*310}"/>`}).join("")}</g><rect x="0" y="780" width="1000" height="220" fill="#f3d9a4"/>`))},{id:"fabrics",name:"Folded fabrics",src:uri(svg("#f4efe6",`${["#0d6b61","#e0a526","#9c1f4f","#3d5a98","#d9822b","#7a4f00"].map((e,a)=>`<rect x="${260+a%2*20}" y="${270+a*80}" width="480" height="70" rx="12" fill="${e}"/>`).join("")}`))}];function fallbackArt(e,a){let n=0;for(const r of e)n=n*31+r.charCodeAt(0)>>>0;const l=[["#0d6b61","#f2a516","#fdf1d8"],["#9c1f4f","#f4c96b","#fbe9ef"],["#3d5a98","#f9c23c","#e6ecf8"],["#7a4f00","#e0a526","#fdf1d8"]][n%4],s=a.w,o=a.h;let m="";for(let r=0;r<9;r++){const p=60+(n>>r)%7*30,u=(n>>r+2)%10*s/10+40,f=(n>>r+4)%14*o/14+60;m+=`<circle cx="${u}" cy="${f}" r="${p}" fill="${r%2?l[0]:l[1]}" opacity="${.35+r%3*.2}"/>`}return uri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${o}"><rect width="${s}" height="${o}" fill="${l[2]}"/>${m}<rect x="${s*.18}" y="${o*.36}" width="${s*.64}" height="${o*.28}" rx="40" fill="${l[0]}"/><circle cx="${s/2}" cy="${o/2}" r="${Math.min(s,o)*.09}" fill="${l[1]}"/></svg>`)}function cleanSvg(e){const a=e.match(/<svg[\s\S]*<\/svg>/i);if(!a)return null;let n=a[0];return n=n.replace(/<script[\s\S]*?<\/script>/gi,"").replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi,"").replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi,"").replace(/<image[\s\S]*?(\/>|<\/image>)/gi,""),/xmlns=/.test(n)||(n=n.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"')),uri(n)}const fmtWhen=e=>e.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})+", "+e.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"}).replace("am","AM").replace("pm","PM"),pad=e=>String(e).padStart(2,"0");function nextSaturday(){const e=new Date;return e.setDate(e.getDate()+((6-e.getDay()+7)%7||7)),e.setHours(18,0,0,0),e}const toDateInput=e=>`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}`,normTag=e=>(e=e.trim().replace(/^#+/,"").replace(/[^\p{L}\p{N}_]/gu,""),e?"#"+e:""),STORE_KEY="digim-composer-draft-v1",DRAFTS_KEY="digim-drafts-v1";function loadDrafts(){try{const e=localStorage.getItem(DRAFTS_KEY);if(e)return JSON.parse(e);const a=localStorage.getItem(STORE_KEY);return a?[{id:newId(),updatedAt:Date.now(),state:JSON.parse(a)}]:[]}catch{return[]}}function storeDrafts(e){try{return localStorage.setItem(DRAFTS_KEY,JSON.stringify(e)),!0}catch{return!1}}const newId=()=>"d"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),stripUploads=e=>{const a=n=>(n||[]).filter(l=>l.source!=="upload");return{...e,master:{...e.master,media:a(e.master.media)},overrides:Object.fromEntries(Object.entries(e.overrides).map(([n,l])=>[n,l.media?{...l,media:a(l.media)}:l]))}},fixCategory=e=>(CATEGORIES.some(a=>a.id===e.category)||(e.category=CATEGORIES[1].id),e),timeAgo=e=>{const a=new Date(e),n=new Date,l=a.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"}).replace("am","AM").replace("pm","PM");if(a.toDateString()===n.toDateString())return"Today, "+l;const s=new Date(n);return s.setDate(n.getDate()-1),a.toDateString()===s.toDateString()?"Yesterday, "+l:a.toLocaleDateString("en-IN",{day:"numeric",month:"short"})+", "+l};
-const initialState = (isBlank = false, categoryId = null, scheduledDate = null) => { const cat = categoryId ? (CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[1]) : CATEGORIES[1]; const a = scheduledDate ? new Date(scheduledDate + "T18:00:00") : nextSaturday(); const dateStr = scheduledDate || toDateInput(a); return { category: cat.id, format: "post", master: { caption: isBlank ? "" : cat.caption, tags: isBlank ? [] : cat.tags.slice(), media: [] }, overrides: { facebook: {}, instagram: {} }, channels: { facebook: true, instagram: true }, audience: "all", ageMin: 20, ageMax: 60, when: "schedule", date: dateStr, time: "18:00" }; };function Btn({kind:e="primary",size:a="md",icon:n,children:l,className:s="",...o}){const m={primary:"bg-primary text-on-primary hover:bg-primary-hover border border-primary hover:border-primary-hover",secondary:"bg-surface text-ink border border-control-border hover:bg-sunken",text:"bg-transparent text-primary border border-transparent hover:bg-primary-tint",danger:"bg-surface text-danger border border-danger hover:bg-danger-tint"}[e],r={lg:"min-h-[52px] px-6",md:"min-h-[44px] px-5",sm:"min-h-[36px] px-3 text-[15px]"}[a];return React.createElement("button",{type:"button",className:`inline-flex items-center justify-center gap-2 rounded-md font-semibold text-base leading-5 whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:bg-sunken disabled:text-ink-muted disabled:border-transparent disabled:cursor-not-allowed ${m} ${r} ${s}`,...o},n&&React.createElement(Icon,{name:n,size:20}),l)}function Chip({selected:e,icon:a,children:n,onClick:l,className:s="",...o}){return React.createElement("button",{type:"button","aria-pressed":o.role?void 0:!!e,onClick:l,className:`inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full border text-[15px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${e?"bg-primary-tint text-primary border-primary":"bg-surface text-ink border-control-border hover:bg-sunken"} ${s}`,...o},a&&React.createElement(Icon,{name:a,size:18}),n)}function Badge({kind:e="neutral",icon:a,children:n}){const l={neutral:"bg-sunken text-ink-muted",ai:"bg-accent text-ink",ok:"bg-primary-tint text-primary",err:"bg-danger-tint text-danger",wait:"bg-accent-tint text-accent-ink"}[e];return React.createElement("span",{className:`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs leading-4 font-semibold ${l}`},a&&React.createElement(Icon,{name:a,size:14}),n)}function Section({id:e,title:a,hint:n,children:l,aside:s}){return React.createElement("section",{id:e,"aria-labelledby":e+"-h",className:"bg-surface border border-hairline rounded-lg p-4 md:p-6 flex flex-col gap-4"},React.createElement("div",{className:"flex items-start justify-between gap-3"},React.createElement("div",{className:"flex flex-col gap-0.5"},React.createElement("h2",{id:e+"-h",className:"font-display text-[21px] leading-7 font-semibold text-ink"},a),n&&React.createElement("p",{className:"text-sm text-ink-muted"},n)),s),l)}function FieldError({children:e}){return React.createElement("p",{className:"flex items-start gap-1.5 text-sm text-danger"},React.createElement(Icon,{name:"alert",size:18}),e)}function Toggle({on:e,onChange:a,label:n,sub:l,icon:s}){return React.createElement("button",{type:"button",role:"switch","aria-checked":e,onClick:()=>a(!e),className:`flex items-center gap-3 min-h-[64px] px-4 rounded-md text-left border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${e?"bg-primary-tint border-primary border-2 px-[15px]":"bg-surface border-control-border"}`},s,React.createElement("span",{className:"flex-1 flex flex-col"},React.createElement("span",{className:"font-semibold text-base"},n),React.createElement("span",{className:"text-sm text-ink-muted"},l)),React.createElement("span",{"aria-hidden":"true",className:`w-11 h-[26px] rounded-full p-[3px] flex ${e?"bg-primary justify-end":"bg-control-border justify-start"}`},React.createElement("span",{className:"w-5 h-5 rounded-full bg-white"})))}function PlatformMark({p:e,size:a=32}){const n=e==="facebook";return React.createElement("span",{"aria-hidden":"true",style:{width:a,height:a,background:n?"#1877f2":"linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)"},className:"rounded-[9px] flex items-center justify-center text-white font-bold flex-none"},n?React.createElement("span",{style:{fontSize:a*.55,lineHeight:1}},"f"):React.createElement("span",{className:"block rounded-[30%] border-2 border-white",style:{width:a*.55,height:a*.55}}))}function MediaField({media:e,format:a,locked:n,onChange:l,onOpen:s,error:o}){const m=FORMATS.find(i=>i.id===a),r=a==="story",p=useRef(null),u=i=>l(r?[...e,i].slice(0,10):[i]),f=i=>{const b=i.target.files&&i.target.files[0];if(!b)return;const g={src:URL.createObjectURL(b),name:b.name,source:"upload",video:b.type.startsWith("video/")};u(g),i.target.value=""};return React.createElement("div",{className:"flex flex-col gap-3"},React.createElement("div",{className:"flex items-center justify-between gap-2"},React.createElement("span",{className:"font-semibold text-base"},r?`Slides (${e.length}/10)`:a==="reel"?"Video or cover image":"Image"),React.createElement("span",{className:"text-sm text-ink-muted"},m.detail)),React.createElement("div",{className:`flex gap-3 ${r?"overflow-x-auto pb-1":""}`},e.map((i,b)=>React.createElement("div",{key:b,className:"relative flex-none rounded-md overflow-hidden bg-sunken border border-hairline",style:{width:r?104:a==="reel"?132:180,aspectRatio:m.ratio}},i.video?React.createElement("video",{src:i.src,muted:!0,playsInline:!0,className:"w-full h-full object-cover"}):React.createElement("img",{src:i.src,alt:i.name,className:"w-full h-full object-cover"}),i.source==="ai"&&React.createElement("span",{className:"absolute top-1.5 left-1.5"},React.createElement(Badge,{kind:"ai",icon:"spark"},"AI")),r&&React.createElement("span",{className:"absolute bottom-1.5 left-1.5 bg-ink/80 text-white text-xs font-semibold rounded-sm px-1.5"},b+1),!n&&React.createElement("button",{type:"button","aria-label":`Remove ${i.name}`,onClick:()=>l(e.filter((g,v)=>v!==b)),className:"absolute top-1.5 right-1.5 w-8 h-8 rounded-full bg-surface/95 text-ink flex items-center justify-center border border-hairline hover:bg-danger-tint hover:text-danger"},React.createElement(Icon,{name:"x",size:16})))),e.length===0&&React.createElement("div",{className:"flex-none rounded-md border-2 border-dashed border-control-border flex flex-col items-center justify-center gap-1 text-ink-muted text-sm text-center p-3",style:{width:a==="post"?180:132,aspectRatio:m.ratio}},React.createElement(Icon,{name:"image",size:28}),"No ",a==="reel"?"video":"image"," yet")),!n&&React.createElement("div",{className:"flex flex-wrap gap-2"},React.createElement(Btn,{kind:"secondary",size:"md",icon:"upload",onClick:()=>p.current&&p.current.click()},"Upload"),React.createElement(Btn,{kind:"secondary",size:"md",icon:"grid",onClick:()=>s("library",u)},"Library"),React.createElement(Btn,{kind:"secondary",size:"md",icon:"spark",onClick:()=>s("ai",u),className:"!text-ink"},React.createElement("span",null,"Generate with AI")),React.createElement("input",{ref:p,type:"file",accept:a==="reel"?"video/*,image/*":"image/*",className:"sr-only",onChange:f,"aria-label":"Upload a file",tabIndex:-1})),o&&React.createElement(FieldError,null,o))}function CaptionField({value:e,locked:a,onChange:n,onTone:l,toneBusy:s,limit:o,total:m,idSuffix:r}){const p=m>o;return React.createElement("div",{className:"flex flex-col gap-2"},React.createElement("label",{htmlFor:"cap-"+r,className:"font-semibold text-base"},"Caption"),React.createElement("textarea",{id:"cap-"+r,value:e,readOnly:a,onChange:u=>n(u.target.value),rows:5,className:`w-full rounded-md border px-3 py-2.5 text-base leading-6 resize-y focus:outline focus:outline-2 focus:outline-primary ${a?"bg-sunken text-ink-muted border-hairline":"bg-surface text-ink border-control-border"}`,placeholder:"Write what you want to tell customers."}),React.createElement("div",{className:"flex flex-wrap items-center justify-between gap-2"},a?React.createElement("span",null):React.createElement("div",{className:"flex flex-wrap items-center gap-2",role:"group","aria-label":"Text tone"},React.createElement("span",{className:"text-sm text-ink-muted mr-1 inline-flex items-center gap-1"},React.createElement(Icon,{name:"wand",size:16}),"Tone"),TONES.map(u=>React.createElement(Chip,{key:u.id,onClick:()=>l(u),disabled:!!s||!e.trim(),className:"disabled:opacity-60 min-h-[36px]"},s===u.id?React.createElement("span",{className:"inline-flex items-center gap-1.5"},React.createElement("span",{className:"w-3.5 h-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin"}),u.label):u.label))),React.createElement("span",{className:`text-sm tabular-nums ${p?"text-danger font-semibold":"text-ink-muted"}`},m.toLocaleString("en-IN")," / ",o.toLocaleString("en-IN"))))}function TagField({tags:e,locked:a,onChange:n,suggestions:l,limit:s,idSuffix:o}){const[m,r]=useState(""),p=f=>{const i=f.split(/[\s,]+/).map(normTag).filter(Boolean),b=[...e];i.forEach(g=>{b.some(v=>v.toLowerCase()===g.toLowerCase())||b.push(g)}),n(b),r("")},u=l.filter(f=>!e.some(i=>i.toLowerCase()===f.toLowerCase()));return React.createElement("div",{className:"flex flex-col gap-2"},React.createElement("div",{className:"flex items-center justify-between"},React.createElement("label",{htmlFor:"tag-"+o,className:"font-semibold text-base"},"Hashtags"),React.createElement("span",{className:`text-sm tabular-nums ${e.length>s?"text-danger font-semibold":"text-ink-muted"}`},e.length," / ",s)),React.createElement("div",{className:`flex flex-wrap gap-2 rounded-md border p-2 ${a?"bg-sunken border-hairline":"bg-surface border-control-border focus-within:outline focus-within:outline-2 focus-within:outline-primary"}`},e.map(f=>React.createElement("span",{key:f,className:"inline-flex items-center gap-1 min-h-[32px] pl-3 pr-1 rounded-full bg-primary-tint text-primary text-[15px] font-semibold"},f,!a&&React.createElement("button",{type:"button","aria-label":`Remove ${f}`,onClick:()=>n(e.filter(i=>i!==f)),className:"w-7 h-7 rounded-full flex items-center justify-center hover:bg-primary hover:text-on-primary"},React.createElement(Icon,{name:"x",size:14})))),!a&&React.createElement("input",{id:"tag-"+o,value:m,onChange:f=>r(f.target.value),onKeyDown:f=>{["Enter",","," "].includes(f.key)?(f.preventDefault(),m.trim()&&p(m)):f.key==="Backspace"&&!m&&e.length&&n(e.slice(0,-1))},onBlur:()=>m.trim()&&p(m),placeholder:e.length?"Add more":"#ShopLocal",className:"flex-1 min-w-[120px] min-h-[32px] bg-transparent text-base outline-none placeholder:text-ink-muted"})),!a&&u.length>0&&React.createElement("div",{className:"flex flex-wrap items-center gap-2"},React.createElement("span",{className:"text-sm text-ink-muted"},"Suggested"),u.map(f=>React.createElement("button",{key:f,type:"button",onClick:()=>p(f),className:"inline-flex items-center gap-1 min-h-[32px] px-2.5 rounded-full border border-dashed border-control-border text-sm font-semibold text-ink hover:bg-sunken"},React.createElement(Icon,{name:"plus",size:14}),f))))}function Inherit({tab:e,field:a,label:n,customized:l,onCustomize:s,onReset:o,children:m}){return e==="all"?React.createElement(React.Fragment,null,m):React.createElement("div",{className:`flex flex-col gap-3 rounded-md p-3 -mx-1 ${l?"bg-accent-tint/60":""}`},React.createElement("div",{className:"flex flex-wrap items-center justify-between gap-2"},l?React.createElement(Badge,{kind:"wait",icon:"check"},"Customized for ",PNAME[e]):React.createElement("span",{className:"text-sm text-ink-muted"},n,": same as All platforms"),l?React.createElement(Btn,{kind:"text",size:"sm",icon:"undo",onClick:o},"Reset to All platforms"):React.createElement(Btn,{kind:"secondary",size:"sm",onClick:s},"Customize for ",PNAME[e])),m)}function CaptionText({caption:e,tags:a,max:n,more:l,dark:s}){const[o,m]=useState(!1),p=(e+(a.length?`
 
-`:"")+a.join(" ")).length>n,u=o||!p?e:e.slice(0,n).trimEnd();return React.createElement("span",{className:"whitespace-pre-line"},u,(o||!p)&&a.length>0&&React.createElement(React.Fragment,null,`
+// SVG icons dictionary
+const ICONS = {
+  home: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 12H5M11 6l-6 6 6 6" />
+    </svg>
+  ),
+  drafts: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 3h9l4 4v14H6z" />
+      <path d="M14 3v5h5M9 13h7M9 17h5" />
+    </svg>
+  ),
+  post: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+    </svg>
+  ),
+  reel: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <path d="M10 9l4 3-4 3z" />
+    </svg>
+  ),
+  story: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="7" y="3" width="11" height="18" rx="2" />
+      <path d="M4 6v12M21 6v12" />
+    </svg>
+  ),
+  postNow: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12h12M11 6l6 6-6 6" />
+      <path d="M20 4v16" />
+    </svg>
+  ),
+  schedule: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  ),
+  check: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  ),
+  image: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#566661" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="M21 16l-5-5-9 9" />
+    </svg>
+  ),
+  spark: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+    </svg>
+  ),
+  upload: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 16V4M7 9l5-5 5 5" />
+      <path d="M4 16v4h16v-4" />
+    </svg>
+  ),
+  grid: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  ),
+  undo: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+    </svg>
+  ),
+  wand: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20L16 8M14 4v2M18 6h2M18 10v2M20 4l-1.5 1.5" />
+    </svg>
+  ),
+  chevronDown: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  ),
+  eye: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  plus: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  x: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  ),
+  trash: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+    </svg>
+  ),
+  hanger: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3" />
+      <path d="M12 8L3 15h18z" />
+    </svg>
+  ),
+  sun: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  ),
+  star: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />
+    </svg>
+  ),
+  lamp: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z" />
+      <path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z" />
+    </svg>
+  ),
+  bag: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 8h14l-1 13H6z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  clapper: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="9" width="18" height="12" rx="2" />
+      <path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5" />
+    </svg>
+  ),
+  megaphone: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10v4h4l8 5V5L7 10z" />
+      <path d="M19 9a4 4 0 0 1 0 6" />
+    </svg>
+  ),
+  bulb: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+    </svg>
+  )
+};
 
-`,React.createElement("span",{className:s?"text-[#b8d8ff]":"text-[#00376b]"},a.join(" "))),p&&!o&&React.createElement(React.Fragment,null,"\u2026 ",React.createElement("button",{type:"button",onClick:()=>m(!0),className:s?"text-white/80 font-semibold":"text-[#65676b] font-semibold"},l)))}function Media({item:e,ratio:a,className:n=""}){return e?e.video?React.createElement("video",{src:e.src,muted:!0,autoPlay:!0,loop:!0,playsInline:!0,className:"w-full object-cover "+n,style:{aspectRatio:a}}):React.createElement("img",{src:e.src,alt:e.name,className:"w-full object-cover "+n,style:{aspectRatio:a}}):React.createElement("div",{className:"bg-[#e4e6eb] flex items-center justify-center text-[#65676b] "+n,style:{aspectRatio:a}},React.createElement(Icon,{name:"image",size:32}))}function Avatar({size:e=32}){return React.createElement("span",{"aria-hidden":"true",className:"rounded-full bg-[#0d6b61] text-white flex items-center justify-center font-bold flex-none",style:{width:e,height:e,fontSize:e*.45}},"L")}function FeedPost({platform:e,content:a,device:n,whenLabel:l}){const s=a.media[0],o=n==="mobile"?e==="instagram"?90:130:e==="instagram"?120:220;return e==="facebook"?React.createElement("article",{className:"bg-white text-[#050505] rounded-lg shadow-[0_1px_2px_rgba(0,0,0,.2)] overflow-hidden font-sans"},React.createElement("header",{className:"flex items-center gap-2 px-3 pt-3"},React.createElement(Avatar,{size:40}),React.createElement("div",{className:"flex-1 leading-tight"},React.createElement("div",{className:"font-semibold text-[15px]"},SHOP.name),React.createElement("div",{className:"text-[13px] text-[#65676b] flex items-center gap-1"},l," ",React.createElement(Icon,{name:"globe",size:12}))),React.createElement(Icon,{name:"more",size:20,className:"text-[#65676b]"})),React.createElement("p",{className:"px-3 py-2 text-[15px] leading-5"},React.createElement(CaptionText,{caption:a.caption,tags:a.tags,max:o,more:"See more"})),React.createElement(Media,{item:s,ratio:"1 / 1"}),React.createElement("footer",{className:"flex justify-around border-t border-[#ced0d4] mx-3 py-1 text-[#65676b] text-[15px] font-semibold"},React.createElement("span",{className:"flex items-center gap-1.5 py-1.5"},React.createElement(Icon,{name:"heart",size:18}),"Like"),React.createElement("span",{className:"flex items-center gap-1.5 py-1.5"},React.createElement(Icon,{name:"msg",size:18}),"Comment"),React.createElement("span",{className:"flex items-center gap-1.5 py-1.5"},React.createElement(Icon,{name:"share",size:18}),"Share"))):React.createElement("article",{className:"bg-white text-[#000] font-sans"},React.createElement("header",{className:"flex items-center gap-2.5 px-3 py-2.5"},React.createElement("span",{className:"p-[2px] rounded-full",style:{background:"linear-gradient(45deg,#f9a03f,#d92e7f,#7b3fe4)"}},React.createElement("span",{className:"block p-[2px] bg-white rounded-full"},React.createElement(Avatar,{size:30}))),React.createElement("span",{className:"flex-1 font-semibold text-sm"},SHOP.handle),React.createElement(Icon,{name:"more",size:20})),React.createElement(Media,{item:s,ratio:"1 / 1"}),React.createElement("div",{className:"flex items-center gap-4 px-3 pt-3"},React.createElement(Icon,{name:"heart",size:24}),React.createElement(Icon,{name:"msg",size:24}),React.createElement(Icon,{name:"send",size:24}),React.createElement("span",{className:"flex-1"}),React.createElement(Icon,{name:"bookmark",size:24})),React.createElement("p",{className:"px-3 pt-2 pb-3 text-sm leading-[18px]"},React.createElement("b",{className:"mr-1"},SHOP.handle),React.createElement(CaptionText,{caption:a.caption,tags:a.tags,max:o,more:"more"})))}function TallPost({platform:e,content:a,format:n}){const[l,s]=useState(0),o=a.media;useEffect(()=>{l>o.length-1&&s(Math.max(0,o.length-1))},[o.length]);const m=o[l],r=n==="story";return React.createElement("article",{className:"relative bg-black text-white rounded-[14px] overflow-hidden font-sans",style:{aspectRatio:"9 / 16"}},m?m.video?React.createElement("video",{src:m.src,muted:!0,autoPlay:!0,loop:!0,playsInline:!0,className:"absolute inset-0 w-full h-full object-cover"}):React.createElement("img",{src:m.src,alt:m.name,className:"absolute inset-0 w-full h-full object-cover"}):React.createElement("div",{className:"absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/70 text-sm"},React.createElement(Icon,{name:r?"layers":"film",size:36}),"Add ",r?"slides":"a video"),React.createElement("div",{className:"absolute inset-0",style:{background:"linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 55%, rgba(0,0,0,.65))"}}),r&&o.length>0&&React.createElement("div",{className:"absolute top-2 inset-x-2 flex gap-1"},o.map((p,u)=>React.createElement("span",{key:u,className:`flex-1 h-[3px] rounded-full ${u<=l?"bg-white":"bg-white/40"}`}))),React.createElement("header",{className:"absolute top-5 inset-x-3 flex items-center gap-2"},React.createElement(Avatar,{size:30}),React.createElement("span",{className:"font-semibold text-sm"},e==="instagram"?SHOP.handle:SHOP.name),React.createElement("span",{className:"text-xs text-white/75"},r?"Story":"Reel"),React.createElement("span",{className:"flex-1"}),React.createElement(Icon,{name:"more",size:20})),!r&&m&&!m.video&&React.createElement("span",{className:"absolute inset-0 flex items-center justify-center pointer-events-none"},React.createElement("span",{className:"w-16 h-16 rounded-full bg-black/40 flex items-center justify-center"},React.createElement(Icon,{name:"play",size:30,className:"fill-white"}))),r&&o.length>1&&React.createElement(React.Fragment,null,React.createElement("button",{type:"button","aria-label":"Previous slide",onClick:()=>s(Math.max(0,l-1)),className:"absolute left-0 top-16 bottom-28 w-1/3"}),React.createElement("button",{type:"button","aria-label":"Next slide",onClick:()=>s(Math.min(o.length-1,l+1)),className:"absolute right-0 top-16 bottom-28 w-1/3"})),!r&&React.createElement("div",{className:"absolute right-2.5 bottom-24 flex flex-col items-center gap-4"},React.createElement(Icon,{name:"heart",size:26}),React.createElement(Icon,{name:"msg",size:26}),React.createElement(Icon,{name:"send",size:26})),React.createElement("div",{className:"absolute bottom-3 left-3 right-14 text-[13px] leading-[18px]"},r?React.createElement("div",{className:"flex items-center gap-2"},React.createElement("span",{className:"flex-1 min-h-[40px] rounded-full border border-white/70 px-4 flex items-center text-white/85"},"Send message"),React.createElement(Icon,{name:"heart",size:24}),React.createElement(Icon,{name:"send",size:24})):React.createElement("p",{className:"line-clamp-3"},React.createElement("b",{className:"mr-1"},e==="instagram"?SHOP.handle:SHOP.name),a.caption," ",React.createElement("span",{className:"text-white/85"},a.tags.join(" ")))))}function Preview({platform:e,setPlatform:a,device:n,content:l,format:s,channels:o,whenLabel:m}){const r=["facebook","instagram"].filter(g=>o[g]),p=r.includes(e)?e:r[0]||e,u=l(p),f=!o[p],i=s!=="post",b=i?React.createElement(TallPost,{platform:p,content:u,format:s,key:p+s}):React.createElement(FeedPost,{platform:p,content:u,device:n,whenLabel:m});return React.createElement("div",{className:"flex flex-col gap-4"},React.createElement("div",{className:"flex flex-wrap items-center justify-between gap-3"},React.createElement("div",{className:"inline-flex p-1 rounded-md bg-sunken",role:"group","aria-label":"Preview platform"},(r.length?r:["facebook","instagram"]).map(g=>React.createElement("button",{key:g,type:"button","aria-pressed":p===g,onClick:()=>a(g),className:`inline-flex items-center gap-2 min-h-[40px] px-3 rounded-[9px] text-[15px] font-semibold ${p===g?"bg-surface text-ink shadow-sm":"text-ink-muted"}`},React.createElement(PlatformMark,{p:g,size:20}),PNAME[g])))),f&&React.createElement("div",{className:"flex items-start gap-2 rounded-md bg-accent-tint text-accent-ink text-sm p-3"},React.createElement(Icon,{name:"info",size:18}),PNAME[p]," is off for this post. This is how it would look."),React.createElement("div",{className:`flex justify-center ${f?"opacity-60":""}`},n==="mobile"?React.createElement("div",{className:"w-[340px] max-w-full rounded-[44px] bg-[#16211f] p-[10px] shadow-[0_8px_24px_rgba(22,33,31,.18)]"},React.createElement("div",{className:"rounded-[34px] overflow-hidden bg-[#f0f2f5] h-[640px] flex flex-col"},React.createElement("div",{className:"h-8 flex-none bg-white flex items-center justify-center"},React.createElement("span",{className:"w-20 h-1.5 rounded-full bg-[#16211f]"})),!i&&React.createElement("div",{className:"h-11 flex-none bg-white border-b border-[#e4e6eb] flex items-center px-4 font-bold text-[17px] text-[#050505]"},p==="facebook"?"Feed":"Home"),React.createElement("div",{className:`flex-1 overflow-y-auto ${i?"bg-black p-0":p==="facebook"?"p-2":"bg-white"}`},b))):React.createElement("div",{className:"w-full max-w-[720px] rounded-lg overflow-hidden border border-hairline shadow-[0_8px_24px_rgba(22,33,31,.12)]"},React.createElement("div",{className:"h-9 bg-[#e9eeec] flex items-center gap-1.5 px-3"},React.createElement("span",{className:"w-2.5 h-2.5 rounded-full bg-[#c4ccc9]"}),React.createElement("span",{className:"w-2.5 h-2.5 rounded-full bg-[#c4ccc9]"}),React.createElement("span",{className:"w-2.5 h-2.5 rounded-full bg-[#c4ccc9]"}),React.createElement("span",{className:"ml-3 flex-1 h-5 rounded bg-white/80"})),React.createElement("div",{className:"bg-[#f0f2f5] flex gap-4 p-4 min-h-[560px] justify-center"},React.createElement("div",{className:"hidden xl:flex flex-col gap-3 w-36 pt-2"},[70,55,80,60].map((g,v)=>React.createElement("span",{key:v,className:"h-3 rounded bg-[#dfe3e2]",style:{width:g+"%"}}))),React.createElement("div",{className:i?"w-[300px]":"w-full max-w-[470px]"},b),React.createElement("div",{className:"hidden xl:flex flex-col gap-3 w-36 pt-2"},[65,85,50].map((g,v)=>React.createElement("span",{key:v,className:"h-3 rounded bg-[#dfe3e2]",style:{width:g+"%"}})))))))}function Dialog({title:e,onClose:a,children:n,footer:l}){const s=useRef(null);return useEffect(()=>{const o=document.activeElement;return s.current&&s.current.focus(),()=>{o&&o.focus&&o.focus()}},[]),React.createElement("div",{className:"fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/50 p-0 sm:p-6",onMouseDown:o=>o.target===o.currentTarget&&a()},React.createElement("div",{ref:s,tabIndex:-1,role:"dialog","aria-modal":"true","aria-label":e,onKeyDown:o=>o.key==="Escape"&&a(),className:"bg-surface w-full sm:max-w-[720px] max-h-[92vh] rounded-t-lg sm:rounded-lg flex flex-col shadow-[0_8px_24px_rgba(22,33,31,.24)] outline-none"},React.createElement("div",{className:"flex items-center justify-between gap-3 px-4 md:px-6 py-3 border-b border-hairline"},React.createElement("h2",{className:"font-display text-[21px] leading-7 font-semibold"},e),React.createElement("button",{type:"button","aria-label":"Close",onClick:a,className:"w-11 h-11 rounded-md flex items-center justify-center hover:bg-sunken"},React.createElement(Icon,{name:"x"}))),React.createElement("div",{className:"flex-1 overflow-y-auto p-4 md:p-6"},n),l&&React.createElement("div",{className:"px-4 md:px-6 py-3 border-t border-hairline flex flex-wrap justify-end gap-3"},l)))}function LibraryDialog({format:e,onPick:a,onClose:n}){const l=FORMATS.find(s=>s.id===e);return React.createElement(Dialog,{title:"Your image library",onClose:n},React.createElement("p",{className:"text-sm text-ink-muted mb-4"},"Shown cropped to ",l.detail,". Tap one to use it."),React.createElement("div",{className:"grid grid-cols-2 sm:grid-cols-4 gap-3"},LIBRARY.map(s=>React.createElement("button",{key:s.id,type:"button",onClick:()=>{a({src:s.src,name:s.name,source:"library"}),n()},className:"group flex flex-col gap-1.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded-md"},React.createElement("img",{src:s.src,alt:"",className:"w-full rounded-md object-cover border border-hairline group-hover:border-primary",style:{aspectRatio:l.ratio}}),React.createElement("span",{className:"text-sm font-semibold"},s.name)))))}const STYLES=["Flat illustration","Bold poster","Soft pastel"];function AIDialog({format:e,setFormat:a,category:n,sample:l,onPick:s,onClose:o}){const m=CATEGORIES.find(x=>x.id===n)||CATEGORIES[1],[r,p]=useState(`${m.label} for a saree shop: rich silk sarees in deep red and gold`),[u,f]=useState(STYLES[0]),[i,b]=useState(!1),[g,v]=useState(null),[S,E]=useState(""),D=useRef(null),$=FORMATS.find(x=>x.id===e),C=async()=>{b(!0),v(null),E(""),D.current&&D.current.abort(),D.current=new AbortController;try{if(!l)throw{code:"unavailable"};const x=`You are an illustrator making artwork for a small Indian shop's social media ${$.label.toLowerCase()}.
-Draw: ${r}
-Style: ${u}. Warm, festive, uncluttered, suitable for ${SHOP.sells}.
-Return ONLY one complete SVG document and nothing else: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${$.w} ${$.h}">\u2026</svg>.
-Rules: fill the whole canvas with a background; use shapes, paths and gradients only; no text, no <image>, no <script>, no <foreignObject>, no external links; under 12000 characters.`,w=await l(x,{modelTier:"default",signal:D.current.signal}),y=cleanSvg(w.text||"");if(!y)throw{code:"bad_output"};v({src:y,name:r.slice(0,40),source:"ai"})}catch(x){if(x&&x.name==="AbortError"){b(!1);return}v({src:fallbackArt(r+u,$),name:r.slice(0,40),source:"ai"}),E(x&&x.code==="not_granted"?"AI access was declined, so this is a sample image.":"AI images aren\u2019t available here, so this is a sample image. In DigiM this calls the image generator.")}b(!1)};return React.createElement(Dialog,{title:"Generate an image with AI",onClose:o,footer:React.createElement(React.Fragment,null,React.createElement(Btn,{kind:"text",onClick:o},"Cancel"),g?React.createElement(React.Fragment,null,React.createElement(Btn,{kind:"secondary",icon:"refresh",onClick:C,disabled:i},"Try again"),React.createElement(Btn,{kind:"primary",icon:"check",onClick:()=>{s(g),o()}},"Use this image")):React.createElement(Btn,{kind:"primary",icon:"spark",onClick:C,disabled:i||!r.trim()},i?"Generating\u2026":"Generate"))},React.createElement("div",{className:"flex flex-col md:flex-row gap-6"},React.createElement("div",{className:"flex-1 flex flex-col gap-4 min-w-0"},React.createElement("div",{className:"flex flex-col gap-2"},React.createElement("span",{className:"font-semibold text-base"},"Content format"),React.createElement("div",{className:"grid grid-cols-3 gap-2",role:"radiogroup","aria-label":"Content format"},FORMATS.map(x=>React.createElement("button",{key:x.id,type:"button",role:"radio","aria-checked":e===x.id,onClick:()=>{a(x.id),v(null)},className:`flex flex-col items-start gap-1 p-2.5 rounded-md border text-left ${e===x.id?"bg-primary-tint border-2 border-primary p-[9px]":"bg-surface border-control-border"}`},React.createElement(Icon,{name:x.icon,size:22,className:"text-primary"}),React.createElement("span",{className:"text-sm font-semibold leading-4"},x.label),React.createElement("span",{className:"text-xs text-ink-muted"},x.detail))))),React.createElement("div",{className:"flex flex-col gap-1"},React.createElement("label",{htmlFor:"ai-prompt",className:"font-semibold text-base"},"Describe the image"),React.createElement("textarea",{id:"ai-prompt",rows:4,value:r,onChange:x=>p(x.target.value),className:"w-full rounded-md border border-control-border bg-surface px-3 py-2.5 text-base leading-6 focus:outline focus:outline-2 focus:outline-primary"}),React.createElement("span",{className:"text-sm text-ink-muted"},"Mention colours, products and the mood you want.")),React.createElement("div",{className:"flex flex-wrap gap-2",role:"group","aria-label":"Style"},STYLES.map(x=>React.createElement(Chip,{key:x,selected:u===x,onClick:()=>f(x)},x)))),React.createElement("div",{className:"md:w-[220px] flex-none flex flex-col gap-2"},React.createElement("span",{className:"font-semibold text-base"},"Result"),React.createElement("div",{className:"rounded-md overflow-hidden border border-hairline bg-sunken flex items-center justify-center text-ink-muted text-sm text-center",style:{aspectRatio:$.ratio,maxHeight:360}},i?React.createElement("div",{className:"w-full h-full animate-pulse bg-accent-tint flex flex-col items-center justify-center gap-2 text-accent-ink"},React.createElement(Icon,{name:"spark",size:28}),"Creating your image"):g?React.createElement("img",{src:g.src,alt:"Generated image",className:"w-full h-full object-cover"}):React.createElement("span",{className:"p-4 flex flex-col items-center gap-2"},React.createElement(Icon,{name:"image",size:28}),"Your image appears here")),S&&React.createElement("p",{className:"text-sm text-ink-muted"},S))))}
-export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSaveSuccess }: any) {
-  if (businessInfo && businessInfo.name) {
-    SHOP.name = businessInfo.name;
-    SHOP.handle = (businessInfo.name || "srikrish").toLowerCase().replace(/[^a-z0-9]/g, '') || "srikrish";
-    if (businessInfo.location) SHOP.area = businessInfo.location;
+export const CATEGORIES = [
+  {
+    id: "collection",
+    label: "New Collection",
+    icon: "hanger",
+    caption: (shop) => "Our new collection has arrived! Fresh designs in silk and cotton, now at " + shop + ". Come and see them first.",
+    tags: ["#NewCollection", "#NewArrivals", "#SareeLove", "#ShopLocal"]
+  },
+  {
+    id: "summer",
+    label: "Summer Sale",
+    icon: "sun",
+    caption: (shop) => "Beat the heat with our Summer Sale! Up to 30% off cotton sarees and kurtas at " + shop + ". This week only, on MG Road.",
+    tags: ["#SummerSale", "#CottonSarees", "#ShopLocal", "#Bengaluru"]
+  },
+  {
+    id: "spotlight",
+    label: "Customer Spotlight",
+    icon: "star",
+    caption: (shop) => "Thank you, Ananya, for choosing " + shop + " for your special day! You looked stunning in our pure Kanjeevaram silk saree. Tag us to get featured!",
+    tags: ["#CustomerLove", "#HappyCustomer", "#EthnicWear", "#ShopLocal"]
+  },
+  {
+    id: "festival",
+    label: "Festival Offer",
+    icon: "lamp",
+    caption: (shop) => "Celebrate the festive season in style! Visit " + shop + " for exclusive festival offers on handloom silk and zari collections.",
+    tags: ["#FestivalVibes", "#FestiveOffer", "#HandloomLove", "#Celebration"]
+  },
+  {
+    id: "showcase",
+    label: "Product Showcase",
+    icon: "bag",
+    caption: (shop) => "Spotlight on our handwoven Banarasi and Kanjeevaram weaves. Intricate craftsmanship passed down through generations, now at " + shop + ".",
+    tags: ["#SilkSarees", "#PureSilk", "#Handcrafted", "#TraditionalWear"]
+  },
+  {
+    id: "bts",
+    label: "Behind the Scenes",
+    icon: "clapper",
+    caption: (shop) => "A sneak peek behind the counter at " + shop + ": inspecting the new handloom arrivals straight from our master weavers.",
+    tags: ["#BehindTheScenes", "#ArtisansOfIndia", "#WeavingStories", "#Handloom"]
+  },
+  {
+    id: "promo",
+    label: "Promotion",
+    icon: "megaphone",
+    caption: (shop) => "Weekend special: Get an exclusive matching blouse piece complimentary with every silk saree purchase at " + shop + ".",
+    tags: ["#SpecialOffer", "#WeekendDeal", "#SareeShopping", "#Offers"]
+  },
+  {
+    id: "info",
+    label: "Knowledge Info",
+    icon: "bulb",
+    caption: (shop) => "Did you know? Pure silk sarees should always be kept in breathable muslin cloth, never in plastic bags. Visit " + shop + " for more silk care tips!",
+    tags: ["#SareeCare", "#SilkCareTips", "#TextileTips", "#ShopLocal"]
+  },
+  {
+    id: "blank",
+    label: "Blank post",
+    icon: "plus",
+    caption: () => "",
+    tags: ["#ShopLocal"]
   }
-  const [e, a] = useState(() => loadDrafts().sort((t, c) => c.updatedAt - t.updatedAt));
-  const [n, l] = useState(() => {
-    if (initParams?.mode === 'draft' && initParams.draft?.id) return String(initParams.draft.id);
-    return newId();
-  });
-  const [s, o] = useState(() => {
-    if (initParams?.mode === 'draft' && initParams.draft) {
-      const st = initParams.draft.state || initParams.draft;
-      return fixCategory({ ...initialState(), ...st });
+];
+
+const SAMPLE_LIBRARY = [
+  { url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80", title: "Silk Saree Elegance" },
+  { url: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80", title: "Handloom Cotton Drape" },
+  { url: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80", title: "Festive Zari Border" },
+  { url: "https://images.unsplash.com/photo-1610030469668-93510cb2866c?auto=format&fit=crop&w=800&q=80", title: "Bridal Red Kanjeevaram" },
+  { url: "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80", title: "Artisan Weave Texture" },
+  { url: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80", title: "Store Collection Display" }
+];
+
+export function PostComposer({ initParams, onNavigateToTab, businessInfo, onSaveSuccess }) {
+  const shopName = businessInfo?.name || SHOP.name || "SriKrish";
+  const shopInitial = shopName.trim().charAt(0).toUpperCase() || "S";
+
+  // Formats: post (1:1), reel (9:16), story (9:16)
+  const [format, setFormat] = useState("post");
+
+  // When: "now" or "schedule"
+  const [when, setWhen] = useState("schedule");
+
+  // Default date: tomorrow
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  };
+
+  const [scheduledDate, setScheduledDate] = useState(getTomorrowStr());
+  const [scheduledTime, setScheduledTime] = useState("18:00");
+
+  // Post to channels
+  const [channels, setChannels] = useState({ facebook: true, instagram: true });
+
+  // Platform tab for editing: "all", "facebook", "instagram"
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Selected Category
+  const [selectedCatId, setSelectedCatId] = useState("collection");
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+
+  // Post content
+  const initialCategory = CATEGORIES.find(c => c.id === "collection") || CATEGORIES[0];
+  const [caption, setCaption] = useState(initialCategory.caption(shopName));
+  const [hashtags, setHashtags] = useState([...initialCategory.tags]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [showAddTag, setShowAddTag] = useState(false);
+
+  // Undo history for post type changes
+  const [undoState, setUndoState] = useState(null);
+  const [showBanner, setShowBanner] = useState(true);
+
+  // Media
+  const [mediaUrl, setMediaUrl] = useState(null);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Drafts drawer & list
+  const [isDraftsOpen, setIsDraftsOpen] = useState(false);
+  const [draftsList, setDraftsList] = useState([]);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+
+  // Saving / Publishing status
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [previewPlatform, setPreviewPlatform] = useState(null); // null, "facebook", "instagram"
+
+  const fileInputRef = useRef(null);
+
+  const getSavedTenantId = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("tenant_id") || "1";
     }
-    if (initParams?.mode === 'type' && initParams.category) {
-      return initialState(false, initParams.category);
+    return "1";
+  };
+
+  // Fetch drafts
+  const fetchDrafts = async () => {
+    try {
+      const res = await fetch("/api/campaign/drafts?tenant_id=" + getSavedTenantId());
+      if (res.ok) {
+        const data = await res.json();
+        setDraftsList(Array.isArray(data) ? data : data.drafts || []);
+      }
+    } catch (e) {
+      console.warn("Could not fetch drafts:", e);
     }
-    if (initParams?.mode === 'calendar_date' && initParams.date) {
-      return initialState(true, null, initParams.date);
-    }
-    return initialState(true);
-  });
-  const [m, r] = useState(false);
-  const [p, u] = useState(() => initParams?.mode !== 'draft');
-  const f = useRef(false);
-  const [i, b] = useState("all");
-  const [g, v] = useState("instagram");
-  const [S, E] = useState("mobile");
-  const [D, $] = useState(() => {
-    if (initParams?.mode === 'draft' && initParams.draft?.updatedAt) return new Date(initParams.draft.updatedAt);
-    return e[0] ? new Date(e[0].updatedAt) : null;
-  });
-  const [C, x] = useState("draft");
-  const [w, y] = useState(null);
-  const [I, V] = useState(null);
-  const [ee, te] = useState(false);
-  const [B, ae] = useState(false);
-  const G = useRef(null);
-  const [de, se] = useState(null);
-  const [_, me] = useState(false);
-  const [H, pe] = useState(null);
-  const W = useRef((CATEGORIES.find(t => t.id === s.category) || CATEGORIES[1]).caption);
-  const fe = useRef(null);
-  const K = useRef(null);
+  };
 
   useEffect(() => {
+    fetchDrafts();
+  }, []);
+
+  // Handle initParams
+  useEffect(() => {
     if (!initParams) return;
-    if (initParams.mode === 'draft' && initParams.draft) {
-      const st = initParams.draft.state || initParams.draft;
-      const loaded = fixCategory({ ...initialState(), ...st });
-      o(loaded);
-      l(String(initParams.draft.id || newId()));
-      u(false);
-      W.current = (CATEGORIES.find(h => h.id === loaded.category) || CATEGORIES[1]).caption;
-      if (initParams.draft.updatedAt) $(new Date(initParams.draft.updatedAt));
-    } else if (initParams.mode === 'type' && initParams.category) {
-      const fresh = initialState(false, initParams.category);
-      o(fresh);
-      l(newId());
-      u(true);
-      W.current = (CATEGORIES.find(h => h.id === fresh.category) || CATEGORIES[1]).caption;
-      $(null);
-    } else if (initParams.mode === 'calendar_date' && initParams.date) {
-      const fresh = initialState(true, null, initParams.date);
-      o(fresh);
-      l(newId());
-      u(true);
-      W.current = "";
-      $(null);
-    } else if (initParams.mode === 'blank') {
-      const fresh = initialState(true);
-      o(fresh);
-      l(newId());
-      u(true);
-      W.current = "";
-      $(null);
+
+    if (initParams.mode === "type" && initParams.category) {
+      const cat = CATEGORIES.find(c => c.id === initParams.category) || CATEGORIES[0];
+      setSelectedCatId(cat.id);
+      setCaption(cat.caption(shopName));
+      setHashtags([...cat.tags]);
+      setShowBanner(true);
+      setUndoState(null);
+    } else if (initParams.mode === "calendar_date" && initParams.date) {
+      setWhen("schedule");
+      setScheduledDate(initParams.date);
+    } else if (initParams.mode === "draft" && initParams.draft) {
+      loadDraftData(initParams.draft);
+    } else if (initParams.mode === "blank") {
+      setSelectedCatId("blank");
+      setCaption("");
+      setHashtags(["#ShopLocal"]);
+      setShowBanner(false);
     }
   }, [initParams]);
-useEffect(()=>{window.claude&&typeof window.claude.use=="function"&&window.claude.use("sample").then(t=>pe(()=>t)).catch(()=>{})},[]);const N=t=>(f.current=!0,o(c=>({...c,...typeof t=="function"?t(c):t}))),Y=(t,c)=>s.overrides[t][c]!==void 0?s.overrides[t][c]:s.master[c],R=t=>({caption:Y(t,"caption"),tags:Y(t,"tags"),media:Y(t,"media")}),j=(t,c,d)=>N(h=>t==="all"?{master:{...h.master,[c]:d}}:{overrides:{...h.overrides,[t]:{...h.overrides[t],[c]:d}}}),Z=(t,c)=>j(t,c,Array.isArray(s.master[c])?s.master[c].slice():s.master[c]),q=(t,c)=>N(d=>{const h={...d.overrides[t]};return delete h[c],{overrides:{...d.overrides,[t]:h}}}),ue=CATEGORIES.find(t=>t.id===s.category)||CATEGORIES[1],je=FORMATS.find(t=>t.id===s.format);useEffect(()=>{if(!f.current||C!=="draft")return;const t=setTimeout(()=>J(),700);return()=>clearTimeout(t)},[s]),useEffect(()=>{if(!w)return;const t=setTimeout(()=>y(null),6e3);return()=>clearTimeout(t)},[w]),useEffect(()=>{i!=="all"&&v(i)},[i]);const he=t=>{const c=s.master.caption.trim()&&s.master.caption!==W.current;N(d=>({category:t.id,master:{...d.master,caption:c?d.master.caption:t.caption,tags:Array.from(new Set([...c?d.master.tags:[],...t.tags]))}})),W.current=t.caption,c&&y({text:`Kept your caption. Tap \u201CUse ${t.label} text\u201D to replace it.`,action:{label:`Use ${t.label} text`,fn:()=>{j("all","caption",t.caption),W.current=t.caption}}})},ne=t=>N(c=>{const d=k=>t==="story"?k:k.slice(0,1),h=Object.fromEntries(Object.entries(c.overrides).map(([k,z])=>[k,z.media?{...z,media:d(z.media)}:z]));return{format:t,master:{...c.master,media:d(c.master.media)},overrides:h}}),xe=async(t,c)=>{const d=t==="all"?s.master.caption:Y(t,"caption");se(c.id);let h=null;try{H&&(h=((await H(`Rewrite this social media caption for ${SHOP.name}, a small shop selling ${SHOP.sells}${t!=="all"?` (for ${PNAME[t]})`:""}.
-Make it ${c.instruction}.
-Keep every fact, price, date, place and the shop name. Keep any [placeholders] exactly. Do not add hashtags or emoji.
-Return only the new caption text.
 
-Caption:
-${d}`,{modelTier:"quick",cache:!1})).text||"").trim().replace(/^["“]|["”]$/g,""))}catch{h=null}h||(h=localTone(d,c.id));const k=d;j(t,"caption",h),se(null),y({text:`Caption made ${c.label.toLowerCase()}${H?"":" (sample rewrite)"}.`,action:{label:"Undo",fn:()=>j(t,"caption",k)}})},M=new Date(`${s.date}T${s.time||"00:00"}`),A=useMemo(()=>{const t={},c=["facebook","instagram"].filter(d=>s.channels[d]);return c.length||(t.channels="Pick at least one place to post."),c.forEach(d=>{const h=R(d);!h.caption.trim()&&!h.media.length&&(t["caption-"+d]=`${PNAME[d]} needs a caption or an image.`),d==="instagram"&&!h.media.length&&(t["media-instagram"]=`Instagram needs ${s.format==="reel"?"a video":"at least one image"}.`),(h.caption+" "+h.tags.join(" ")).length>LIMITS[d].caption&&(t["caption-"+d]=`Too long for ${PNAME[d]}: keep it under ${LIMITS[d].caption.toLocaleString("en-IN")} characters.`),h.tags.length>LIMITS[d].tags&&(t["tags-"+d]=`${PNAME[d]} allows up to ${LIMITS[d].tags} hashtags.`)}),s.when==="schedule"&&(isNaN(M)||M<new Date)&&(t.when="Pick a time in the future."),t},[s]),T=Object.values(A),ie=["facebook","instagram"].filter(t=>s.channels[t]),le=ie.length===2?"Facebook and Instagram":ie.map(t=>PNAME[t]).join("")||"no channels",be=s.when==="now"?"Publish now":`Schedule for ${isNaN(M)?"\u2026":fmtWhen(M)}`,ge=s.when==="now"?"Publish now":isNaN(M)?"Schedule":`Schedule ${M.toLocaleDateString("en-IN",{weekday:"short"})} ${M.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"}).replace("am","AM").replace("pm","PM")}`,re=async()=>{if(T.length){te(!0),y({text:T.length===1?T[0]:`Fix ${T.length} things before posting.`,err:!0});return}fe.current=C;const t=e.find(c=>c.id===n);oe(n),x(s.when==="now"?"published":"scheduled"),y({text:s.when==="now"?`Published to ${le}.`:`Scheduled for ${fmtWhen(M)} on ${le}.`,action:{label:"Undo",fn:()=>{x("draft"),J(s,n)}}});try{const savedTId=typeof window!=="undefined"?(localStorage.getItem("tenant_id")||"1"):"1",curC=i==="all"?s.master:R(i),schedDt=s.when==="schedule"&&s.date&&s.time?`${s.date}T${s.time}`:null,mUrl=curC.media&&curC.media[0]?curC.media[0].src:null;await fetch("/api/campaign/publish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:curC.caption+(curC.tags&&curC.tags.length?"\n\n"+curC.tags.join(" "):""),image_url:mUrl&&mUrl.startsWith("data:")?null:mUrl,publish_to_instagram:s.channels.instagram,tenant_id:parseInt(savedTId,10),scheduled_time:schedDt})}).catch(()=>{});if(onSaveSuccess)onSaveSuccess();}catch(err){console.error(err);}};function J(t=s,c=n){const d={id:c,updatedAt:Date.now(),state:stripUploads(t)};a(h=>{const k=[d,...h.filter(z=>z.id!==c)];return storeDrafts(k),k}),$(new Date)}const oe=t=>a(c=>{const d=c.filter(h=>h.id!==t);return storeDrafts(d),d}),ve=t=>a(c=>{const d=[t,...c.filter(h=>h.id!==t.id)].sort((h,k)=>k.updatedAt-h.updatedAt);return storeDrafts(d),d}),ye=async()=>{f.current=!0,J(),x("draft"),y({text:"Draft saved.",action:{label:"View drafts",fn:()=>r(!0)}});try{const savedTId=typeof window!=="undefined"?(localStorage.getItem("tenant_id")||"1"):"1",curC=s.master,schedDt=s.when==="schedule"&&s.date&&s.time?`${s.date}T${s.time}`:null,mUrl=curC.media&&curC.media[0]?curC.media[0].src:null;await fetch("/api/campaign/draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:curC.caption,category:s.category||"General",generated_text:curC.caption+(curC.tags&&curC.tags.length?"\n\n"+curC.tags.join(" "):""),image_url:mUrl&&mUrl.startsWith("data:")?null:mUrl,scheduled_time:schedDt,tenant_id:parseInt(savedTId,10)})}).catch(()=>{});if(onSaveSuccess)onSaveSuccess();}catch(e){}},Q=(t,c)=>{f.current=!1;const d=fixCategory({...initialState(),...t});o(d),l(c),b("all"),x("draft"),te(!1),W.current=(CATEGORIES.find(h=>h.id===d.category)||CATEGORIES[1]).caption,$(null)},we=()=>{Q(initialState(true),newId()),u(!0),r(!1),y({text:"Started a new post. Your other drafts are in Drafts."})},Ne=t=>{if(t.id===n){r(!1);return}Q(t.state,t.id),u(!1),$(new Date(t.updatedAt)),r(!1),y({text:"Opened your draft."})},ke=t=>{oe(t.id),t.id===n&&Q(initialState(),newId()),y({text:"Draft deleted.",action:{label:"Undo",fn:()=>ve(t)}})},Me=(t,c)=>V({kind:t,add:c}),O=t=>ee?A[t]:null,$e=t=>Object.keys(s.overrides[t]).length>0,U=i,F=i==="all"?s.master:R(i),ce=i==="all"?LIMITS.instagram:LIMITS[i],X=(t,c)=>i==="all"&&["facebook","instagram"].filter(d=>s.overrides[d][t]!==void 0).map(d=>React.createElement("p",{key:d,className:"flex flex-wrap items-center gap-1.5 text-sm text-accent-ink bg-accent-tint rounded-md px-3 py-2"},React.createElement(Icon,{name:"info",size:16}),PNAME[d]," uses its own ",c,".",React.createElement("button",{type:"button",className:"font-semibold underline underline-offset-2",onClick:()=>{b(d),K.current&&K.current.scrollIntoView({block:"nearest"})}},"View"))),Se=C==="scheduled"?React.createElement(Badge,{kind:"ok",icon:"clock"},"Scheduled"):C==="published"?React.createElement(Badge,{kind:"ok",icon:"check"},"Published"):React.createElement(Badge,null,"Draft"),Ce=s.when==="now"?"Just now":isNaN(M)?"Scheduled":fmtWhen(M),L=["facebook","instagram"].some(t=>R(t).media.length>0&&R(t).caption.trim()),ze=()=>{ae(!0),setTimeout(()=>G.current&&G.current.scrollIntoView({behavior:"smooth",block:"start"}),50)},De=React.createElement(Preview,{platform:g,setPlatform:v,device:S,setDevice:E,content:R,format:s.format,channels:s.channels,whenLabel:Ce});return React.createElement("div",{className:"min-h-full bg-canvas text-ink font-sans"},React.createElement("header",{className:"sticky top-[env(safe-area-inset-top,0px)] z-30 bg-surface border-b border-hairline"},React.createElement("div",{className:"max-w-[1440px] mx-auto px-4 lg:px-8 min-h-[64px] flex items-center gap-3"},React.createElement("a",{href:"#",onClick:t=>{t.preventDefault();onNavigateToTab?.("home");},className:"inline-flex items-center gap-1.5 min-h-[44px] pr-2 font-semibold text-ink","aria-label":"Back to Home"},React.createElement(Icon,{name:"arrowLeft"})," ",React.createElement("span",{className:"hidden sm:inline"},"Home")),React.createElement("div",{className:"flex-1 min-w-0 flex items-center gap-3"},React.createElement("h1",{className:"font-display text-2xl leading-[30px] font-bold whitespace-nowrap flex-none"},p?"New post":"Edit draft"),React.createElement("span",{className:"hidden sm:inline-flex"},Se),React.createElement("span",{className:"hidden xl:inline text-sm text-ink-muted truncate"},C!=="draft"?"Moved to Calendar":D?`Saved to Drafts ${D.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"}).replace("am","AM").replace("pm","PM")}`:"Saves to Drafts as you type")),React.createElement("button",{type:"button",onClick:()=>r(!0),"aria-label":`Drafts, ${e.length}`,className:"inline-flex items-center gap-2 min-h-[44px] px-3 rounded-md font-semibold text-ink hover:bg-sunken focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"},React.createElement(Icon,{name:"drafts"}),React.createElement("span",{className:"hidden sm:inline"},"Drafts"),React.createElement("span",{className:"min-w-[22px] h-[22px] px-1.5 rounded-full bg-sunken text-ink-muted text-xs font-semibold flex items-center justify-center"},e.length)),React.createElement(Btn,{kind:"secondary",size:"md",onClick:ye},"Save draft"),React.createElement(Btn,{kind:"primary",size:"md",icon:s.when==="now"?"send":"clock",onClick:re,className:"hidden lg:inline-flex"},be))),React.createElement("main",{className:"max-w-[880px] mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-32 lg:pb-12 flex gap-8 items-start"},React.createElement("div",{className:"flex-1 min-w-0 flex flex-col gap-4"},ee&&T.length>0&&React.createElement("div",{role:"alert",className:"rounded-lg bg-danger-tint text-danger p-4 flex gap-2"},React.createElement(Icon,{name:"alert"}),React.createElement("div",{className:"flex flex-col gap-1"},React.createElement("b",null,"Before you post:"),T.map((t,c)=>React.createElement("span",{key:c,className:"text-[15px]"},t)))),React.createElement(Section,{id:"type",title:"What\u2019s this post about?",hint:"Pick a type and we\u2019ll start the caption and hashtags for you."},React.createElement("div",{className:"flex flex-wrap gap-2",role:"radiogroup","aria-label":"Post type"},CATEGORIES.map(t=>React.createElement(Chip,{key:t.id,role:"radio","aria-checked":s.category===t.id,selected:s.category===t.id,icon:t.icon,onClick:()=>he(t)},t.label))),React.createElement("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-2 pt-4 border-t border-hairline"},React.createElement("span",{id:"fmt-l",className:"font-semibold text-base w-16"},"Format"),React.createElement("div",{className:"inline-flex flex-wrap p-1 rounded-md bg-sunken",role:"radiogroup","aria-labelledby":"fmt-l"},FORMATS.map(t=>React.createElement("button",{key:t.id,type:"button",role:"radio","aria-checked":s.format===t.id,onClick:()=>ne(t.id),className:`inline-flex items-center gap-1.5 min-h-[40px] px-3 rounded-[9px] text-[15px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${s.format===t.id?"bg-surface text-ink shadow-sm":"text-ink-muted hover:text-ink"}`},React.createElement(Icon,{name:t.icon,size:18,className:s.format===t.id?"text-primary":""}),t.id==="story"?React.createElement(React.Fragment,null,React.createElement("span",{className:"sm:hidden"},"Story"),React.createElement("span",{className:"hidden sm:inline"},t.label)):t.label,React.createElement("span",{className:"hidden sm:inline text-xs font-medium text-ink-muted"},t.detail.split(" ").pop())))))),React.createElement("section",{"aria-labelledby":"content-h",className:"bg-surface border border-hairline rounded-lg flex flex-col"},React.createElement("div",{ref:K,className:"sticky top-[calc(64px+env(safe-area-inset-top,0px))] z-20 bg-surface rounded-t-lg border-b border-hairline px-4 md:px-6 pt-4 flex flex-col gap-3"},React.createElement("div",{className:"flex items-center justify-between gap-3"},React.createElement("h2",{id:"content-h",className:"font-display text-[21px] leading-7 font-semibold"},"Content"),React.createElement("span",{className:"text-sm text-ink-muted hidden sm:inline"},"Write once, tweak per platform")),React.createElement("div",{className:"flex gap-1 -mb-px overflow-x-auto",role:"tablist","aria-label":"Edit content for"},[["all","All platforms"],["facebook","Facebook"],["instagram","Instagram"]].map(([t,c])=>React.createElement("button",{key:t,type:"button",role:"tab","aria-selected":i===t,onClick:()=>b(t),className:`inline-flex items-center gap-2 min-h-[44px] px-3 border-b-2 text-[15px] font-semibold whitespace-nowrap ${i===t?"border-primary text-primary":"border-transparent text-ink-muted hover:text-ink"}`},t!=="all"&&React.createElement(PlatformMark,{p:t,size:18}),c,t!=="all"&&$e(t)&&React.createElement("span",{className:"w-2 h-2 rounded-full bg-accent","aria-label":"has custom changes"}),t!=="all"&&!s.channels[t]&&React.createElement("span",{className:"text-xs font-medium text-ink-muted"},"(off)"))))),React.createElement("div",{role:"tabpanel",className:"p-4 md:p-6 flex flex-col gap-6"},i!=="all"&&React.createElement("p",{className:"flex items-start gap-2 text-sm text-ink bg-primary-tint rounded-md px-3 py-2.5"},React.createElement(Icon,{name:"info",size:18,className:"text-primary"}),React.createElement("span",null,"Changes here only affect ",PNAME[i],". Anything you don\u2019t customize stays in sync with All platforms.")),React.createElement(Inherit,{tab:i,label:s.format==="story"?"Slides":"Image",customized:i!=="all"&&s.overrides[i].media!==void 0,onCustomize:()=>Z(i,"media"),onReset:()=>q(i,"media")},React.createElement(MediaField,{media:F.media,format:s.format,locked:i!=="all"&&s.overrides[i].media===void 0,onChange:t=>j(U,"media",t),onOpen:Me,error:O(i==="all"?"media-instagram":"media-"+i)})),X("media",s.format==="story"?"slides":"image"),React.createElement(Inherit,{tab:i,label:"Caption",customized:i!=="all"&&s.overrides[i].caption!==void 0,onCustomize:()=>Z(i,"caption"),onReset:()=>q(i,"caption")},React.createElement(CaptionField,{value:F.caption,idSuffix:i,locked:i!=="all"&&s.overrides[i].caption===void 0,onChange:t=>j(U,"caption",t),onTone:t=>xe(U,t),toneBusy:de,limit:ce.caption,total:(F.caption+" "+F.tags.join(" ")).trim().length}),O(i==="all"?"caption-instagram":"caption-"+i)&&React.createElement(FieldError,null,A[i==="all"?"caption-instagram":"caption-"+i])),X("caption","caption"),React.createElement(Inherit,{tab:i,label:"Hashtags",customized:i!=="all"&&s.overrides[i].tags!==void 0,onCustomize:()=>Z(i,"tags"),onReset:()=>q(i,"tags")},React.createElement(TagField,{tags:F.tags,idSuffix:i,locked:i!=="all"&&s.overrides[i].tags===void 0,onChange:t=>j(U,"tags",t),suggestions:ue.tags.concat(["#ShopLocal","#MGRoad"]),limit:ce.tags}),O("tags-"+(i==="all"?"instagram":i))&&React.createElement(FieldError,null,A["tags-"+(i==="all"?"instagram":i)])),X("tags","hashtags"))),React.createElement("section",{ref:G,"aria-labelledby":"pv-h",className:"bg-surface border border-hairline rounded-lg scroll-mt-[88px]"},React.createElement("button",{type:"button","aria-expanded":L&&B,"aria-controls":"pv-body",disabled:!L,onClick:()=>ae(t=>!t),className:"w-full flex items-center gap-3 p-4 md:px-6 text-left min-h-[72px] rounded-lg disabled:cursor-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"},React.createElement(Icon,{name:"eye",className:L?"text-primary":"text-ink-muted"}),React.createElement("span",{className:"flex-1 flex flex-col"},React.createElement("span",{id:"pv-h",className:`font-display text-[21px] leading-7 font-semibold ${L?"text-ink":"text-ink-muted"}`},"Preview"),React.createElement("span",{className:"text-sm text-ink-muted"},L?B?"How your post will look on Facebook and Instagram.":"See how your post will look before it goes out.":"Add an image and a caption to preview your post.")),L?React.createElement("span",{className:"inline-flex items-center gap-1.5 text-primary font-semibold text-[15px]"},B?"Hide":"Show",React.createElement(Icon,{name:"right",className:`transition-transform ${B?"-rotate-90":"rotate-90"}`})):React.createElement(Badge,null,"Not ready")),L&&B&&React.createElement("div",{id:"pv-body",className:"px-4 md:px-6 pb-6 pt-4 border-t border-hairline"},De)),React.createElement("section",{"aria-label":"Where and when",className:"bg-surface border border-hairline rounded-lg p-4 md:px-6 flex flex-col gap-4"},React.createElement("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-2"},React.createElement("h2",{id:"to-l",className:"font-display text-[21px] leading-7 font-semibold w-24"},"Post to"),React.createElement("div",{className:"flex flex-wrap gap-2",role:"group","aria-labelledby":"to-l"},["facebook","instagram"].map(t=>React.createElement("button",{key:t,type:"button",role:"switch","aria-checked":s.channels[t],onClick:()=>N(c=>({channels:{...c.channels,[t]:!c.channels[t]}})),className:`inline-flex items-center gap-2 min-h-[44px] pl-2 pr-3 rounded-full border text-[15px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${s.channels[t]?"bg-primary-tint border-primary text-ink":"bg-surface border-control-border text-ink-muted"}`},React.createElement("span",{className:s.channels[t]?"":"opacity-50 grayscale"},React.createElement(PlatformMark,{p:t,size:24})),PNAME[t],React.createElement("span",{"aria-hidden":"true",className:`w-5 h-5 rounded-full flex items-center justify-center ${s.channels[t]?"bg-primary text-on-primary":"border-2 border-control-border"}`},s.channels[t]&&React.createElement(Icon,{name:"check",size:12,strokeWidth:3})))))),O("channels")&&React.createElement(FieldError,null,A.channels),React.createElement("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-2 pt-4 border-t border-hairline"},React.createElement("h2",{id:"when-l",className:"font-display text-[21px] leading-7 font-semibold w-24"},"When"),React.createElement("div",{className:"inline-flex p-1 rounded-md bg-sunken",role:"radiogroup","aria-labelledby":"when-l"},[["now","send","Post now"],["schedule","clock","Schedule"]].map(([t,c,d])=>React.createElement("button",{key:t,type:"button",role:"radio","aria-checked":s.when===t,onClick:()=>N({when:t}),className:`inline-flex items-center gap-1.5 min-h-[40px] px-3 rounded-[9px] text-[15px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${s.when===t?"bg-surface text-ink shadow-sm":"text-ink-muted hover:text-ink"}`},React.createElement(Icon,{name:c,size:18,className:s.when===t?"text-primary":""}),d))),s.when==="schedule"&&React.createElement("div",{className:"flex flex-wrap items-center gap-2"},React.createElement("input",{type:"date","aria-label":"Date",value:s.date,onChange:t=>N({date:t.target.value}),className:"min-h-[44px] rounded-md border border-control-border bg-surface px-3 text-base text-ink focus:outline focus:outline-2 focus:outline-primary"}),React.createElement("input",{type:"time","aria-label":"Time",value:s.time,onChange:t=>N({time:t.target.value}),className:"min-h-[44px] rounded-md border border-control-border bg-surface px-3 text-base text-ink focus:outline focus:outline-2 focus:outline-primary"}),React.createElement("span",{className:"text-sm text-ink-muted"},"IST"))),s.when==="schedule"&&O("when")&&React.createElement(FieldError,null,A.when)),React.createElement("section",{"aria-labelledby":"settings-h",className:"bg-surface border border-hairline rounded-lg"},React.createElement("button",{type:"button","aria-expanded":_,"aria-controls":"settings-panel",onClick:()=>me(!_),className:"w-full flex items-center gap-3 p-4 md:px-6 text-left rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"},React.createElement("span",{className:"flex-1 flex flex-col gap-0.5"},React.createElement("span",{id:"settings-h",className:"font-display text-[21px] leading-7 font-semibold"},"Settings"),React.createElement("span",{className:"text-sm text-ink-muted"},"Audience: ",s.audience==="all"?"All":s.audience==="women"?"Women":"Men",", ages ",s.ageMin," to ",s.ageMax===65?"65+":s.ageMax)),React.createElement(Icon,{name:"right",className:`text-ink-muted transition-transform ${_?"rotate-90":""}`})),_&&React.createElement("div",{id:"settings-panel",className:"px-4 md:px-6 pb-4 md:pb-6 pt-1 flex flex-col gap-4 border-t border-hairline"},React.createElement("div",{className:"flex flex-col gap-2 pt-4"},React.createElement("span",{className:"font-semibold text-base"},"Target audience"),React.createElement("div",{className:"flex flex-wrap gap-2",role:"radiogroup","aria-label":"Target audience"},[["all","All"],["women","Women"],["men","Men"]].map(([t,c])=>React.createElement(Chip,{key:t,role:"radio","aria-checked":s.audience===t,selected:s.audience===t,icon:t==="all"?"users":null,onClick:()=>N({audience:t})},c)))),React.createElement(AgeRange,{min:s.ageMin,max:s.ageMax,onChange:(t,c)=>N({ageMin:t,ageMax:c})}),React.createElement("div",{className:"flex flex-wrap items-center justify-between gap-2"},React.createElement("p",{className:"flex items-start gap-1.5 text-sm text-ink-muted"},React.createElement(Icon,{name:"info",size:16}),"Applied where Facebook and Instagram support it for this kind of post."),(s.audience!=="all"||s.ageMin!==20||s.ageMax!==60)&&React.createElement(Btn,{kind:"text",size:"sm",icon:"undo",onClick:()=>N({audience:"all",ageMin:20,ageMax:60})},"Reset to defaults")))))),React.createElement("div",{className:"lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-hairline px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(22,33,31,.08)] flex gap-3"},React.createElement(Btn,{kind:"primary",size:"lg",className:"flex-1 min-w-0",onClick:re},React.createElement("span",{className:"truncate"},ge))),m&&React.createElement(DraftsPanel,{drafts:e,currentId:n,onOpen:Ne,onDelete:ke,onNew:we,onClose:()=>r(!1)}),I&&I.kind==="library"&&React.createElement(LibraryDialog,{format:s.format,onPick:I.add,onClose:()=>V(null)}),I&&I.kind==="ai"&&React.createElement(AIDialog,{format:s.format,setFormat:ne,category:s.category,sample:H,onPick:t=>{I.add(t),y({text:"Image added to your post.",action:{label:"Show preview",fn:ze}})},onClose:()=>V(null)}),w&&React.createElement("div",{role:"status","aria-live":"polite",className:"fixed z-[60] left-4 right-4 sm:left-auto sm:right-6 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] lg:bottom-6 sm:max-w-[460px] flex items-center gap-3 rounded-md bg-[#16211f] text-white px-4 py-3 shadow-[0_8px_24px_rgba(22,33,31,.24)]"},React.createElement(Icon,{name:w.err?"alert":"check",className:w.err?"text-[#f0796b]":"text-[#8fd8cc]"}),React.createElement("span",{className:"flex-1 text-[15px] leading-5"},w.text),w.action&&React.createElement("button",{type:"button",onClick:()=>{w.action.fn(),y(null)},className:"font-semibold text-[#8fd8cc] min-h-[44px] px-2 whitespace-nowrap"},w.action.label),React.createElement("button",{type:"button","aria-label":"Dismiss",onClick:()=>y(null),className:"w-9 h-9 flex items-center justify-center rounded-md hover:bg-white/10"},React.createElement(Icon,{name:"x",size:18}))))}
-function DraftsPanel({drafts:e,currentId:a,onOpen:n,onDelete:l,onNew:s,onClose:o}){const m=useRef(null);return useEffect(()=>{const r=document.activeElement;return m.current&&m.current.focus(),()=>r&&r.focus&&r.focus()},[]),React.createElement("div",{className:"fixed inset-0 z-50 flex justify-end bg-ink/40",onMouseDown:r=>r.target===r.currentTarget&&o()},React.createElement("div",{ref:m,tabIndex:-1,role:"dialog","aria-modal":"true","aria-labelledby":"drafts-h",onKeyDown:r=>r.key==="Escape"&&o(),className:"w-full sm:max-w-[440px] h-full bg-surface flex flex-col shadow-[0_8px_24px_rgba(22,33,31,.24)] outline-none pt-[env(safe-area-inset-top,0px)]"},React.createElement("div",{className:"flex items-center justify-between gap-3 px-4 md:px-6 min-h-[64px] border-b border-hairline"},React.createElement("div",{className:"flex flex-col"},React.createElement("h2",{id:"drafts-h",className:"font-display text-[21px] leading-7 font-semibold"},"Drafts"),React.createElement("span",{className:"text-sm text-ink-muted"},"Posts you haven\u2019t scheduled or published yet")),React.createElement("button",{type:"button","aria-label":"Close drafts",onClick:o,className:"w-11 h-11 rounded-md flex items-center justify-center hover:bg-sunken"},React.createElement(Icon,{name:"x"}))),React.createElement("div",{className:"flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-3"},e.length===0&&React.createElement("div",{className:"flex flex-col items-center text-center gap-2 py-12 text-ink-muted"},React.createElement(Icon,{name:"drafts",size:32}),React.createElement("b",{className:"text-ink text-base"},"No drafts yet"),React.createElement("span",{className:"text-sm max-w-[260px]"},"Posts save here automatically as you write. Scheduled posts move to the Calendar.")),e.map(r=>{const p=r.state||{},u=p.master&&p.master.media&&p.master.media[0]||null,f=CATEGORIES.find(S=>S.id===p.category),i=FORMATS.find(S=>S.id===p.format)||FORMATS[0],b=p.channels||{},g=b.facebook&&b.instagram?"Facebook and Instagram":b.facebook?"Facebook":b.instagram?"Instagram":"No channel",v=r.id===a;return React.createElement("article",{key:r.id,className:`flex gap-3 p-3 rounded-md border ${v?"border-2 border-primary bg-primary-tint p-[11px]":"border-hairline bg-surface"}`},React.createElement("div",{className:"w-16 flex-none rounded-sm overflow-hidden bg-sunken flex items-center justify-center text-ink-muted",style:{aspectRatio:i.ratio,maxHeight:112}},u?React.createElement("img",{src:u.src,alt:"",className:"w-full h-full object-cover"}):React.createElement(Icon,{name:"image"})),React.createElement("div",{className:"flex-1 min-w-0 flex flex-col gap-1"},React.createElement("div",{className:"flex items-center gap-2 flex-wrap"},React.createElement("b",{className:"text-base leading-5"},f?f.label:"Post"),v&&React.createElement(Badge,{kind:"ok"},"Open now")),React.createElement("p",{className:"text-sm text-ink line-clamp-2"},p.master&&p.master.caption||"No caption yet"),React.createElement("p",{className:"text-xs text-ink-muted"},i.label,", ",g,". Edited ",timeAgo(r.updatedAt)),React.createElement("div",{className:"flex gap-2 pt-1"},React.createElement(Btn,{kind:"secondary",size:"sm",onClick:()=>n(r)},v?"Keep editing":"Open"),React.createElement(Btn,{kind:"text",size:"sm",icon:"trash",onClick:()=>l(r),className:"!text-danger hover:!bg-danger-tint","aria-label":`Delete draft: ${f?f.label:"Post"}`},"Delete"))))})),React.createElement("div",{className:"px-4 md:px-6 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] border-t border-hairline"},React.createElement(Btn,{kind:"primary",size:"lg",icon:"plus",className:"w-full",onClick:s},"Start a new post"))))}function AgeRange({min:e,max:a,onChange:n}){const o=m=>(m-13)/52*100;return React.createElement("div",{className:"flex flex-col gap-2"},React.createElement("div",{className:"flex items-center justify-between"},React.createElement("span",{className:"font-semibold text-base",id:"age-l"},"Age"),React.createElement("span",{className:"text-base font-semibold tabular-nums text-primary"},e," to ",a===65?"65+":a)),React.createElement("div",{className:"relative h-11","aria-labelledby":"age-l"},React.createElement("div",{className:"absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 rounded-full bg-sunken"}),React.createElement("div",{className:"absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-primary",style:{left:o(e)+"%",right:100-o(a)+"%"}}),React.createElement("input",{type:"range",min:13,max:65,value:e,"aria-label":"Minimum age",onChange:m=>n(Math.min(+m.target.value,a-1),a),className:"dual absolute inset-0 w-full"}),React.createElement("input",{type:"range",min:13,max:65,value:a,"aria-label":"Maximum age",onChange:m=>n(e,Math.max(+m.target.value,e+1)),className:"dual absolute inset-0 w-full"})),React.createElement("div",{className:"flex justify-between text-sm text-ink-muted"},React.createElement("span",null,"13"),React.createElement("span",null,"65+")))}function localTone(e,a){const n=e.split(/(?<=[.!?])\s+/).filter(Boolean);if(a==="shorten"){let l="";for(const s of n){if((l+" "+s).trim().length>Math.max(60,e.length/2)&&l)break;l=(l+" "+s).trim()}return l}return a==="elaborate"?e.trim()+" Drop by the shop or message us to know more, we\u2019re happy to help you choose.":a==="formal"?e.replace(/!/g,".").replace(/\bwe’re\b/gi,"we are").replace(/\byou’re\b/gi,"you are").replace(/\bdon’t\b/gi,"do not").replace(/^Hey[^.]*\.\s*/i,""):a==="casual"?(/^(Hey|Hi)/.test(e)?"":"Hey there! ")+e.replace(/\bwe are\b/gi,"we\u2019re").replace(/\byou are\b/gi,"you\u2019re"):e}
+  // Handle category switch
+  const handleSelectCategory = (catId) => {
+    const cat = CATEGORIES.find(c => c.id === catId);
+    if (!cat) return;
+
+    // Save undo state
+    setUndoState({
+      catId: selectedCatId,
+      caption: caption,
+      hashtags: [...hashtags]
+    });
+
+    setSelectedCatId(catId);
+    setCaption(cat.caption(shopName));
+    setHashtags([...cat.tags]);
+    setShowBanner(true);
+    setIsCatDropdownOpen(false);
+  };
+
+  const handleUndo = () => {
+    if (!undoState) return;
+    setSelectedCatId(undoState.catId);
+    setCaption(undoState.caption);
+    setHashtags([...undoState.hashtags]);
+    setUndoState(null);
+    setShowBanner(false);
+  };
+
+  // Tone transformations
+  const handleToneChange = (tone) => {
+    if (!caption) return;
+    let newCap = caption;
+    if (tone === "casual") {
+      newCap = caption.replace(/^Our /i, "Hey everyone! Our ")
+        .replace(/Come and see them first\./i, "Drop by and check them out! \ud83d\ude0a")
+        .replace(/Beat the heat/i, "Beat the heat \u2600\ufe0f");
+    } else if (tone === "formal") {
+      newCap = caption.replace(/^Hey everyone! /i, "")
+        .replace(/Drop by and check them out! \ud83d\ude0a/i, "We invite you to visit our store to explore the collection.")
+        .replace(/\ud83d\ude0a|\u2600\ufe0f/g, "");
+    } else if (tone === "shorten") {
+      const sentences = caption.split(/(?<=[.!?])\s+/);
+      newCap = sentences.slice(0, 1).join(" ");
+    } else if (tone === "elaborate") {
+      if (!caption.includes("Visit us on MG Road")) {
+        newCap = caption.trim() + " Visit us on MG Road, Bengaluru or message us directly on WhatsApp to place your orders.";
+      }
+    }
+    setCaption(newCap);
+  };
+
+  // Add / remove hashtags
+  const handleAddHashtag = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!newTagInput.trim()) return;
+    let tag = newTagInput.trim();
+    if (!tag.startsWith("#")) tag = "#" + tag;
+    tag = tag.replace(/\s+/g, "");
+    if (!hashtags.includes(tag)) {
+      setHashtags([...hashtags, tag]);
+    }
+    setNewTagInput("");
+    setShowAddTag(false);
+  };
+
+  const handleRemoveHashtag = (tagToRemove) => {
+    setHashtags(hashtags.filter(t => t !== tagToRemove));
+  };
+
+  // File upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setMediaUrl(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // AI image generation
+  const handleGenerateAI = () => {
+    setIsGeneratingAI(true);
+    setTimeout(() => {
+      const randomImg = SAMPLE_LIBRARY[Math.floor(Math.random() * SAMPLE_LIBRARY.length)].url;
+      setMediaUrl(randomImg);
+      setIsGeneratingAI(false);
+      setStatusMessage({ type: "success", text: "AI generated a fresh showcase image!" });
+      setTimeout(() => setStatusMessage(null), 3000);
+    }, 900);
+  };
+
+  // Save Draft
+  const handleSaveDraft = async () => {
+    try {
+      const tenantId = getSavedTenantId();
+      const payload = {
+        id: currentDraftId,
+        category: selectedCatId,
+        format,
+        caption,
+        hashtags,
+        media_url: mediaUrl,
+        channels,
+        when,
+        scheduled_date: scheduledDate,
+        scheduled_time: scheduledTime
+      };
+
+      const res = await fetch("/api/campaign/draft?tenant_id=" + tenantId, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.id) setCurrentDraftId(result.id);
+        setStatusMessage({ type: "success", text: "Draft saved successfully!" });
+        fetchDrafts();
+        if (onSaveSuccess) onSaveSuccess();
+      } else {
+        setStatusMessage({ type: "success", text: "Draft saved locally." });
+      }
+    } catch (e) {
+      setStatusMessage({ type: "success", text: "Draft saved locally." });
+    }
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  // Load draft
+  const loadDraftData = (draft) => {
+    if (!draft) return;
+    setCurrentDraftId(draft.id || null);
+    if (draft.category) setSelectedCatId(draft.category);
+    if (draft.format) setFormat(draft.format);
+    if (draft.caption !== undefined) setCaption(draft.caption);
+    if (draft.hashtags) setHashtags(Array.isArray(draft.hashtags) ? draft.hashtags : []);
+    if (draft.media_url) setMediaUrl(draft.media_url);
+    if (draft.channels) setChannels(draft.channels);
+    if (draft.when) setWhen(draft.when);
+    if (draft.scheduled_date) setScheduledDate(draft.scheduled_date);
+    if (draft.scheduled_time) setScheduledTime(draft.scheduled_time);
+    setIsDraftsOpen(false);
+    setShowBanner(false);
+  };
+
+  // Schedule or Publish
+  const handlePublish = async () => {
+    if (!channels.facebook && !channels.instagram) {
+      setStatusMessage({ type: "error", text: "Please select at least one platform (Facebook or Instagram)." });
+      setTimeout(() => setStatusMessage(null), 3000);
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const tenantId = getSavedTenantId();
+      const payload = {
+        category: selectedCatId,
+        format,
+        caption,
+        hashtags: hashtags.join(" "),
+        media_url: mediaUrl,
+        platforms: {
+          facebook: !!channels.facebook,
+          instagram: !!channels.instagram
+        },
+        is_scheduled: when === "schedule",
+        scheduled_date: when === "schedule" ? scheduledDate : null,
+        scheduled_time: when === "schedule" ? scheduledTime : null
+      };
+
+      const res = await fetch("/api/campaign/publish?tenant_id=" + tenantId, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setStatusMessage({
+          type: "success",
+          text: when === "schedule" ? "Post scheduled successfully!" : "Post published successfully!"
+        });
+        if (onSaveSuccess) onSaveSuccess();
+        setTimeout(() => {
+          if (onNavigateToTab) onNavigateToTab("calendar");
+        }, 1200);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({
+          type: "error",
+          text: err.detail || "Failed to publish post. Please verify platform connection."
+        });
+        setTimeout(() => setStatusMessage(null), 4000);
+      }
+    } catch (e) {
+      setStatusMessage({ type: "error", text: "Network error occurred." });
+      setTimeout(() => setStatusMessage(null), 4000);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // Formatted date string for preview
+  const formattedScheduledText = useMemo(() => {
+    if (when === "now") return "Just now";
+    try {
+      const parts = scheduledDate.split("-");
+      const year = parts[0];
+      const month = parts[1];
+      const day = parts[2];
+      const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const dayStr = dayNames[d.getDay()];
+      const monthStr = monthNames[d.getMonth()];
+      
+      const tparts = (scheduledTime || "18:00").split(":");
+      const hours = parseInt(tparts[0], 10);
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const formattedH = hours % 12 || 12;
+      return dayStr + " " + day + " " + monthStr + ", " + formattedH + ":" + tparts[1] + " " + ampm;
+    } catch (err) {
+      return scheduledDate + ", " + scheduledTime;
+    }
+  }, [when, scheduledDate, scheduledTime]);
+
+  const activeCat = CATEGORIES.find(c => c.id === selectedCatId) || CATEGORIES[0];
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        boxSizing: "border-box",
+        background: "#f4f6f5",
+        color: "#16211f",
+        fontFamily: "'Mukta', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      {/* Hidden File Input for Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleFileUpload}
+      />
+
+      {/* Toast / Status banner */}
+      {statusMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 99999,
+            padding: "12px 20px",
+            borderRadius: "12px",
+            background: statusMessage.type === "error" ? "#b42318" : "#0d6b61",
+            color: "#ffffff",
+            fontWeight: 600,
+            fontSize: "15px",
+            boxShadow: "0 8px 24px rgba(22, 33, 31, 0.16)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}
+        >
+          {statusMessage.type === "error" ? "⚠️" : "✓"} {statusMessage.text}
+        </div>
+      )}
+
+      {/* Top Bar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          gap: "12px",
+          flexWrap: "wrap",
+          minHeight: "64px",
+          padding: "0 24px",
+          background: "#ffffff",
+          borderBottom: "1px solid #d6dedb"
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => onNavigateToTab && onNavigateToTab("home")}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            minHeight: "44px",
+            fontWeight: 600,
+            color: "#16211f",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "16px"
+          }}
+        >
+          {ICONS.home} Home
+        </button>
+
+        <h1
+          style={{
+            margin: "0 0 0 8px",
+            fontFamily: "'Baloo 2', 'Mukta', sans-serif",
+            fontSize: "24px",
+            lineHeight: "30px",
+            fontWeight: 700
+          }}
+        >
+          New post
+        </h1>
+
+        <span style={{ flex: 1 }} />
+
+        {/* Drafts button */}
+        <button
+          type="button"
+          onClick={() => setIsDraftsOpen(true)}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            minHeight: "44px",
+            padding: "0 12px",
+            fontWeight: 600,
+            color: "#16211f",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "15px"
+          }}
+        >
+          {ICONS.drafts} Drafts{" "}
+          <span
+            style={{
+              minWidth: "22px",
+              height: "22px",
+              padding: "0 6px",
+              boxSizing: "border-box",
+              borderRadius: "999px",
+              background: "#e9eeec",
+              color: "#566661",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            {draftsList.length}
+          </span>
+        </button>
+
+        {/* Save Draft */}
+        <button
+          type="button"
+          onClick={handleSaveDraft}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            minHeight: "44px",
+            padding: "0 20px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: 600,
+            boxSizing: "border-box",
+            cursor: "pointer",
+            background: "#ffffff",
+            color: "#16211f",
+            border: "1px solid #7a8b86"
+          }}
+        >
+          Save draft
+        </button>
+      </div>
+
+      {/* Main 2-Column Layout */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "32px",
+          padding: "32px 24px",
+          justifyContent: "center",
+          alignItems: "flex-start"
+        }}
+      >
+        {/* Left Column: Set up Panel (340px) */}
+        <div style={{ flex: "0 1 340px", minWidth: "280px" }}>
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #d6dedb",
+              borderRadius: "16px",
+              padding: "20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontFamily: "'Baloo 2', 'Mukta', sans-serif",
+                fontSize: "21px",
+                lineHeight: "28px",
+                fontWeight: 600
+              }}
+            >
+              Set up
+            </h2>
+
+            {/* Format: Post, Reel, Story */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Format</span>
+              <div
+                role="radiogroup"
+                style={{
+                  display: "inline-flex",
+                  flexWrap: "wrap",
+                  padding: "4px",
+                  borderRadius: "12px",
+                  background: "#e9eeec"
+                }}
+              >
+                {[
+                  { id: "post", label: "Post", icon: ICONS.post },
+                  { id: "reel", label: "Reel", icon: ICONS.reel },
+                  { id: "story", label: "Story", icon: ICONS.story }
+                ].map((fmt) => {
+                  const isChecked = format === fmt.id;
+                  return (
+                    <button
+                      key={fmt.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isChecked}
+                      onClick={() => setFormat(fmt.id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        minHeight: "40px",
+                        padding: "0 12px",
+                        borderRadius: "9px",
+                        border: "none",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        background: isChecked ? "#ffffff" : "transparent",
+                        color: isChecked ? "#16211f" : "#566661",
+                        boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
+                      }}
+                    >
+                      <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{fmt.icon}</span>
+                      {fmt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* When: Post now vs Schedule */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "16px", borderTop: "1px solid #d6dedb" }}>
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>When</span>
+              <div
+                role="radiogroup"
+                style={{
+                  display: "inline-flex",
+                  flexWrap: "wrap",
+                  padding: "4px",
+                  borderRadius: "12px",
+                  background: "#e9eeec"
+                }}
+              >
+                {[
+                  { id: "now", label: "Post now", icon: ICONS.postNow },
+                  { id: "schedule", label: "Schedule", icon: ICONS.schedule }
+                ].map((w) => {
+                  const isChecked = when === w.id;
+                  return (
+                    <button
+                      key={w.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isChecked}
+                      onClick={() => setWhen(w.id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        minHeight: "40px",
+                        padding: "0 12px",
+                        borderRadius: "9px",
+                        border: "none",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        background: isChecked ? "#ffffff" : "transparent",
+                        color: isChecked ? "#16211f" : "#566661",
+                        boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
+                      }}
+                    >
+                      <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{w.icon}</span>
+                      {w.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Date & Time pickers (only if schedule) */}
+              {when === "schedule" && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                  <input
+                    type="date"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      minHeight: "44px",
+                      padding: "0 12px",
+                      border: "1px solid #7a8b86",
+                      borderRadius: "12px",
+                      background: "#ffffff",
+                      fontSize: "15px",
+                      boxSizing: "border-box",
+                      minWidth: "140px",
+                      color: "#16211f"
+                    }}
+                  />
+                  <input
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      minHeight: "44px",
+                      padding: "0 12px",
+                      border: "1px solid #7a8b86",
+                      borderRadius: "12px",
+                      background: "#ffffff",
+                      fontSize: "15px",
+                      boxSizing: "border-box",
+                      minWidth: "100px",
+                      color: "#16211f"
+                    }}
+                  />
+                  <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>IST</p>
+                </div>
+              )}
+            </div>
+
+            {/* Post to: Facebook & Instagram */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "16px", borderTop: "1px solid #d6dedb" }}>
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Post to</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px" }}>
+                {/* Facebook switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={channels.facebook}
+                  onClick={() => setChannels({ ...channels, facebook: !channels.facebook })}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    minHeight: "36px",
+                    padding: "0 10px 0 6px",
+                    borderRadius: "999px",
+                    border: channels.facebook ? "1px solid #0d6b61" : "1px solid #d6dedb",
+                    background: channels.facebook ? "#e2f0ed" : "#ffffff",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: channels.facebook ? "#16211f" : "#566661",
+                    cursor: "pointer"
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      flex: "none",
+                      borderRadius: "10px",
+                      background: "#1877f2",
+                      color: "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: "11px"
+                    }}
+                  >
+                    f
+                  </span>
+                  Facebook
+                  {channels.facebook && (
+                    <span style={{ color: "#0d6b61" }}>{ICONS.check}</span>
+                  )}
+                </button>
+
+                {/* Instagram switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={channels.instagram}
+                  onClick={() => setChannels({ ...channels, instagram: !channels.instagram })}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    minHeight: "36px",
+                    padding: "0 10px 0 6px",
+                    borderRadius: "999px",
+                    border: channels.instagram ? "1px solid #0d6b61" : "1px solid #d6dedb",
+                    background: channels.instagram ? "#e2f0ed" : "#ffffff",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: channels.instagram ? "#16211f" : "#566661",
+                    cursor: "pointer"
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      flex: "none",
+                      borderRadius: "10px",
+                      background: "linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <span style={{ width: "10px", height: "10px", border: "2px solid #ffffff", borderRadius: "30%" }} />
+                  </span>
+                  Instagram
+                  {channels.instagram && (
+                    <span style={{ color: "#0d6b61" }}>{ICONS.check}</span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Primary Action Button */}
+            <button
+              type="button"
+              disabled={isPublishing}
+              onClick={handlePublish}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                minHeight: "52px",
+                padding: "0 20px",
+                borderRadius: "12px",
+                fontSize: "16px",
+                fontWeight: 600,
+                boxSizing: "border-box",
+                cursor: isPublishing ? "not-allowed" : "pointer",
+                width: "100%",
+                background: "#0d6b61",
+                color: "#ffffff",
+                border: "1px solid #0d6b61",
+                opacity: isPublishing ? 0.7 : 1,
+                marginTop: "8px"
+              }}
+            >
+              {when === "schedule" ? ICONS.schedule : ICONS.postNow}
+              {isPublishing
+                ? "Processing..."
+                : when === "schedule"
+                ? "Schedule post"
+                : "Publish now"}
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column: Post Editor & Preview (820px) */}
+        <main style={{ flex: "0 1 820px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Platform Switcher Tabs */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "4px", borderBottom: "1px solid #d6dedb" }}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "all"}
+              onClick={() => setActiveTab("all")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                minHeight: "44px",
+                padding: "0 12px",
+                border: "none",
+                borderBottom: activeTab === "all" ? "2px solid #0d6b61" : "2px solid transparent",
+                background: "transparent",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: activeTab === "all" ? "#0d6b61" : "#566661",
+                cursor: "pointer"
+              }}
+            >
+              All platforms
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "facebook"}
+              onClick={() => setActiveTab("facebook")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                minHeight: "44px",
+                padding: "0 12px",
+                border: "none",
+                borderBottom: activeTab === "facebook" ? "2px solid #0d6b61" : "2px solid transparent",
+                background: "transparent",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: activeTab === "facebook" ? "#0d6b61" : "#566661",
+                cursor: "pointer"
+              }}
+            >
+              <span
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  flex: "none",
+                  borderRadius: "10px",
+                  background: "#1877f2",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "9px"
+                }}
+              >
+                f
+              </span>
+              Facebook
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "instagram"}
+              onClick={() => setActiveTab("instagram")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                minHeight: "44px",
+                padding: "0 12px",
+                border: "none",
+                borderBottom: activeTab === "instagram" ? "2px solid #0d6b61" : "2px solid transparent",
+                background: "transparent",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: activeTab === "instagram" ? "#0d6b61" : "#566661",
+                cursor: "pointer"
+              }}
+            >
+              <span
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  flex: "none",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <span style={{ width: "9px", height: "9px", border: "2px solid #ffffff", borderRadius: "30%" }} />
+              </span>
+              Instagram
+            </button>
+          </div>
+
+          <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>
+            Edits here go to every platform. Pick Facebook or Instagram to change just that one.
+          </p>
+
+          {/* The Post Editor Card (The post IS the editor) */}
+          <article
+            style={{
+              width: "100%",
+              background: "#ffffff",
+              border: "1px solid #d6dedb",
+              borderRadius: "16px",
+              padding: "20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              boxSizing: "border-box"
+            }}
+          >
+            {/* Header: Avatar, Name, Scheduled Time */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "10px" }}>
+              <span
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "#0d6b61",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "16px"
+                }}
+              >
+                {shopInitial}
+              </span>
+              <span style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <b style={{ fontSize: "16px", color: "#16211f" }}>{shopName}</b>
+                <span style={{ fontSize: "13px", color: "#566661" }}>{formattedScheduledText}</span>
+              </span>
+            </div>
+
+            {/* Media Box & Caption Area */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
+              {/* Media Container (300px min 240px) */}
+              <div style={{ flex: "0 1 300px", minWidth: "240px" }}>
+                {mediaUrl ? (
+                  <div
+                    style={{
+                      position: "relative",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      border: "1px solid #d6dedb",
+                      aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
+                      background: "#16211f",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <img
+                      src={mediaUrl}
+                      alt="Post visual"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    {/* Change / Remove overlay */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "8px",
+                        left: "8px",
+                        right: "8px",
+                        display: "flex",
+                        gap: "6px"
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        style={{
+                          flex: 1,
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          background: "rgba(22, 33, 31, 0.75)",
+                          color: "#ffffff",
+                          border: "none",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMediaUrl(null)}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          background: "rgba(180, 35, 24, 0.8)",
+                          color: "#ffffff",
+                          border: "none",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    role="group"
+                    aria-label="No image yet"
+                    style={{
+                      borderRadius: "12px",
+                      border: "2px dashed #7a8b86",
+                      background: "#f4f6f5",
+                      aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                      padding: "16px",
+                      boxSizing: "border-box",
+                      textAlign: "center"
+                    }}
+                  >
+                    {ICONS.image}
+                    <b style={{ fontSize: "15px", color: "#16211f" }}>Add your image</b>
+                    <span style={{ fontSize: "13px", color: "#566661", maxWidth: "260px" }}>
+                      The image is what people notice first.
+                    </span>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", marginTop: "4px" }}>
+                      {/* Generate with AI button */}
+                      <button
+                        type="button"
+                        disabled={isGeneratingAI}
+                        onClick={handleGenerateAI}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          minHeight: "44px",
+                          padding: "0 20px",
+                          borderRadius: "12px",
+                          fontSize: "15px",
+                          fontWeight: 600,
+                          boxSizing: "border-box",
+                          cursor: isGeneratingAI ? "wait" : "pointer",
+                          width: "100%",
+                          background: "#ffffff",
+                          color: "#16211f",
+                          border: "1px solid #7a8b86"
+                        }}
+                      >
+                        <span style={{ color: "#0d6b61" }}>{ICONS.spark}</span>
+                        {isGeneratingAI ? "Generating..." : "Generate with AI"}
+                      </button>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                        {/* Upload button */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minHeight: "44px",
+                            padding: "0 8px",
+                            borderRadius: "12px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            boxSizing: "border-box",
+                            cursor: "pointer",
+                            width: "100%",
+                            background: "#ffffff",
+                            color: "#16211f",
+                            border: "1px solid #7a8b86"
+                          }}
+                        >
+                          {ICONS.upload} Upload
+                        </button>
+
+                        {/* Library button */}
+                        <button
+                          type="button"
+                          onClick={() => setIsLibraryOpen(true)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minHeight: "44px",
+                            padding: "0 8px",
+                            borderRadius: "12px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            boxSizing: "border-box",
+                            cursor: "pointer",
+                            width: "100%",
+                            background: "#ffffff",
+                            color: "#16211f",
+                            border: "1px solid #7a8b86"
+                          }}
+                        >
+                          {ICONS.grid} Library
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side of Editor: Post type, Caption, Tones, Hashtags */}
+              <div style={{ flex: "1 1 340px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* Post Type Selector */}
+                <div style={{ position: "relative" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661", display: "block", marginBottom: "4px" }}>
+                    Post type
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      minHeight: "44px",
+                      padding: "0 14px",
+                      borderRadius: "12px",
+                      border: "1px solid #7a8b86",
+                      background: "#ffffff",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#16211f",
+                      cursor: "pointer",
+                      width: "100%",
+                      textAlign: "left"
+                    }}
+                  >
+                    <span style={{ color: "#0d6b61" }}>{ICONS[activeCat.icon] || ICONS.hanger}</span>
+                    <span style={{ flex: 1 }}>{activeCat.label}</span>
+                    <span style={{ color: "#566661" }}>{ICONS.chevronDown}</span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isCatDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        zIndex: 100,
+                        marginTop: "4px",
+                        background: "#ffffff",
+                        border: "1px solid #d6dedb",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 24px rgba(22, 33, 31, 0.12)",
+                        maxHeight: "280px",
+                        overflowY: "auto",
+                        padding: "6px"
+                      }}
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => handleSelectCategory(cat.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            width: "100%",
+                            padding: "10px 12px",
+                            border: "none",
+                            borderRadius: "8px",
+                            background: selectedCatId === cat.id ? "#e2f0ed" : "transparent",
+                            color: selectedCatId === cat.id ? "#0d6b61" : "#16211f",
+                            fontWeight: selectedCatId === cat.id ? 700 : 500,
+                            fontSize: "14px",
+                            textAlign: "left",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <span style={{ color: selectedCatId === cat.id ? "#0d6b61" : "#566661" }}>
+                            {ICONS[cat.icon] || ICONS.hanger}
+                          </span>
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Banner: Caption and hashtags updated */}
+                {showBanner && selectedCatId !== "blank" && (
+                  <div
+                    role="status"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      padding: "8px 12px",
+                      borderRadius: "12px",
+                      background: "#fdf1d8",
+                      color: "#7a4f00",
+                      fontSize: "14px",
+                      lineHeight: "20px"
+                    }}
+                  >
+                    <span style={{ color: "#7a4f00" }}>{ICONS.spark}</span>
+                    <span style={{ flex: 1, minWidth: "180px" }}>
+                      Caption and hashtags updated for <b>{activeCat.label}</b>.
+                    </span>
+                    {undoState && (
+                      <button
+                        type="button"
+                        onClick={handleUndo}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontWeight: 600,
+                          color: "#7a4f00",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        {ICONS.undo} Undo
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Caption Textarea (The Post Caption itself) */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <textarea
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    placeholder="Write your post caption..."
+                    rows={4}
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      fontFamily: "'Mukta', sans-serif",
+                      fontSize: "17px",
+                      lineHeight: "26px",
+                      padding: "10px 12px",
+                      borderRadius: "12px",
+                      border: "1px solid #d6dedb",
+                      outline: "none",
+                      color: "#16211f",
+                      resize: "vertical",
+                      background: "#ffffff"
+                    }}
+                    onFocus={(e) => { e.target.style.outline = "2px solid #0d6b61"; }}
+                    onBlur={(e) => { e.target.style.outline = "none"; }}
+                  />
+
+                  {/* AI Tone Tools */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#566661" }}>
+                      {ICONS.wand} Tone
+                    </span>
+                    {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleToneChange(t.toLowerCase())}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          minHeight: "34px",
+                          padding: "0 12px",
+                          borderRadius: "999px",
+                          border: "1px solid #7a8b86",
+                          background: "#ffffff",
+                          color: "#16211f",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hashtags */}
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                  {hashtags.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        color: "#0d6b61",
+                        fontWeight: 600,
+                        fontSize: "15px",
+                        background: "#e2f0ed",
+                        padding: "2px 8px",
+                        borderRadius: "6px"
+                      }}
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveHashtag(tag)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#566661",
+                          fontSize: "14px",
+                          padding: "0 2px"
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+
+                  {showAddTag ? (
+                    <form onSubmit={handleAddHashtag} style={{ display: "inline-flex", gap: "4px" }}>
+                      <input
+                        type="text"
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        placeholder="#tag"
+                        autoFocus
+                        style={{
+                          width: "90px",
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          border: "1px solid #0d6b61",
+                          fontSize: "14px"
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          background: "#0d6b61",
+                          color: "#ffffff",
+                          border: "none",
+                          fontSize: "12px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Add
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddTag(true)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "2px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0d6b61",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {ICONS.plus} Add
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer row: Character count & Platform preview switch */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+                flexWrap: "wrap",
+                paddingTop: "12px",
+                borderTop: "1px solid #d6dedb"
+              }}
+            >
+              <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>
+                {caption.length} / 2,200 characters
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setPreviewPlatform(previewPlatform ? null : "facebook")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#0d6b61",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer"
+                }}
+              >
+                {ICONS.eye} {previewPlatform ? "Hide live preview" : "See it on Facebook or Instagram"}
+              </button>
+            </div>
+
+            {/* Expanded realistic social preview */}
+            {previewPlatform && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "16px",
+                  background: "#f4f6f5",
+                  borderRadius: "12px",
+                  border: "1px solid #d6dedb"
+                }}
+              >
+                <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPlatform("facebook")}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: previewPlatform === "facebook" ? "#1877f2" : "#ffffff",
+                      color: previewPlatform === "facebook" ? "#ffffff" : "#16211f",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Facebook Feed View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPlatform("instagram")}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: previewPlatform === "instagram" ? "linear-gradient(135deg,#f9a03f,#d92e7f)" : "#ffffff",
+                      color: previewPlatform === "instagram" ? "#ffffff" : "#16211f",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Instagram Feed View
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    maxWidth: "440px",
+                    margin: "0 auto",
+                    background: "#ffffff",
+                    borderRadius: "8px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    overflow: "hidden"
+                  }}
+                >
+                  <div style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: "#0d6b61",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700
+                      }}
+                    >
+                      {shopInitial}
+                    </div>
+                    <div>
+                      <b style={{ fontSize: "14px", display: "block" }}>{shopName}</b>
+                      <span style={{ fontSize: "12px", color: "#666" }}>{formattedScheduledText}</span>
+                    </div>
+                  </div>
+                  {mediaUrl && (
+                    <img
+                      src={mediaUrl}
+                      alt="preview"
+                      style={{ width: "100%", maxHeight: "360px", objectFit: "cover" }}
+                    />
+                  )}
+                  <div style={{ padding: "12px" }}>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "14px", lineHeight: "20px" }}>{caption}</p>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#0d6b61" }}>{hashtags.join(" ")}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </article>
+        </main>
+      </div>
+
+      {/* Library Modal */}
+      {isLibraryOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100000,
+            background: "rgba(22, 33, 31, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "600px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 12px 36px rgba(0,0,0,0.2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>Choose from Image Library</h3>
+              <button
+                type="button"
+                onClick={() => setIsLibraryOpen(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#566661" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+              {SAMPLE_LIBRARY.map((item, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setMediaUrl(item.url);
+                    setIsLibraryOpen(false);
+                  }}
+                  style={{
+                    position: "relative",
+                    aspectRatio: "1 / 1",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    border: "2px solid transparent",
+                    padding: 0,
+                    cursor: "pointer",
+                    background: "#f4f6f5"
+                  }}
+                >
+                  <img src={item.url} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drafts Drawer */}
+      {isDraftsOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100000,
+            background: "rgba(22, 33, 31, 0.4)",
+            display: "flex",
+            justifyContent: "flex-end"
+          }}
+          onClick={() => setIsDraftsOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              height: "100%",
+              background: "#ffffff",
+              boxShadow: "-8px 0 24px rgba(0,0,0,0.15)",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "20px 24px",
+                borderBottom: "1px solid #d6dedb"
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>Drafts</h3>
+                <span style={{ fontSize: "13px", color: "#566661" }}>
+                  Posts you haven't scheduled or published yet
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDraftsOpen(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#566661" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+
+            {/* Drafts list */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {draftsList.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "#566661" }}>
+                  <p style={{ fontWeight: 600, fontSize: "16px", color: "#16211f" }}>No drafts saved yet</p>
+                  <p style={{ fontSize: "14px" }}>Hit "Save draft" anytime while composing to store your progress.</p>
+                </div>
+              ) : (
+                draftsList.map((d, i) => (
+                  <div
+                    key={d.id || i}
+                    style={{
+                      padding: "14px",
+                      borderRadius: "12px",
+                      border: "1px solid #d6dedb",
+                      background: "#f4f6f5",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <b style={{ fontSize: "15px" }}>{d.category || "Post draft"}</b>
+                      <span style={{ fontSize: "12px", color: "#566661" }}>
+                        {d.format || "post"} • {d.updated_at || "Recent"}
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: "14px", color: "#16211f", maxHeight: "40px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {d.caption || "No caption"}
+                    </p>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                      <button
+                        type="button"
+                        onClick={() => loadDraftData(d)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          background: "#0d6b61",
+                          color: "#ffffff",
+                          border: "none",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Keep editing
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Bottom button */}
+            <div style={{ padding: "16px 20px", borderTop: "1px solid #d6dedb" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCatId("blank");
+                  setCaption("");
+                  setHashtags(["#ShopLocal"]);
+                  setMediaUrl(null);
+                  setCurrentDraftId(null);
+                  setIsDraftsOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  minHeight: "44px",
+                  borderRadius: "12px",
+                  background: "#0d6b61",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  cursor: "pointer"
+                }}
+              >
+                + Start a new post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
