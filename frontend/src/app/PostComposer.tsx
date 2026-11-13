@@ -917,14 +917,14 @@ export function PostComposer({
                       fontSize: "15px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      background: isChecked ? "var(--surface, #ffffff)" : "transparent",
-                      color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)",
-                      border: isChecked ? "1.5px solid var(--primary, #2f6b2f)" : "1.5px solid transparent",
+                      background: isChecked ? "#2F6B2F" : "transparent",
+                      color: isChecked ? "#ffffff" : "var(--muted, #566054)",
+                      border: isChecked ? "1.5px solid #2F6B2F" : "1.5px solid transparent",
                       boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08)" : "none",
                       transition: "all 0.2s ease"
                     }}
                   >
-                    <span style={{ color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)" }}>{fmt.icon}</span>
+                    <span style={{ color: isChecked ? "#ffffff" : "var(--muted, #566054)" }}>{fmt.icon}</span>
                     {fmt.label}
                   </button>
                 );
@@ -977,14 +977,14 @@ export function PostComposer({
                         fontSize: "15px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        background: isChecked ? "var(--surface, #ffffff)" : "transparent",
-                        color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)",
-                        border: isChecked ? "1.5px solid var(--primary, #2f6b2f)" : "1.5px solid transparent",
+                        background: isChecked ? "#2F6B2F" : "transparent",
+                        color: isChecked ? "#ffffff" : "var(--muted, #566054)",
+                        border: isChecked ? "1.5px solid #2F6B2F" : "1.5px solid transparent",
                         boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08)" : "none",
                         transition: "all 0.2s ease"
                       }}
                     >
-                      <span style={{ color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)" }}>{w.icon}</span>
+                      <span style={{ color: isChecked ? "#ffffff" : "var(--muted, #566054)" }}>{w.icon}</span>
                       {w.label}
                     </button>
                   );
@@ -1797,9 +1797,9 @@ export function PostComposer({
                   fontWeight: 600,
                   boxSizing: "border-box",
                   cursor: isPublishing ? "not-allowed" : "pointer",
-                  background: "var(--primary, #2f6b2f)",
-                  color: "var(--onprimary, #ffffff)",
-                  border: "1.5px solid var(--primary, #2f6b2f)",
+                  background: "#2F6B2F",
+                  color: "#ffffff",
+                  border: "1.5px solid #2F6B2F",
                   boxShadow: "0 4px 14px rgba(47, 107, 47, 0.35)",
                   transition: "all 0.2s ease",
                   opacity: isPublishing ? 0.7 : 1

@@ -280,8 +280,8 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 /* --- Prototype Composer Theme Variables & Utility Classes --- */
-:root {
-  --primary: 69 181 166;
+/* Legacy prototype variables scoped to .prototype-legacy only if needed */
+.prototype-legacy {
   --ph: 98 198 184;
   --pt: 18 50 48;
   --op: 6 37 32;
@@ -293,7 +293,6 @@ input[type=range]::-webkit-slider-runnable-track {
   --sk: 11 17 16;
   --hl: 40 54 51;
   --cb: 100 119 111;
-  --ink: 230 238 236;
   --im: 157 175 170;
   --dg: 240 121 107;
   --dt: 52 22 20;
@@ -822,4 +821,25 @@ button {
 :root[data-theme="light"] button[role="switch"][aria-checked="false"]:hover {
   border-color: var(--primary) !important;
   color: var(--ink) !important;
+}
+
+/* Explicit DigiM Primary Button Colors */
+.btn-primary,
+button.btn-primary,
+button[type="submit"].btn-primary,
+.cta-button-primary {
+  background: #2F6B2F !important;
+  background-color: #2F6B2F !important;
+  color: #ffffff !important;
+  border: 1px solid #2F6B2F !important;
+  box-shadow: 0 4px 14px rgba(47, 107, 47, 0.35) !important;
+}
+
+.btn-primary:hover:not(:disabled),
+button.btn-primary:hover:not(:disabled),
+.cta-button-primary:hover:not(:disabled) {
+  background: #275827 !important;
+  background-color: #275827 !important;
+  border-color: #275827 !important;
+  box-shadow: 0 6px 20px rgba(47, 107, 47, 0.45) !important;
 }
