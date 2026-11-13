@@ -2523,6 +2523,28 @@ export function CampaignDashboard({
     if (!visualSuggestion) {
       setVisualSuggestion(promptToUse);
     }
+
+    // Read AI Image Style strictly from Settings (post_defaults)
+    let styleModifier = '';
+    try {
+      const savedDefaults = typeof window !== 'undefined' ? localStorage.getItem('post_defaults') : null;
+      if (savedDefaults) {
+        const defs = JSON.parse(savedDefaults);
+        const style = defs.aiImageStyle;
+        if (style === 'Flat illustration') {
+          styleModifier = ', in a clean flat 2D vector illustration style, vibrant minimalist digital art, clean geometric shapes, no photorealism';
+        } else if (style === 'Bold poster') {
+          styleModifier = ', in a bold graphic design poster style, high contrast, vibrant saturated colors, striking visual composition';
+        } else if (style === 'Soft pastel') {
+          styleModifier = ', in a soft pastel aesthetic style, delicate muted colors, warm gentle natural lighting, artistic fine art';
+        } else if (style === 'Photorealistic' || style === 'Realistic') {
+          styleModifier = ', high-end commercial studio product photography, crisp sharp focus, 8k resolution, photorealistic, natural lighting';
+        }
+      }
+    } catch (e) {}
+
+    const promptWithStyle = promptToUse + styleModifier;
+
     setIsGeneratingImage(true);
     try {
       // If we already have a carousel set and user is clicking Regenerate on a single slide, only request 1 image
@@ -2533,7 +2555,7 @@ export function CampaignDashboard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: promptToUse,
+          prompt: promptWithStyle,
           num_images: countToGen,
           format_type: formatType
         })
