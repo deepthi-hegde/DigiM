@@ -4026,7 +4026,7 @@ export function CampaignDashboard({
           format_type: formatType
         })
       });
-      const data = await res.json();
+      const data = res.ok ? await res.json().catch(() => ({})) : {};
       if (data.status === 'success' && data.url) {
         const newMedia = {
           id: "ai-" + Date.now(),
@@ -4232,7 +4232,7 @@ export function CampaignDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_liked: !isLiked })
       });
-      const data = await res.json();
+      const data = res.ok ? await res.json().catch(() => ({})) : {};
       if (data.status === 'success') {
         setIsLiked(data.is_liked);
         notifySuccess(data.is_liked ? "Added to Style Profile! AI will mimic this style." : "Removed from Style Profile.");
@@ -5003,7 +5003,7 @@ export function CampaignDashboard({
                           formData.append('file', file);
                           const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
                           const res = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, { method: 'POST', body: formData });
-                          const d = await res.json();
+                          const d = res.ok ? await res.json().catch(() => ({})) : {};
                           if (d.url) {
                             setPostLogoUrl(d.url);
                             if (typeof window !== 'undefined') localStorage.setItem('brand_logo_url', d.url);
@@ -6675,8 +6675,12 @@ function CalendarTab({
   useEffect(() => {
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
     Promise.all([
-      fetch('/api/campaigns?tenant_id=' + savedTenantId).then(res => res.json()),
-      fetch('/api/calendar/events').then(res => res.json()).catch(() => [])
+      fetch('/api/campaigns?tenant_id=' + savedTenantId)
+        .then(res => res.ok ? res.json() : [])
+        .catch(() => []),
+      fetch('/api/calendar/events')
+        .then(res => res.ok ? res.json() : [])
+        .catch(() => [])
     ])
       .then(([campaignData, calendarData]) => {
         setCampaigns(campaignData);
@@ -7212,7 +7216,8 @@ function AnalyticsTab() {
   useEffect(() => {
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
     fetch(`/api/meta/analytics?tenant_id=${savedTenantId}`)
-      .then(res => res.json())
+      .then(res => res.ok ? res.json() : {})
+      .catch(() => ({}))
       .then(resData => {
         setData(resData);
         setLoading(false);
