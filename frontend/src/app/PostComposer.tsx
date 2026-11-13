@@ -291,11 +291,11 @@ export function PostComposer({
   const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
   const [aiGenPrompt, setAiGenPrompt] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState("dark");
+  const [currentTheme, setCurrentTheme] = useState("light");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("digim_theme") || document.documentElement.getAttribute("data-theme") || "dark";
+      const savedTheme = localStorage.getItem("digim_theme") || document.documentElement.getAttribute("data-theme") || "light";
       setCurrentTheme(savedTheme);
       document.documentElement.setAttribute("data-theme", savedTheme);
     }
