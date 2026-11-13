@@ -59,7 +59,7 @@ const ICONS = {
     </svg>
   ),
   image: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#566661" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9dafaa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <circle cx="9" cy="10" r="2" />
       <path d="M21 16l-5-5-9 9" />
@@ -651,8 +651,8 @@ export function PostComposer({
         zIndex: 999,
         overflowY: "auto",
         boxSizing: "border-box",
-        background: "#f4f6f5",
-        color: "#16211f",
+        background: "#0e1615",
+        color: "#e6eeec",
         fontFamily: "'Mukta', 'Noto Sans Devanagari', system-ui, sans-serif",
         display: "flex",
         flexDirection: "column"
@@ -690,8 +690,8 @@ export function PostComposer({
           flexWrap: "wrap",
           minHeight: "64px",
           padding: "0 24px",
-          background: "#ffffff",
-          borderBottom: "1px solid #d6dedb"
+          background: "#16201f",
+          borderBottom: "1px solid #283633"
         }}
       >
         <button
@@ -705,7 +705,7 @@ export function PostComposer({
             gap: "6px",
             minHeight: "44px",
             fontWeight: 600,
-            color: "#16211f",
+            color: "#e6eeec",
             textDecoration: "none",
             background: "transparent",
             border: "none",
@@ -724,7 +724,7 @@ export function PostComposer({
             fontSize: "24px",
             lineHeight: "30px",
             fontWeight: 700,
-            color: "#16211f"
+            color: "#e6eeec"
           }}
         >
           New post
@@ -743,7 +743,7 @@ export function PostComposer({
             minHeight: "44px",
             padding: "0 12px",
             fontWeight: 600,
-            color: "#16211f",
+            color: "#e6eeec",
             textDecoration: "none",
             background: "transparent",
             border: "none",
@@ -759,8 +759,8 @@ export function PostComposer({
               padding: "0 6px",
               boxSizing: "border-box",
               borderRadius: "999px",
-              background: "#e9eeec",
-              color: "#566661",
+              background: "#0b1110",
+              color: "#9dafaa",
               fontSize: "12px",
               display: "flex",
               alignItems: "center",
@@ -788,9 +788,9 @@ export function PostComposer({
             fontWeight: 600,
             boxSizing: "border-box",
             cursor: "pointer",
-            background: "#ffffff",
-            color: "#16211f",
-            border: "1px solid #7a8b86"
+            background: "#16201f",
+            color: "#e6eeec",
+            border: "1px solid #64776f"
           }}
         >
           Save draft
@@ -814,8 +814,8 @@ export function PostComposer({
         <section
           aria-label="Set up"
           style={{
-            background: "#ffffff",
-            border: "1px solid #d6dedb",
+            background: "#16201f",
+            border: "1px solid #283633",
             borderRadius: "16px",
             padding: "16px 20px",
             display: "flex",
@@ -826,7 +826,7 @@ export function PostComposer({
         >
           {/* Format: Post, Reel, Story */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>Format</span>
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#9dafaa" }}>Format</span>
             <div
               role="radiogroup"
               style={{
@@ -834,7 +834,7 @@ export function PostComposer({
                 flexWrap: "wrap",
                 padding: "4px",
                 borderRadius: "12px",
-                background: "#e9eeec"
+                background: "#0b1110"
               }}
             >
               {[
@@ -861,12 +861,12 @@ export function PostComposer({
                       fontSize: "15px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      background: isChecked ? "#ffffff" : "transparent",
-                      color: isChecked ? "#16211f" : "#566661",
-                      boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
+                      background: isChecked ? "#2a3836" : "transparent",
+                      color: isChecked ? "#e6eeec" : "#9dafaa",
+                      boxShadow: isChecked ? "0 1px 2px rgba(0,0,0,.5)" : "none"
                     }}
                   >
-                    <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{fmt.icon}</span>
+                    <span style={{ color: isChecked ? "#45b5a6" : "#9dafaa" }}>{fmt.icon}</span>
                     {fmt.label}
                   </button>
                 );
@@ -881,10 +881,10 @@ export function PostComposer({
               flexDirection: "column",
               gap: "6px",
               paddingLeft: "20px",
-              borderLeft: "1px solid #d6dedb"
+              borderLeft: "1px solid #283633"
             }}
           >
-            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>When</span>
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#9dafaa" }}>When</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
               <div
                 role="radiogroup"
@@ -893,7 +893,7 @@ export function PostComposer({
                   flexWrap: "wrap",
                   padding: "4px",
                   borderRadius: "12px",
-                  background: "#e9eeec"
+                  background: "#0b1110"
                 }}
               >
                 {[
@@ -919,12 +919,12 @@ export function PostComposer({
                         fontSize: "15px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        background: isChecked ? "#ffffff" : "transparent",
-                        color: isChecked ? "#16211f" : "#566661",
-                        boxShadow: isChecked ? "0 1px 2px rgba(22,33,31,.12)" : "none"
+                        background: isChecked ? "#2a3836" : "transparent",
+                        color: isChecked ? "#e6eeec" : "#9dafaa",
+                        boxShadow: isChecked ? "0 1px 2px rgba(0,0,0,.5)" : "none"
                       }}
                     >
-                      <span style={{ color: isChecked ? "#0d6b61" : "#566661" }}>{w.icon}</span>
+                      <span style={{ color: isChecked ? "#45b5a6" : "#9dafaa" }}>{w.icon}</span>
                       {w.label}
                     </button>
                   );
@@ -943,13 +943,13 @@ export function PostComposer({
                       alignItems: "center",
                       minHeight: "44px",
                       padding: "0 12px",
-                      border: "1px solid #7a8b86",
+                      border: "1px solid #64776f",
                       borderRadius: "12px",
-                      background: "#ffffff",
+                      background: "#16201f",
                       fontSize: "15px",
                       boxSizing: "border-box",
                       minWidth: "130px",
-                      color: "#16211f"
+                      color: "#e6eeec"
                     }}
                   />
                   <input
@@ -961,16 +961,16 @@ export function PostComposer({
                       alignItems: "center",
                       minHeight: "44px",
                       padding: "0 12px",
-                      border: "1px solid #7a8b86",
+                      border: "1px solid #64776f",
                       borderRadius: "12px",
-                      background: "#ffffff",
+                      background: "#16201f",
                       fontSize: "15px",
                       boxSizing: "border-box",
                       minWidth: "96px",
-                      color: "#16211f"
+                      color: "#e6eeec"
                     }}
                   />
-                  <span style={{ fontSize: "13px", color: "#566661" }}>IST</span>
+                  <span style={{ fontSize: "13px", color: "#9dafaa" }}>IST</span>
                 </>
               )}
             </div>
@@ -983,10 +983,10 @@ export function PostComposer({
               flexDirection: "column",
               gap: "6px",
               paddingLeft: "20px",
-              borderLeft: "1px solid #d6dedb"
+              borderLeft: "1px solid #283633"
             }}
           >
-            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#566661" }}>Post to</span>
+            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "#9dafaa" }}>Post to</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "6px" }}>
               {/* Facebook Toggle */}
               <button
@@ -1002,11 +1002,11 @@ export function PostComposer({
                   minHeight: "36px",
                   padding: "0 10px 0 6px",
                   borderRadius: "999px",
-                  border: channels.facebook ? "1px solid #0d6b61" : "1px solid #7a8b86",
-                  background: channels.facebook ? "#e2f0ed" : "#ffffff",
+                  border: channels.facebook ? "1px solid #45b5a6" : "1px solid #64776f",
+                  background: channels.facebook ? "#123230" : "#0b1110",
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#16211f",
+                  color: "#e6eeec",
                   cursor: "pointer"
                 }}
               >
@@ -1030,7 +1030,7 @@ export function PostComposer({
                 </span>
                 Facebook
                 {channels.facebook && (
-                  <span style={{ color: "#0d6b61", display: "flex" }}>{ICONS.check}</span>
+                  <span style={{ color: "#45b5a6", display: "flex" }}>{ICONS.check}</span>
                 )}
               </button>
 
@@ -1048,11 +1048,11 @@ export function PostComposer({
                   minHeight: "36px",
                   padding: "0 10px 0 6px",
                   borderRadius: "999px",
-                  border: channels.instagram ? "1px solid #0d6b61" : "1px solid #7a8b86",
-                  background: channels.instagram ? "#e2f0ed" : "#ffffff",
+                  border: channels.instagram ? "1px solid #45b5a6" : "1px solid #64776f",
+                  background: channels.instagram ? "#123230" : "#0b1110",
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#16211f",
+                  color: "#e6eeec",
                   cursor: "pointer"
                 }}
               >
@@ -1073,7 +1073,7 @@ export function PostComposer({
                 </span>
                 Instagram
                 {channels.instagram && (
-                  <span style={{ color: "#0d6b61", display: "flex" }}>{ICONS.check}</span>
+                  <span style={{ color: "#45b5a6", display: "flex" }}>{ICONS.check}</span>
                 )}
               </button>
             </div>
@@ -1083,7 +1083,7 @@ export function PostComposer({
         {/* Main Post Editor Section */}
         <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Platform Tabs Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "4px", borderBottom: "1px solid #d6dedb" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "4px", borderBottom: "1px solid #283633" }}>
             <button
               type="button"
               role="tab"
@@ -1096,11 +1096,11 @@ export function PostComposer({
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: platformTab === "all" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "all" ? "2px solid #45b5a6" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: platformTab === "all" ? "#0d6b61" : "#566661",
+                color: platformTab === "all" ? "#45b5a6" : "#9dafaa",
                 cursor: "pointer"
               }}
             >
@@ -1118,11 +1118,11 @@ export function PostComposer({
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: platformTab === "facebook" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "facebook" ? "2px solid #45b5a6" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: platformTab === "facebook" ? "#0d6b61" : "#566661",
+                color: platformTab === "facebook" ? "#45b5a6" : "#9dafaa",
                 cursor: "pointer"
               }}
             >
@@ -1158,11 +1158,11 @@ export function PostComposer({
                 minHeight: "44px",
                 padding: "0 12px",
                 border: "none",
-                borderBottom: platformTab === "instagram" ? "2px solid #0d6b61" : "2px solid transparent",
+                borderBottom: platformTab === "instagram" ? "2px solid #45b5a6" : "2px solid transparent",
                 background: "transparent",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: platformTab === "instagram" ? "#0d6b61" : "#566661",
+                color: platformTab === "instagram" ? "#45b5a6" : "#9dafaa",
                 cursor: "pointer"
               }}
             >
@@ -1185,7 +1185,7 @@ export function PostComposer({
             </button>
           </div>
 
-          <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>
+          <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#9dafaa" }}>
             Edits here go to every platform. Pick Facebook or Instagram to change just that one.
           </p>
 
@@ -1193,8 +1193,8 @@ export function PostComposer({
           <article
             style={{
               width: "100%",
-              background: "#ffffff",
-              border: "1px solid #d6dedb",
+              background: "#16201f",
+              border: "1px solid #283633",
               borderRadius: "16px",
               padding: "20px",
               display: "flex",
@@ -1210,8 +1210,8 @@ export function PostComposer({
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "#0d6b61",
-                  color: "#ffffff",
+                  background: "#45b5a6",
+                  color: "#062520",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1223,8 +1223,8 @@ export function PostComposer({
                 {(shopData.name || "S").charAt(0).toUpperCase()}
               </span>
               <span style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <b style={{ fontSize: "16px", color: "#16211f" }}>{shopData.name}</b>
-                <span style={{ fontSize: "13px", color: "#566661" }}>
+                <b style={{ fontSize: "16px", color: "#e6eeec" }}>{shopData.name}</b>
+                <span style={{ fontSize: "13px", color: "#9dafaa" }}>
                   {formatDateTimeDisplay(scheduledDate, scheduledTime)}
                 </span>
               </span>
@@ -1240,8 +1240,8 @@ export function PostComposer({
                     aria-label="No image yet"
                     style={{
                       borderRadius: "12px",
-                      border: "2px dashed #7a8b86",
-                      background: "#f4f6f5",
+                      border: "2px dashed #64776f",
+                      background: "#0e1615",
                       aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
                       display: "flex",
                       flexDirection: "column",
@@ -1254,8 +1254,8 @@ export function PostComposer({
                     }}
                   >
                     {ICONS.image}
-                    <b style={{ fontSize: "15px", color: "#16211f" }}>Add your image</b>
-                    <span style={{ fontSize: "13px", color: "#566661", maxWidth: "260px" }}>
+                    <b style={{ fontSize: "15px", color: "#e6eeec" }}>Add your image</b>
+                    <span style={{ fontSize: "13px", color: "#9dafaa", maxWidth: "260px" }}>
                       The image is what people notice first.
                     </span>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
@@ -1275,9 +1275,9 @@ export function PostComposer({
                           boxSizing: "border-box",
                           cursor: "pointer",
                           width: "100%",
-                          background: "#ffffff",
-                          color: "#16211f",
-                          border: "1px solid #7a8b86"
+                          background: "#16201f",
+                          color: "#e6eeec",
+                          border: "1px solid #64776f"
                         }}
                       >
                         {ICONS.spark} Generate with AI
@@ -1297,9 +1297,9 @@ export function PostComposer({
                             boxSizing: "border-box",
                             cursor: "pointer",
                             width: "100%",
-                            background: "#ffffff",
-                            color: "#16211f",
-                            border: "1px solid #7a8b86"
+                            background: "#16201f",
+                            color: "#e6eeec",
+                            border: "1px solid #64776f"
                           }}
                         >
                           <input
@@ -1326,9 +1326,9 @@ export function PostComposer({
                             boxSizing: "border-box",
                             cursor: "pointer",
                             width: "100%",
-                            background: "#ffffff",
-                            color: "#16211f",
-                            border: "1px solid #7a8b86"
+                            background: "#16201f",
+                            color: "#e6eeec",
+                            border: "1px solid #64776f"
                           }}
                         >
                           {ICONS.grid} Library
@@ -1344,7 +1344,7 @@ export function PostComposer({
                       overflow: "hidden",
                       aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
                       background: "#000000",
-                      border: "1px solid #d6dedb"
+                      border: "1px solid #283633"
                     }}
                   >
                     <img
@@ -1417,7 +1417,7 @@ export function PostComposer({
               <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
                 {/* Post type dropdown trigger */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#566661" }}>Post type</span>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#9dafaa" }}>Post type</span>
                   <button
                     type="button"
                     onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
@@ -1429,19 +1429,19 @@ export function PostComposer({
                       minHeight: "48px",
                       padding: "0 12px",
                       borderRadius: "12px",
-                      border: "1px solid #7a8b86",
-                      background: "#ffffff",
+                      border: "1px solid #64776f",
+                      background: "#16201f",
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#16211f",
+                      color: "#e6eeec",
                       textAlign: "left",
                       boxSizing: "border-box",
                       cursor: "pointer"
                     }}
                   >
-                    <span style={{ color: "#0d6b61", display: "flex" }}>{currentCategory.icon}</span>
+                    <span style={{ color: "#45b5a6", display: "flex" }}>{currentCategory.icon}</span>
                     <span style={{ flex: 1 }}>{currentCategory.label}</span>
-                    <span style={{ color: "#566661", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                    <span style={{ color: "#9dafaa", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
                       {ICONS.chevronDown}
                     </span>
                   </button>
@@ -1454,8 +1454,8 @@ export function PostComposer({
                         top: "76px",
                         left: 0,
                         right: 0,
-                        background: "#ffffff",
-                        border: "1px solid #d6dedb",
+                        background: "#16201f",
+                        border: "1px solid #283633",
                         borderRadius: "12px",
                         boxShadow: "0 10px 28px rgba(22, 33, 31, 0.15)",
                         zIndex: 50,
@@ -1477,15 +1477,15 @@ export function PostComposer({
                             padding: "10px 12px",
                             borderRadius: "8px",
                             border: "none",
-                            background: postType === cat.id ? "#e2f0ed" : "transparent",
-                            color: postType === cat.id ? "#0d6b61" : "#16211f",
+                            background: postType === cat.id ? "#123230" : "transparent",
+                            color: postType === cat.id ? "#45b5a6" : "#e6eeec",
                             fontWeight: postType === cat.id ? 700 : 500,
                             fontSize: "14px",
                             cursor: "pointer",
                             textAlign: "left"
                           }}
                         >
-                          <span style={{ color: postType === cat.id ? "#0d6b61" : "#566661" }}>{cat.icon}</span>
+                          <span style={{ color: postType === cat.id ? "#45b5a6" : "#9dafaa" }}>{cat.icon}</span>
                           <span>{cat.label}</span>
                         </button>
                       ))}
@@ -1504,13 +1504,13 @@ export function PostComposer({
                       flexWrap: "wrap",
                       padding: "8px 12px",
                       borderRadius: "12px",
-                      background: "#fdf1d8",
-                      color: "#7a4f00",
+                      background: "#2e2410",
+                      color: "#f4c46b",
                       fontSize: "14px",
                       lineHeight: "20px"
                     }}
                   >
-                    <span style={{ display: "flex", color: "#7a4f00" }}>{ICONS.spark}</span>
+                    <span style={{ display: "flex", color: "#f4c46b" }}>{ICONS.spark}</span>
                     <span style={{ flex: 1, minWidth: "180px" }}>
                       Caption and hashtags updated for <b>{noticeBannerType}</b>.
                     </span>
@@ -1522,7 +1522,7 @@ export function PostComposer({
                         alignItems: "center",
                         gap: "4px",
                         fontWeight: 600,
-                        color: "#7a4f00",
+                        color: "#f4c46b",
                         background: "none",
                         border: "none",
                         cursor: "pointer",
@@ -1537,7 +1537,7 @@ export function PostComposer({
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#7a4f00",
+                        color: "#f4c46b",
                         cursor: "pointer",
                         fontSize: "16px",
                         padding: "0 4px",
@@ -1563,20 +1563,20 @@ export function PostComposer({
                       lineHeight: "26px",
                       padding: "10px 12px",
                       borderRadius: "12px",
-                      border: "1.5px solid #d6dedb",
+                      border: "1.5px solid #64776f",
                       outline: "none",
                       resize: "vertical",
                       boxSizing: "border-box",
-                      color: "#16211f",
-                      background: "#ffffff",
+                      color: "#e6eeec",
+                      background: "#16201f",
                       transition: "border-color 0.2s, box-shadow 0.2s"
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#0d6b61";
+                      e.currentTarget.style.borderColor = "#45b5a6";
                       e.currentTarget.style.boxShadow = "0 0 0 3px rgba(13, 107, 97, 0.15)";
                     }}
                     onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#d6dedb";
+                      e.currentTarget.style.borderColor = "#64776f";
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   />
@@ -1584,7 +1584,7 @@ export function PostComposer({
 
                 {/* Tone AI Quick Actions */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#566661" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#9dafaa" }}>
                     {ICONS.wand} Tone
                   </span>
                   {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
@@ -1600,9 +1600,9 @@ export function PostComposer({
                         minHeight: "36px",
                         padding: "0 14px",
                         borderRadius: "999px",
-                        border: "1px solid #7a8b86",
-                        background: "#ffffff",
-                        color: "#16211f",
+                        border: "1px solid #64776f",
+                        background: "#16201f",
+                        color: "#e6eeec",
                         fontSize: "14px",
                         fontWeight: 600,
                         boxSizing: "border-box",
@@ -1616,7 +1616,7 @@ export function PostComposer({
 
                 {/* Hashtags display + Add tag */}
                 <p style={{ margin: 0, fontSize: "16px", lineHeight: "24px" }}>
-                  <span style={{ color: "#0d6b61", fontWeight: 600 }}>
+                  <span style={{ color: "#45b5a6", fontWeight: 600 }}>
                     {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
                   </span>{" "}
                   {isAddingTag ? (
@@ -1635,7 +1635,7 @@ export function PostComposer({
                           width: "90px",
                           height: "28px",
                           padding: "2px 6px",
-                          border: "1px solid #0d6b61",
+                          border: "1px solid #45b5a6",
                           borderRadius: "6px",
                           fontSize: "14px",
                           outline: "none"
@@ -1647,7 +1647,7 @@ export function PostComposer({
                         style={{
                           height: "28px",
                           padding: "0 8px",
-                          background: "#0d6b61",
+                          background: "#45b5a6",
                           color: "#fff",
                           border: "none",
                           borderRadius: "6px",
@@ -1669,7 +1669,7 @@ export function PostComposer({
                         gap: "2px",
                         fontSize: "14px",
                         fontWeight: 600,
-                        color: "#0d6b61",
+                        color: "#45b5a6",
                         background: "none",
                         border: "none",
                         cursor: "pointer",
@@ -1692,10 +1692,10 @@ export function PostComposer({
                 gap: "16px",
                 flexWrap: "wrap",
                 paddingTop: "16px",
-                borderTop: "1px solid #d6dedb"
+                borderTop: "1px solid #283633"
               }}
             >
-              <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#566661" }}>
+              <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "#9dafaa" }}>
                 {caption.length} / 2,200 characters
               </p>
               <span style={{ flex: 1 }} />
@@ -1709,7 +1709,7 @@ export function PostComposer({
                   minHeight: "44px",
                   fontSize: "15px",
                   fontWeight: 600,
-                  color: "#0d6b61",
+                  color: "#45b5a6",
                   background: "none",
                   border: "none",
                   cursor: "pointer"
@@ -1733,9 +1733,9 @@ export function PostComposer({
                   fontWeight: 600,
                   boxSizing: "border-box",
                   cursor: isPublishing ? "not-allowed" : "pointer",
-                  background: "#0d6b61",
-                  color: "#ffffff",
-                  border: "1px solid #0d6b61",
+                  background: "#45b5a6",
+                  color: "#062520",
+                  border: "1px solid #45b5a6",
                   opacity: isPublishing ? 0.7 : 1
                 }}
               >
@@ -1757,7 +1757,7 @@ export function PostComposer({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.4)",
+            background: "rgba(0, 0, 0, 0.75)",
             zIndex: 1000,
             display: "flex",
             justifyContent: "flex-end"
@@ -1768,7 +1768,7 @@ export function PostComposer({
             style={{
               width: "100%",
               maxWidth: "400px",
-              background: "#ffffff",
+              background: "#16201f",
               height: "100%",
               boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
               display: "flex",
@@ -1785,7 +1785,7 @@ export function PostComposer({
               <button
                 type="button"
                 onClick={() => setIsDraftsOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#9dafaa" }}
               >
                 {ICONS.x}
               </button>
@@ -1793,7 +1793,7 @@ export function PostComposer({
 
             <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
               {draftsList.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#566661", marginTop: "40px" }}>
+                <div style={{ textAlign: "center", color: "#9dafaa", marginTop: "40px" }}>
                   <p>No saved drafts yet.</p>
                   <p style={{ fontSize: "13px" }}>Click "Save draft" at the top to save your progress.</p>
                 </div>
@@ -1803,16 +1803,16 @@ export function PostComposer({
                     key={d.id}
                     onClick={() => handleLoadDraft(d)}
                     style={{
-                      border: "1px solid #d6dedb",
+                      border: "1px solid #283633",
                       borderRadius: "12px",
                       padding: "14px",
                       cursor: "pointer",
-                      background: currentDraftId === d.id ? "#e2f0ed" : "#f4f6f5",
+                      background: currentDraftId === d.id ? "#123230" : "#0e1615",
                       transition: "background 0.2s"
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                      <b style={{ fontSize: "15px", color: "#16211f" }}>
+                      <b style={{ fontSize: "15px", color: "#e6eeec" }}>
                         {d.title || "Untitled draft"}
                       </b>
                       <button
@@ -1823,10 +1823,10 @@ export function PostComposer({
                         {ICONS.trash}
                       </button>
                     </div>
-                    <p style={{ margin: "4px 0", fontSize: "13px", color: "#566661", lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <p style={{ margin: "4px 0", fontSize: "13px", color: "#9dafaa", lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {d.caption || "No caption text"}
                     </p>
-                    <span style={{ fontSize: "11px", color: "#7a8b86" }}>
+                    <span style={{ fontSize: "11px", color: "#9dafaa" }}>
                       {d.updated_at ? new Date(d.updated_at).toLocaleString() : ""}
                     </span>
                   </div>
@@ -1843,7 +1843,7 @@ export function PostComposer({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.5)",
+            background: "rgba(0, 0, 0, 0.75)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
@@ -1856,7 +1856,7 @@ export function PostComposer({
             style={{
               width: "100%",
               maxWidth: "500px",
-              background: "#ffffff",
+              background: "#16201f",
               borderRadius: "16px",
               padding: "24px",
               boxShadow: "0 12px 32px rgba(0,0,0,0.2)"
@@ -1870,12 +1870,12 @@ export function PostComposer({
               <button
                 type="button"
                 onClick={() => setIsAiGenModalOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#9dafaa" }}
               >
                 {ICONS.x}
               </button>
             </div>
-            <p style={{ fontSize: "14px", color: "#566661", marginBottom: "14px" }}>
+            <p style={{ fontSize: "14px", color: "#9dafaa", marginBottom: "14px" }}>
               Describe the image you want for your ethnic wear store, or leave it blank to auto-generate based on your shop details.
             </p>
             <textarea
@@ -1887,7 +1887,7 @@ export function PostComposer({
                 width: "100%",
                 padding: "12px",
                 borderRadius: "12px",
-                border: "1px solid #7a8b86",
+                border: "1px solid #64776f",
                 fontSize: "14px",
                 marginBottom: "16px",
                 boxSizing: "border-box"
@@ -1900,8 +1900,8 @@ export function PostComposer({
                 style={{
                   padding: "10px 18px",
                   borderRadius: "10px",
-                  border: "1px solid #7a8b86",
-                  background: "#ffffff",
+                  border: "1px solid #64776f",
+                  background: "#16201f",
                   fontWeight: 600,
                   cursor: "pointer"
                 }}
@@ -1916,8 +1916,8 @@ export function PostComposer({
                   padding: "10px 20px",
                   borderRadius: "10px",
                   border: "none",
-                  background: "#0d6b61",
-                  color: "#ffffff",
+                  background: "#45b5a6",
+                  color: "#062520",
                   fontWeight: 600,
                   cursor: isAiGenerating ? "wait" : "pointer"
                 }}
@@ -1935,7 +1935,7 @@ export function PostComposer({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.5)",
+            background: "rgba(0, 0, 0, 0.75)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
@@ -1948,7 +1948,7 @@ export function PostComposer({
             style={{
               width: "100%",
               maxWidth: "600px",
-              background: "#ffffff",
+              background: "#16201f",
               borderRadius: "16px",
               padding: "24px",
               boxShadow: "0 12px 32px rgba(0,0,0,0.2)"
@@ -1962,7 +1962,7 @@ export function PostComposer({
               <button
                 type="button"
                 onClick={() => setIsLibraryOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#9dafaa" }}
               >
                 {ICONS.x}
               </button>
@@ -1981,7 +1981,7 @@ export function PostComposer({
                     borderRadius: "10px",
                     overflow: "hidden",
                     cursor: "pointer",
-                    border: "2px solid #e9eeec"
+                    border: "2px solid #283633"
                   }}
                 >
                   <img src={imgUrl} alt="Library item" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1998,7 +1998,7 @@ export function PostComposer({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.6)",
+            background: "rgba(0, 0, 0, 0.75)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
@@ -2011,7 +2011,7 @@ export function PostComposer({
             style={{
               width: "100%",
               maxWidth: "460px",
-              background: "#ffffff",
+              background: "#16201f",
               borderRadius: "16px",
               padding: "24px",
               boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
@@ -2028,27 +2028,27 @@ export function PostComposer({
               <button
                 type="button"
                 onClick={() => setIsPreviewModalOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#566661" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#9dafaa" }}
               >
                 {ICONS.x}
               </button>
             </div>
 
             {/* Social Post Mockup Card */}
-            <div style={{ border: "1px solid #d6dedb", borderRadius: "12px", overflow: "hidden", background: "#fafafa" }}>
+            <div style={{ border: "1px solid #283633", borderRadius: "12px", overflow: "hidden", background: "#0e1615" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px" }}>
-                <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#0d6b61", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#45b5a6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
                   {(shopData.name || "S").charAt(0).toUpperCase()}
                 </span>
                 <div>
                   <b style={{ fontSize: "14px", display: "block" }}>{shopData.name}</b>
-                  <span style={{ fontSize: "11px", color: "#566661" }}>Sponsored · Just now</span>
+                  <span style={{ fontSize: "11px", color: "#9dafaa" }}>Sponsored · Just now</span>
                 </div>
               </div>
-              <p style={{ padding: "0 12px 10px", margin: 0, fontSize: "14px", lineHeight: "20px", color: "#16211f" }}>
+              <p style={{ padding: "0 12px 10px", margin: 0, fontSize: "14px", lineHeight: "20px", color: "#e6eeec" }}>
                 {caption}
                 {hashtags.length > 0 && (
-                  <span style={{ display: "block", color: "#0d6b61", fontWeight: 600, marginTop: "6px" }}>
+                  <span style={{ display: "block", color: "#45b5a6", fontWeight: 600, marginTop: "6px" }}>
                     {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
                   </span>
                 )}
@@ -2067,8 +2067,8 @@ export function PostComposer({
                 style={{
                   padding: "10px 20px",
                   borderRadius: "10px",
-                  background: "#0d6b61",
-                  color: "#ffffff",
+                  background: "#45b5a6",
+                  color: "#062520",
                   border: "none",
                   fontWeight: 600,
                   cursor: "pointer"
