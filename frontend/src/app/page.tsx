@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { PostComposer } from './PostComposer';
 import Script from 'next/script';
 import { GoogleOAuthProvider, GoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 
@@ -6647,11 +6648,13 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
 function CalendarTab({
   onSelectCampaign,
   onNavigateToTab,
+  onSelectDate,
   activeSubTab = 'upcoming',
   onSubTabChange
 }: {
   onSelectCampaign?: (campaign: any) => void;
   onNavigateToTab?: (tab: string) => void;
+  onSelectDate?: (dateStr: string) => void;
   activeSubTab?: 'upcoming' | 'drafts' | 'past';
   onSubTabChange?: (sub: 'upcoming' | 'drafts' | 'past') => void;
 }) {
@@ -6715,7 +6718,13 @@ function CalendarTab({
   }
 
   // Filter campaigns into scheduled calendar items vs unscheduled drafts
-  const scheduledCampaigns = campaigns.filter(c => c.scheduled_time);
+  const isUpcomingCampaign = (c: any) => {
+    if (!c || !c.scheduled_time) return false;
+    if (c.status === 'archived' || c.status === 'failed' || c.status === 'published') return false;
+    const d = new Date(c.scheduled_time).getTime();
+    return !isNaN(d) && d > Date.now();
+  };
+  const scheduledCampaigns = campaigns.filter(isUpcomingCampaign);
   const unscheduledDrafts = campaigns.filter(c => !c.scheduled_time && c.status === 'draft');
 
   return (
@@ -6849,9 +6858,12 @@ function CalendarTab({
 
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
+          const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           return (
             <div
               key={`day-${day}`}
+              onClick={() => onSelectDate?.(dayDateStr)}
+              title={dayPosts.length === 0 ? `Click to schedule post for ${dayDateStr}` : undefined}
               style={{
                 minHeight: '120px',
                 background: isToday ? 'rgba(82, 183, 136, 0.08)' : 'rgba(255,255,255,0.03)',
@@ -6861,7 +6873,8 @@ function CalendarTab({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                cursor: 'pointer'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -6937,7 +6950,7 @@ function CalendarTab({
                   return (
                     <div
                       key={post.id}
-                      onClick={() => onSelectCampaign?.(post)}
+                      onClick={(e) => { e.stopPropagation(); onSelectCampaign?.(post); }}
                       style={{
                         background: isFailed ? 'rgba(239, 68, 68, 0.12)' : isPublished ? 'rgba(82, 183, 136, 0.15)' : isPast ? 'rgba(245, 158, 11, 0.12)' : 'rgba(56, 189, 248, 0.15)',
                         border: isFailed ? '1.5px solid rgba(239, 68, 68, 0.6)' : isPublished ? '1.5px solid var(--primary-color)' : isPast ? '1px dashed #f59e0b' : '1px solid #38bdf8',
@@ -8642,8 +8655,14 @@ export function HomeView({
     .filter((c: any) => !c.scheduled_time && c.status === 'draft')
     .slice(0, 3);
 
+  const isUpcomingHome = (c: any) => {
+    if (!c || !c.scheduled_time) return false;
+    if (c.status === 'archived' || c.status === 'failed' || c.status === 'published') return false;
+    const d = new Date(c.scheduled_time).getTime();
+    return !isNaN(d) && d > Date.now();
+  };
   const upcoming = campaigns
-    .filter((c: any) => c.scheduled_time && c.status !== 'archived')
+    .filter(isUpcomingHome)
     .sort((a: any, b: any) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime())
     .slice(0, 3);
 
@@ -8672,6 +8691,7 @@ export function HomeView({
 
   const TOPIC_CHIPS = [
     {
+      id: 'summer',
       name: 'Summer Sale',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8681,6 +8701,7 @@ export function HomeView({
       )
     },
     {
+      id: 'collection',
       name: 'New Collection',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8690,6 +8711,7 @@ export function HomeView({
       )
     },
     {
+      id: 'spotlight',
       name: 'Customer Spotlight',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8698,6 +8720,7 @@ export function HomeView({
       )
     },
     {
+      id: 'festival',
       name: 'Festival Offer',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8707,6 +8730,7 @@ export function HomeView({
       )
     },
     {
+      id: 'showcase',
       name: 'Product Showcase',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8716,6 +8740,7 @@ export function HomeView({
       )
     },
     {
+      id: 'bts',
       name: 'Behind the Scenes',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8725,6 +8750,7 @@ export function HomeView({
       )
     },
     {
+      id: 'promo',
       name: 'Promotions',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8734,6 +8760,7 @@ export function HomeView({
       )
     },
     {
+      id: 'info',
       name: 'Knowledge Info',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8794,7 +8821,7 @@ export function HomeView({
             <button
               key={chip.name}
               type="button"
-              onClick={() => onStartTopic(chip.name)}
+              onClick={() => onStartTopic(chip.id || chip.name)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -9262,6 +9289,13 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
 
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedCampaignForEdit, setSelectedCampaignForEdit] = useState<any>(null);
+  const [composerInitParams, setComposerInitParams] = useState<{
+    mode: 'blank' | 'type' | 'draft' | 'calendar_date';
+    category?: string;
+    draft?: any;
+    date?: string;
+    ts?: number;
+  }>({ mode: 'blank' });
   const [inspectCampaign, setInspectCampaign] = useState<any>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -9309,7 +9343,13 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           setCampaigns(cData);
           const drafts = cData.filter((c: any) => !c.scheduled_time && c.status === 'draft');
           setDraftsCount(drafts.length);
-          const upcoming = cData.filter((c: any) => c.scheduled_time && c.status !== 'archived');
+          const isUpcomingDashboard = (c: any) => {
+            if (!c || !c.scheduled_time) return false;
+            if (c.status === 'archived' || c.status === 'failed' || c.status === 'published') return false;
+            const d = new Date(c.scheduled_time).getTime();
+            return !isNaN(d) && d > Date.now();
+          };
+          const upcoming = cData.filter(isUpcomingDashboard);
           setUpcomingCount(upcoming.length);
         }
       }
@@ -9501,6 +9541,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           type="button"
           onClick={() => {
             setSelectedCampaignForEdit(null);
+            setComposerInitParams({ mode: 'blank', ts: Date.now() });
             handleTabChange('create');
           }}
           style={{
@@ -9959,16 +10000,16 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             businessInfo={businessInfo}
             draftsCount={draftsCount}
             upcomingCount={upcomingCount}
-            onStartTopic={(topic) => {
-              setSelectedCampaignForEdit({ prompt: `Promote our ${topic}...`, category: topic, topic });
+            onStartTopic={(topicId) => {
+              setComposerInitParams({ mode: 'type', category: topicId, ts: Date.now() });
               handleTabChange('create');
             }}
             onStartImage={() => {
-              setSelectedCampaignForEdit(null);
+              setComposerInitParams({ mode: 'blank', ts: Date.now() });
               handleTabChange('create');
             }}
             onEditDraft={(draft) => {
-              setSelectedCampaignForEdit(draft);
+              setComposerInitParams({ mode: 'draft', draft, ts: Date.now() });
               handleTabChange('create');
             }}
             onOpenCalendar={(subTab) => {
@@ -9980,10 +10021,11 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           />
         )}
         {isCreateActive && (
-          <CampaignDashboard
-            initialCampaign={selectedCampaignForEdit}
-            onClearEdit={() => setSelectedCampaignForEdit(null)}
-            onNavigateToTab={(tab) => handleTabChange(tab)}
+          <PostComposer
+            initParams={composerInitParams}
+            onNavigateToTab={(tab: string) => handleTabChange(tab)}
+            businessInfo={businessInfo}
+            onSaveSuccess={() => fetchDashboardData()}
           />
         )}
         {isCalendarActive && (
@@ -9991,7 +10033,18 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             activeSubTab={calendarSubTab}
             onSubTabChange={setCalendarSubTab}
             onNavigateToTab={(tab) => handleTabChange(tab)}
-            onSelectCampaign={(c) => setInspectCampaign(c)}
+            onSelectDate={(dateStr) => {
+              setComposerInitParams({ mode: 'calendar_date', date: dateStr, ts: Date.now() });
+              handleTabChange('create');
+            }}
+            onSelectCampaign={(c) => {
+              if (!c.scheduled_time && c.status === 'draft') {
+                setComposerInitParams({ mode: 'draft', draft: { id: c.id, state: c }, ts: Date.now() });
+                handleTabChange('create');
+              } else {
+                setInspectCampaign(c);
+              }
+            }}
           />
         )}
         {isResultsActive && <AnalyticsTab />}
@@ -10069,6 +10122,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         type="button"
         onClick={() => {
           setSelectedCampaignForEdit(null);
+          setComposerInitParams({ mode: 'blank', ts: Date.now() });
           handleTabChange('create');
         }}
         style={{
