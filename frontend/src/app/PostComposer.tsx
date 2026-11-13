@@ -842,9 +842,11 @@ export function PostComposer({
             fontWeight: 600,
             boxSizing: "border-box",
             cursor: "pointer",
-            background: "var(--surface, #172016)",
-            color: "var(--ink, #e6eee4)",
-            border: "1px solid var(--border, #747d73)"
+            background: "var(--surface, #ffffff)",
+            color: "var(--ink, #171f16)",
+            border: "1.5px solid var(--border, #979a96)",
+            boxShadow: "0 1px 3px rgba(23, 31, 22, 0.08)",
+            transition: "all 0.2s ease"
           }}
         >
           Save draft
@@ -915,12 +917,14 @@ export function PostComposer({
                       fontSize: "15px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      background: isChecked ? "#2a3836" : "transparent",
-                      color: isChecked ? "#e6eeec" : "#9dafaa",
-                      boxShadow: isChecked ? "0 1px 2px rgba(0,0,0,.5)" : "none"
+                      background: isChecked ? "var(--surface, #ffffff)" : "transparent",
+                      color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)",
+                      border: isChecked ? "1.5px solid var(--primary, #2f6b2f)" : "1.5px solid transparent",
+                      boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08)" : "none",
+                      transition: "all 0.2s ease"
                     }}
                   >
-                    <span style={{ color: isChecked ? "#45b5a6" : "#9dafaa" }}>{fmt.icon}</span>
+                    <span style={{ color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)" }}>{fmt.icon}</span>
                     {fmt.label}
                   </button>
                 );
@@ -973,12 +977,14 @@ export function PostComposer({
                         fontSize: "15px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        background: isChecked ? "#2a3836" : "transparent",
-                        color: isChecked ? "#e6eeec" : "#9dafaa",
-                        boxShadow: isChecked ? "0 1px 2px rgba(0,0,0,.5)" : "none"
+                        background: isChecked ? "var(--surface, #ffffff)" : "transparent",
+                        color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)",
+                        border: isChecked ? "1.5px solid var(--primary, #2f6b2f)" : "1.5px solid transparent",
+                        boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08)" : "none",
+                        transition: "all 0.2s ease"
                       }}
                     >
-                      <span style={{ color: isChecked ? "#45b5a6" : "#9dafaa" }}>{w.icon}</span>
+                      <span style={{ color: isChecked ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)" }}>{w.icon}</span>
                       {w.label}
                     </button>
                   );
@@ -1056,8 +1062,10 @@ export function PostComposer({
                   minHeight: "36px",
                   padding: "0 10px 0 6px",
                   borderRadius: "999px",
-                  border: channels.facebook ? "1px solid #45b5a6" : "1px solid var(--border, #747d73)",
-                  background: channels.facebook ? "#123230" : "#0b1110",
+                  border: channels.facebook ? "2px solid var(--primary, #2f6b2f)" : "1.5px solid var(--border, #979a96)",
+                  background: channels.facebook ? "var(--tint, #e6ede6)" : "var(--surface, #ffffff)",
+                  boxShadow: channels.facebook ? "0 2px 8px rgba(47, 107, 47, 0.2)" : "none",
+                  transition: "all 0.2s ease",
                   fontSize: "14px",
                   fontWeight: 600,
                   color: "var(--ink, #e6eee4)",
@@ -1084,7 +1092,7 @@ export function PostComposer({
                 </span>
                 Facebook
                 {channels.facebook && (
-                  <span style={{ color: "var(--primary, #7cc47c)", display: "flex" }}>{ICONS.check}</span>
+                  <span style={{ color: "var(--primary, #2f6b2f)", display: "flex" }}>{ICONS.check}</span>
                 )}
               </button>
 
@@ -1102,8 +1110,10 @@ export function PostComposer({
                   minHeight: "36px",
                   padding: "0 10px 0 6px",
                   borderRadius: "999px",
-                  border: channels.instagram ? "1px solid #45b5a6" : "1px solid var(--border, #747d73)",
-                  background: channels.instagram ? "#123230" : "#0b1110",
+                  border: channels.instagram ? "2px solid var(--primary, #2f6b2f)" : "1.5px solid var(--border, #979a96)",
+                  background: channels.instagram ? "var(--tint, #e6ede6)" : "var(--surface, #ffffff)",
+                  boxShadow: channels.instagram ? "0 2px 8px rgba(47, 107, 47, 0.2)" : "none",
+                  transition: "all 0.2s ease",
                   fontSize: "14px",
                   fontWeight: 600,
                   color: "var(--ink, #e6eee4)",
@@ -1127,7 +1137,7 @@ export function PostComposer({
                 </span>
                 Instagram
                 {channels.instagram && (
-                  <span style={{ color: "var(--primary, #7cc47c)", display: "flex" }}>{ICONS.check}</span>
+                  <span style={{ color: "var(--primary, #2f6b2f)", display: "flex" }}>{ICONS.check}</span>
                 )}
               </button>
             </div>
@@ -1493,7 +1503,7 @@ export function PostComposer({
                       cursor: "pointer"
                     }}
                   >
-                    <span style={{ color: "var(--primary, #7cc47c)", display: "flex" }}>{currentCategory.icon}</span>
+                    <span style={{ color: "var(--primary, #2f6b2f)", display: "flex" }}>{currentCategory.icon}</span>
                     <span style={{ flex: 1 }}>{currentCategory.label}</span>
                     <span style={{ color: "var(--muted, #a1ae9e)", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
                       {ICONS.chevronDown}
@@ -1787,9 +1797,11 @@ export function PostComposer({
                   fontWeight: 600,
                   boxSizing: "border-box",
                   cursor: isPublishing ? "not-allowed" : "pointer",
-                  background: "var(--primary, #7cc47c)",
-                  color: "var(--onprimary, #101614)",
-                  border: "1px solid var(--primary, #7cc47c)",
+                  background: "var(--primary, #2f6b2f)",
+                  color: "var(--onprimary, #ffffff)",
+                  border: "1.5px solid var(--primary, #2f6b2f)",
+                  boxShadow: "0 4px 14px rgba(47, 107, 47, 0.35)",
+                  transition: "all 0.2s ease",
                   opacity: isPublishing ? 0.7 : 1
                 }}
               >

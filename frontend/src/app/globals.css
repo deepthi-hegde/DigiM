@@ -750,3 +750,76 @@ button {
   background: #ffffff !important;
   border-color: var(--hair, #d7ddd3) !important;
 }
+
+/* --- DigiM Enhanced Button & Interactive Highlights --- */
+.btn-primary {
+  background: var(--primary) !important;
+  color: var(--onprimary) !important;
+  border: 1px solid var(--primary) !important;
+  box-shadow: 0 4px 14px rgba(47, 107, 47, 0.35) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--hover) !important;
+  border-color: var(--hover) !important;
+  box-shadow: 0 6px 20px rgba(47, 107, 47, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 1px 4px rgba(23, 31, 22, 0.08) !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--tint) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  box-shadow: 0 2px 8px rgba(47, 107, 47, 0.18) !important;
+}
+
+/* Light Theme Button & Chip Enhancements */
+:root[data-theme="light"] button:not(:disabled):hover {
+  cursor: pointer;
+}
+
+:root[data-theme="light"] .desktop-nav button {
+  transition: all 0.2s ease;
+}
+
+:root[data-theme="light"] .desktop-nav button:hover {
+  background: var(--tint) !important;
+  color: var(--primary) !important;
+}
+
+:root[data-theme="light"] [role="radiogroup"] button[aria-checked="true"] {
+  background: var(--surface) !important;
+  color: var(--primary) !important;
+  border: 1.5px solid var(--primary) !important;
+  box-shadow: 0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08) !important;
+}
+
+:root[data-theme="light"] [role="radiogroup"] button[aria-checked="false"]:hover {
+  background: var(--tint) !important;
+  color: var(--ink) !important;
+}
+
+:root[data-theme="light"] button[role="switch"][aria-checked="true"] {
+  background: var(--tint) !important;
+  border: 2px solid var(--primary) !important;
+  color: var(--primary) !important;
+  box-shadow: 0 2px 8px rgba(47, 107, 47, 0.2) !important;
+}
+
+:root[data-theme="light"] button[role="switch"][aria-checked="false"] {
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  color: var(--muted) !important;
+}
+
+:root[data-theme="light"] button[role="switch"][aria-checked="false"]:hover {
+  border-color: var(--primary) !important;
+  color: var(--ink) !important;
+}
