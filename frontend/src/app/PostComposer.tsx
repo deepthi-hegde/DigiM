@@ -291,6 +291,27 @@ export function PostComposer({
   const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
   const [aiGenPrompt, setAiGenPrompt] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState("dark");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("digim_theme") || document.documentElement.getAttribute("data-theme") || "dark";
+      setCurrentTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    setCurrentTheme(nextTheme);
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", nextTheme);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("digim_theme", nextTheme);
+    }
+    showToast(`Switched to ${nextTheme === "dark" ? "Dark" : "Light"} mode`);
+  };
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [libraryImages, setLibraryImages] = useState([]);
 
@@ -731,6 +752,39 @@ export function PostComposer({
         </h1>
 
         <span style={{ flex: 1 }} />
+
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={`Switch to ${currentTheme === "dark" ? "Light" : "Dark"} theme`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            minHeight: "40px",
+            padding: "0 12px",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: 600,
+            cursor: "pointer",
+            background: "var(--sunken, #191f18)",
+            color: "var(--ink, #e6eee4)",
+            border: "1px solid var(--border, #747d73)"
+          }}
+        >
+          {currentTheme === "dark" ? (
+            <>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              Light theme
+            </>
+          ) : (
+            <>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              Dark theme
+            </>
+          )}
+        </button>
 
         {/* Drafts count link */}
         <button
