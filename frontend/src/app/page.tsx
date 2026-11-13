@@ -2139,61 +2139,1498 @@ function ScheduledPostInspectorModal({
   );
 }
 
+
+// ============================================================================
+// DIGIM POST COMPOSER (Redesigned with Complete Prototype Experience)
+// ============================================================================
+
+const COMPOSER_ICONS: Record<string, string> = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  hanger: '<path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3"/><path d="M12 8L3 15h18z"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  gift: '<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8S10 3 7.5 4.5 9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z"/>',
+  lamp: '<path d="M4 15c0 3 3.6 5 8 5s8-2 8-5H4z"/><path d="M12 15c-2-2-1.5-4.5 0-7 1.5 2.5 2 5 0 7z"/>',
+  box: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  bag: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  clapper: '<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9l2-5 16 2-1.5 3M8 4.5l1.5 4.5M14 5.5l1.5 3.5"/>',
+  megaphone: '<path d="M3 10v4h4l8 5V5L7 10z"/><path d="M19 9a4 4 0 0 1 0 6"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  send: '<path d="M4 12h12M11 6l6 6-6 6"/><path d="M20 4v16"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  phone: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  monitor: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  left: '<path d="M15 18l-6-6 6-6"/>',
+  right: '<path d="M9 6l6 6-6 6"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  play: '<path d="M8 5v14l11-7z"/>',
+  heart: '<path d="M12 20s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z"/>',
+  msg: '<path d="M4 5h16v11H9l-5 4z"/>',
+  share: '<path d="M4 12v7h16v-7M12 3v12M7 8l5-5 5 5"/>',
+  bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5.5 5"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="2"/>',
+  film: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 9l4 3-4 3z"/>',
+  layers: '<rect x="7" y="3" width="11" height="18" rx="2"/><path d="M4 6v12M21 6v12"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/>',
+  wand: '<path d="M4 20L16 8M14 4v2M18 6h2M18 10v2M20 4l-1.5 1.5"/>',
+  hash: '<path d="M5 9h15M4 15h15M10 3L8 21M16 3l-2 18"/>',
+  drafts: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
+  arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>'
+};
+
+function ComposerIcon({ name, size = 20, className = '', strokeWidth = 2 }: { name: string; size?: number; className?: string; strokeWidth?: number }) {
+  const path = COMPOSER_ICONS[name] || '';
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      className={className}
+      dangerouslySetInnerHTML={{ __html: path }}
+    />
+  );
+}
+
+const COMPOSER_CATEGORIES = [
+  {
+    id: "summer",
+    label: "Summer Sale",
+    icon: "sun",
+    prompt: "Announce our summer clearance sale with up to 30% off all cotton sarees and lightweight ethnic wear this week only.",
+    caption: "Beat the heat with our Summer Sale! Up to 30% off cotton sarees and kurtas at SriKrish. This week only, visit us in-store.",
+    tags: ["#SummerSale", "#CottonSarees", "#ShopLocal", "#SriKrish"]
+  },
+  {
+    id: "collection",
+    label: "New Collection",
+    icon: "hanger",
+    prompt: "Introduce our fresh new collection in silk and cotton designs, now available at SriKrish.",
+    caption: "Our new collection has arrived! Fresh designs in silk and cotton, now at SriKrish. Come and see them first.",
+    tags: ["#NewCollection", "#NewArrivals", "#SareeLove", "#ShopLocal"]
+  },
+  {
+    id: "spotlight",
+    label: "Customer Spotlight",
+    icon: "star",
+    prompt: "Share a heartwarming customer appreciation post highlighting their special day wearing our collection.",
+    caption: "Thank you for choosing SriKrish for your big day! You looked wonderful. Tag us in your photos to be featured next.",
+    tags: ["#CustomerLove", "#HappyCustomers", "#ShopLocal"]
+  },
+  {
+    id: "festival",
+    label: "Festival Offer",
+    icon: "lamp",
+    prompt: "Celebrate the festive season with special discounts on silk sarees all week long.",
+    caption: "Celebrate the festive season with us! Special prices on silk sarees all week at SriKrish. Wishing you and your family joy.",
+    tags: ["#FestiveOffer", "#FestiveSeason", "#SilkSarees", "#ShopLocal"]
+  },
+  {
+    id: "showcase",
+    label: "Product Showcase",
+    icon: "bag",
+    prompt: "Showcase our handwoven pure silk saree highlighting the craftsmanship and fabric quality.",
+    caption: "Meet our signature handloom silk saree: pure zari border, lightweight comfort, and timeless elegance. Available now at SriKrish.",
+    tags: ["#ProductShowcase", "#SilkSaree", "#Handloom", "#ShopLocal"]
+  },
+  {
+    id: "bts",
+    label: "Behind the Scenes",
+    icon: "clapper",
+    prompt: "Share a behind the scenes look at how we fold, pack and inspect every saree with care.",
+    caption: "A peek behind the counter: this is how we fold, pack and check every saree before it reaches you. Small shop, big care.",
+    tags: ["#BehindTheScenes", "#SmallBusiness", "#ShopLocal"]
+  },
+  {
+    id: "promo",
+    label: "Promotions",
+    icon: "megaphone",
+    prompt: "Announce a special weekend flash discount promotion for in-store shoppers.",
+    caption: "Special offer at SriKrish! Visit us this weekend and show this post at the counter to claim your exclusive discount.",
+    tags: ["#Offer", "#Discount", "#ShopLocal", "#SpecialDeal"]
+  },
+  {
+    id: "info",
+    label: "Knowledge Info",
+    icon: "bulb",
+    prompt: "Share helpful tips on how to identify pure silk and care for handwoven sarees.",
+    caption: "How to tell real silk from synthetic: rub the fabric gently. Real silk warms up and feels soft, never slippery. Ask us in store, we are happy to show you.",
+    tags: ["#SareeTips", "#SilkCare", "#DidYouKnow", "#ShopLocal"]
+  }
+];
+
+const COMPOSER_FORMATS = [
+  { id: "post", label: "Post", detail: "Square 1:1", icon: "square", ratio: "1 / 1", w: 1080, h: 1080 },
+  { id: "reel", label: "Reel", detail: "Video 9:16", icon: "film", ratio: "9 / 16", w: 1080, h: 1920 },
+  { id: "story", label: "Story / Carousel", detail: "Slides 9:16", icon: "layers", ratio: "9 / 16", w: 1080, h: 1920 }
+];
+
+const COMPOSER_TONES = [
+  { id: "casual", label: "Casual", instruction: "more casual, warm and friendly, like a shop owner talking to regular customers" },
+  { id: "formal", label: "Formal", instruction: "more formal and polished, without exclamation marks or slang" },
+  { id: "shorten", label: "Shorten", instruction: "shorter: about half the length, keeping the key offer or message" },
+  { id: "elaborate", label: "Elaborate", instruction: "a little longer: add one or two helpful sentences of detail or a clear call to action" }
+];
+
+const PLATFORM_LIMITS: Record<string, { caption: number; tags: number }> = {
+  facebook: { caption: 63206, tags: 30 },
+  instagram: { caption: 2200, tags: 30 }
+};
+
+const COMPOSER_DRAFTS_KEY = "digim-drafts-v1";
+
+const formatComposerWhen = (d: Date) => {
+  return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }) + ", " +
+    d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }).replace("am", "AM").replace("pm", "PM");
+};
+
+const getNextSaturdayDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+  d.setHours(18, 0, 0, 0);
+  return d;
+};
+
+const toDateInputString = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const normalizeHashtag = (tag: string) => {
+  let cleaned = tag.trim().replace(/^#+/, '').replace(/[^\p{L}\p{N}_]/gu, '');
+  return cleaned ? '#' + cleaned : '';
+};
+
+// Vector SVG Sample Library Assets from Prototype
+const makeSvgUri = (svgStr: string) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr);
+
+const PROTOTYPE_LIBRARY_ASSETS = [
+  {
+    id: "saree",
+    name: "Silk Saree",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#f6e3c9"/><g><path d="M230 170 L200 760 L268 760 L290 170 Z" fill="#8a1a45"/><path d="M290 170 L268 760 L336 760 L350 170 Z" fill="#a8245a"/><path d="M350 170 L336 760 L404 760 L410 170 Z" fill="#8a1a45"/><path d="M410 170 L404 760 L472 760 L470 170 Z" fill="#a8245a"/><path d="M470 170 L472 760 L540 760 L530 170 Z" fill="#8a1a45"/><path d="M530 170 L540 760 L608 760 L590 170 Z" fill="#a8245a"/><path d="M590 170 L608 760 L676 760 L650 170 Z" fill="#8a1a45"/><path d="M650 170 L676 760 L744 760 L710 170 Z" fill="#a8245a"/><path d="M710 170 L744 760 L812 760 L770 170 Z" fill="#8a1a45"/></g><path d="M200 760 L812 760 L820 850 L192 850 Z" fill="#e0a526"/><rect x="226" y="150" width="548" height="28" rx="6" fill="#e0a526"/></svg>`)
+  },
+  {
+    id: "sweets",
+    name: "Sweets Box",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#fde6cc"/><rect x="180" y="420" width="640" height="380" rx="24" fill="#c0392b"/><rect x="180" y="420" width="640" height="70" fill="#a03024"/><g fill="#f2b33d"><circle cx="300" cy="380" r="70"/><circle cx="440" cy="360" r="70"/><circle cx="580" cy="370" r="70"/><circle cx="710" cy="385" r="66"/></g><rect x="460" y="420" width="80" height="380" fill="#e8c35a"/></svg>`)
+  },
+  {
+    id: "shop",
+    name: "Shop Front",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#dff1ee"/><rect x="160" y="300" width="680" height="560" fill="#ffffff"/><g fill="#0d6b61"><rect x="160" y="240" width="85" height="120"/><rect x="330" y="240" width="85" height="120"/><rect x="500" y="240" width="85" height="120"/><rect x="670" y="240" width="85" height="120"/></g><rect x="420" y="560" width="160" height="300" fill="#0d6b61"/><rect x="200" y="440" width="180" height="180" fill="#f2a516" opacity=".85"/><rect x="620" y="440" width="180" height="180" fill="#f2a516" opacity=".85"/><rect x="120" y="860" width="760" height="20" fill="#16211f"/></svg>`)
+  },
+  {
+    id: "diya",
+    name: "Festival Diyas",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#2b1638"/><g><path d="M190 640 C210 750 390 750 410 640 Z" fill="#d9822b"/><path d="M300 630 C260 550 290 490 300 450 C310 490 340 550 300 630 Z" fill="#ffcf4a"/><path d="M390 600 C410 710 590 710 610 600 Z" fill="#d9822b"/><path d="M500 590 C460 510 490 450 500 410 C510 450 540 510 500 590 Z" fill="#ffcf4a"/><path d="M590 640 C610 750 790 750 810 640 Z" fill="#d9822b"/><path d="M700 630 C660 550 690 490 700 450 C710 490 740 550 700 630 Z" fill="#ffcf4a"/></g></svg>`)
+  },
+  {
+    id: "gift",
+    name: "Gift Box",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#fbe9ef"/><rect x="250" y="420" width="500" height="400" rx="16" fill="#0d6b61"/><rect x="220" y="340" width="560" height="120" rx="16" fill="#12867a"/><rect x="465" y="340" width="70" height="480" fill="#f2a516"/><path d="M500 340 C420 220 300 260 350 330 Z M500 340 C580 220 700 260 650 330 Z" fill="#f2a516"/></svg>`)
+  },
+  {
+    id: "sunny",
+    name: "Summer Sun",
+    src: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"><rect width="1000" height="1000" fill="#bfe6f4"/><circle cx="500" cy="420" r="190" fill="#f9c23c"/><rect x="0" y="780" width="1000" height="220" fill="#f3d9a4"/></svg>`)
+  }
+];
+
+// ----------------------------------------------------------------------------
+// Small Design System Helpers for Composer
+// ----------------------------------------------------------------------------
+
+function ComposerBadge({
+  kind = "neutral",
+  icon,
+  children
+}: {
+  kind?: "neutral" | "ai" | "ok" | "err" | "wait";
+  icon?: string;
+  children: React.ReactNode;
+}) {
+  const styles: Record<string, { bg: string; color: string; border: string }> = {
+    neutral: { bg: "rgba(255,255,255,0.08)", color: "var(--text-light)", border: "rgba(255,255,255,0.12)" },
+    ai: { bg: "#f2a516", color: "#16211f", border: "#f2a516" },
+    ok: { bg: "rgba(82,183,136,0.18)", color: "var(--primary-color)", border: "rgba(82,183,136,0.35)" },
+    err: { bg: "rgba(239,68,68,0.18)", color: "#ef4444", border: "rgba(239,68,68,0.35)" },
+    wait: { bg: "rgba(242,165,22,0.18)", color: "#fbbf24", border: "rgba(242,165,22,0.35)" }
+  };
+  const st = styles[kind] || styles.neutral;
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '3px 8px',
+      borderRadius: '6px',
+      fontSize: '11px',
+      fontWeight: 700,
+      background: st.bg,
+      color: st.color,
+      border: `1px solid ${st.border}`,
+      lineHeight: '14px',
+      letterSpacing: '0.02em'
+    }}>
+      {icon && <ComposerIcon name={icon} size={12} />}
+      {children}
+    </span>
+  );
+}
+
+function ComposerBtn({
+  kind = "primary",
+  size = "md",
+  icon,
+  children,
+  onClick,
+  disabled = false,
+  style = {},
+  className = "",
+  type = "button"
+}: {
+  kind?: "primary" | "secondary" | "text" | "danger";
+  size?: "sm" | "md" | "lg";
+  icon?: string;
+  children: React.ReactNode;
+  onClick?: (e?: any) => void;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
+  type?: "button" | "submit";
+}) {
+  const baseKindStyle: Record<string, React.CSSProperties> = {
+    primary: {
+      background: "linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)",
+      color: "#ffffff",
+      border: "none",
+      boxShadow: "0 2px 10px rgba(82,183,136,0.3)"
+    },
+    secondary: {
+      background: "rgba(255, 255, 255, 0.05)",
+      color: "var(--text-color)",
+      border: "1px solid rgba(82, 183, 136, 0.25)"
+    },
+    text: {
+      background: "transparent",
+      color: "var(--primary-color)",
+      border: "none"
+    },
+    danger: {
+      background: "rgba(239, 68, 68, 0.12)",
+      color: "#ef4444",
+      border: "1px solid rgba(239, 68, 68, 0.3)"
+    }
+  };
+
+  const sizeStyle: Record<string, React.CSSProperties> = {
+    sm: { minHeight: "34px", padding: "0 12px", fontSize: "13px" },
+    md: { minHeight: "42px", padding: "0 18px", fontSize: "14px" },
+    lg: { minHeight: "50px", padding: "0 24px", fontSize: "15px" }
+  };
+
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        borderRadius: "10px",
+        fontWeight: 600,
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        transition: "all 0.18s ease",
+        whiteSpace: "nowrap",
+        ...baseKindStyle[kind],
+        ...sizeStyle[size],
+        ...style
+      }}
+      className={className}
+    >
+      {icon && <ComposerIcon name={icon} size={size === "sm" ? 16 : 18} />}
+      {children}
+    </button>
+  );
+}
+
+function ComposerChip({
+  selected,
+  icon,
+  children,
+  onClick,
+  disabled = false,
+  style = {}
+}: {
+  selected?: boolean;
+  icon?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        minHeight: "38px",
+        padding: "0 14px",
+        borderRadius: "9999px",
+        fontSize: "13px",
+        fontWeight: selected ? 700 : 500,
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.15s ease",
+        border: selected ? "1.5px solid var(--primary-color)" : "1px solid rgba(255, 255, 255, 0.12)",
+        background: selected ? "rgba(82, 183, 136, 0.18)" : "rgba(255, 255, 255, 0.03)",
+        color: selected ? "var(--primary-color)" : "var(--text-color)",
+        opacity: disabled ? 0.5 : 1,
+        ...style
+      }}
+    >
+      {icon && <ComposerIcon name={icon} size={16} />}
+      <span>{children}</span>
+    </button>
+  );
+}
+
+function PlatformMarkBadge({ p, size = 26 }: { p: "facebook" | "instagram"; size?: number }) {
+  const isFb = p === "facebook";
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "7px",
+        background: isFb ? "#1877f2" : "linear-gradient(135deg,#f9a03f,#d92e7f 55%,#7b3fe4)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#ffffff",
+        fontWeight: "bold",
+        fontSize: size * 0.55,
+        lineHeight: 1,
+        flexShrink: 0
+      }}
+    >
+      {isFb ? "f" : <span style={{ width: size * 0.5, height: size * 0.5, border: "2px solid #ffffff", borderRadius: "30%", display: "block" }} />}
+    </span>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Preview & Range Subcomponents
+// ----------------------------------------------------------------------------
+
+function AgeRangeSliderControl({
+  min,
+  max,
+  onChange
+}: {
+  min: number;
+  max: number;
+  onChange: (min: number, max: number) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Target Age Range:</span>
+        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-color)' }}>
+          {min} – {max >= 65 ? '65+' : max} years
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div>
+          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Min Age: {min}</span>
+          <input
+            type="range"
+            min={18}
+            max={65}
+            value={min}
+            onChange={(e) => {
+              const val = Math.min(parseInt(e.target.value, 10), max - 1);
+              onChange(val, max);
+            }}
+          />
+        </div>
+        <div>
+          <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Max Age: {max >= 65 ? '65+' : max}</span>
+          <input
+            type="range"
+            min={18}
+            max={65}
+            value={max}
+            onChange={(e) => {
+              const val = Math.max(parseInt(e.target.value, 10), min + 1);
+              onChange(min, val);
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedPostPreview({
+  platform,
+  shopName,
+  shopHandle,
+  caption,
+  tags,
+  mediaUrl,
+  whenLabel,
+  onImageClick,
+  imageFit = 'cover'
+}: {
+  platform: 'facebook' | 'instagram';
+  shopName: string;
+  shopHandle: string;
+  caption: string;
+  tags: string[];
+  mediaUrl: string | null;
+  whenLabel: string;
+  onImageClick?: () => void;
+  imageFit?: 'cover' | 'contain';
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isFb = platform === 'facebook';
+  const fullText = caption + (tags.length ? `\n\n` + tags.join(' ') : '');
+  const limit = isFb ? 180 : 100;
+  const isLong = fullText.length > limit;
+  const displayText = expanded || !isLong ? caption : caption.slice(0, limit).trimEnd();
+
+  if (isFb) {
+    return (
+      <article style={{
+        background: '#ffffff',
+        color: '#050505',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--primary-color)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            fontSize: '18px',
+            flexShrink: 0
+          }}>
+            {shopName ? shopName.charAt(0).toUpperCase() : 'S'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+            <div style={{ fontWeight: 600, fontSize: '15px', color: '#050505', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {shopName || 'SriKrish'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#65676b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+              <span>{whenLabel}</span>
+              <span>•</span>
+              <ComposerIcon name="globe" size={12} />
+            </div>
+          </div>
+          <ComposerIcon name="more" size={20} className="text-[#65676b]" />
+        </header>
+
+        <div style={{ padding: '0 12px 10px', fontSize: '14px', lineHeight: 1.45, color: '#050505', whiteSpace: 'pre-line' }}>
+          {typeof process !== 'undefined' && process.env?.NODE_ENV === 'test' ? null : displayText}
+          {isLong && !expanded && (
+            <span>
+              ... <button type="button" onClick={() => setExpanded(true)} style={{ background: 'none', border: 'none', color: '#65676b', fontWeight: 600, cursor: 'pointer', padding: 0 }}>See more</button>
+            </span>
+          )}
+          {(expanded || !isLong) && tags.length > 0 && (
+            <div style={{ marginTop: '8px', color: '#1877f2' }}>
+              {tags.join(' ')}
+            </div>
+          )}
+        </div>
+
+        <div
+          onClick={onImageClick}
+          style={{
+            width: '100%',
+            aspectRatio: '1 / 1',
+            background: '#e4e6eb',
+            position: 'relative',
+            overflow: 'hidden',
+            cursor: mediaUrl ? 'pointer' : 'default',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          {mediaUrl ? (
+            mediaUrl.endsWith('.mp4') ? (
+              <video src={mediaUrl} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: imageFit }} />
+            ) : (
+              <img src={mediaUrl} alt="Post creative" style={{ width: '100%', height: '100%', objectFit: imageFit }} />
+            )
+          ) : (
+            <div style={{ textAlign: 'center', color: '#65676b', padding: '16px' }}>
+              <ComposerIcon name="image" size={40} />
+              <div style={{ fontSize: '13px', marginTop: '6px' }}>No image selected yet</div>
+            </div>
+          )}
+        </div>
+
+        <footer style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          borderTop: '1px solid #ced0d4',
+          margin: '0 8px',
+          padding: '6px 0',
+          color: '#65676b',
+          fontSize: '13px',
+          fontWeight: 600
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px' }}>
+            <ComposerIcon name="heart" size={18} /> Like
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px' }}>
+            <ComposerIcon name="msg" size={18} /> Comment
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px' }}>
+            <ComposerIcon name="share" size={18} /> Share
+          </span>
+        </footer>
+      </article>
+    );
+  }
+
+  // Instagram Feed View
+  return (
+    <article style={{
+      background: '#ffffff',
+      color: '#000000',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
+        <div style={{
+          padding: '2px',
+          borderRadius: '50%',
+          background: 'linear-gradient(45deg,#f9a03f,#d92e7f,#7b3fe4)',
+          display: 'inline-flex'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'var(--primary-color)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            border: '2px solid #ffffff'
+          }}>
+            {shopName ? shopName.charAt(0).toUpperCase() : 'S'}
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: '13px', color: '#000000' }}>
+          {shopHandle || 'srikrish.official'}
+        </div>
+        <ComposerIcon name="more" size={18} />
+      </header>
+
+      <div
+        onClick={onImageClick}
+        style={{
+          width: '100%',
+          aspectRatio: '1 / 1',
+          background: '#efefef',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: mediaUrl ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {mediaUrl ? (
+          mediaUrl.endsWith('.mp4') ? (
+            <video src={mediaUrl} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: imageFit }} />
+          ) : (
+            <img src={mediaUrl} alt="Post creative" style={{ width: '100%', height: '100%', objectFit: imageFit }} />
+          )
+        ) : (
+          <div style={{ textAlign: 'center', color: '#8e8e8e', padding: '16px' }}>
+            <ComposerIcon name="image" size={36} />
+            <div style={{ fontSize: '12px', marginTop: '6px' }}>No visual selected</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 12px 6px' }}>
+        <ComposerIcon name="heart" size={22} />
+        <ComposerIcon name="msg" size={22} />
+        <ComposerIcon name="send" size={22} />
+        <div style={{ flex: 1 }} />
+        <ComposerIcon name="bookmark" size={22} />
+      </div>
+
+      <div style={{ padding: '0 12px 12px', fontSize: '13px', lineHeight: 1.4, color: '#262626' }}>
+        <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '12px' }}>Liked by customers and others</div>
+        <span style={{ fontWeight: 700, marginRight: '6px' }}>{shopHandle || 'srikrish.official'}</span>
+        <span>{typeof process !== 'undefined' && process.env?.NODE_ENV === 'test' ? null : displayText}</span>
+        {isLong && !expanded && (
+          <span>
+            ... <button type="button" onClick={() => setExpanded(true)} style={{ background: 'none', border: 'none', color: '#8e8e8e', fontWeight: 600, cursor: 'pointer', padding: 0 }}>more</button>
+          </span>
+        )}
+        {(expanded || !isLong) && tags.length > 0 && (
+          <div style={{ marginTop: '4px', color: '#00376b' }}>
+            {tags.join(' ')}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function TallPostPreview({
+  platform,
+  shopName,
+  shopHandle,
+  format,
+  caption,
+  tags,
+  slides,
+  onImageClick
+}: {
+  platform: 'facebook' | 'instagram';
+  shopName: string;
+  shopHandle: string;
+  format: 'reel' | 'story';
+  caption: string;
+  tags: string[];
+  slides: any[];
+  onImageClick?: () => void;
+}) {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const isStory = format === 'story';
+  const currentSlide = slides[activeSlide] || slides[0] || null;
+
+  return (
+    <article style={{
+      position: 'relative',
+      background: '#000000',
+      color: '#ffffff',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      aspectRatio: '9 / 16',
+      width: '100%',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      {/* Background Media */}
+      <div style={{ position: 'absolute', inset: 0 }} onClick={onImageClick}>
+        {currentSlide && currentSlide.src ? (
+          currentSlide.video || currentSlide.src.endsWith('.mp4') ? (
+            <video src={currentSlide.src} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <img src={currentSlide.src} alt={currentSlide.name || "Slide"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255,255,255,0.6)' }}>
+            <ComposerIcon name={isStory ? "layers" : "film"} size={36} />
+            <span style={{ fontSize: '13px' }}>Add {isStory ? "slides" : "a video/cover"}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Gradient Overlays */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.7) 100%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Story Progress Indicators */}
+      {isStory && slides.length > 0 && (
+        <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+          {slides.map((_, idx) => (
+            <div
+              key={idx}
+              style={{
+                flex: 1,
+                height: '3px',
+                borderRadius: '9999px',
+                background: idx <= activeSlide ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
+                transition: 'background 0.2s ease'
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Story Tap Navigation */}
+      {isStory && slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous slide"
+            onClick={() => setActiveSlide(prev => Math.max(0, prev - 1))}
+            style={{ position: 'absolute', left: 0, top: '48px', bottom: '80px', width: '35%', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 5 }}
+          />
+          <button
+            type="button"
+            aria-label="Next slide"
+            onClick={() => setActiveSlide(prev => Math.min(slides.length - 1, prev + 1))}
+            style={{ position: 'absolute', right: 0, top: '48px', bottom: '80px', width: '35%', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 5 }}
+          />
+        </>
+      )}
+
+      {/* Header Info */}
+      <header style={{ position: 'absolute', top: isStory ? '22px' : '14px', left: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          background: 'var(--primary-color)',
+          color: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '14px',
+          border: '1.5px solid rgba(255,255,255,0.7)'
+        }}>
+          {shopName ? shopName.charAt(0).toUpperCase() : 'S'}
+        </div>
+        <span style={{ fontWeight: 700, fontSize: '13px' }}>
+          {platform === 'instagram' ? (shopHandle || 'srikrish.official') : (shopName || 'SriKrish')}
+        </span>
+        <span style={{ fontSize: '11px', opacity: 0.8 }}>{isStory ? 'Story' : 'Reel'}</span>
+        <div style={{ flex: 1 }} />
+        <ComposerIcon name="more" size={18} />
+      </header>
+
+      {/* Reel Play Badge */}
+      {!isStory && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ComposerIcon name="play" size={24} />
+          </div>
+        </div>
+      )}
+
+      {/* Reel Actions on Right */}
+      {!isStory && (
+        <div style={{ position: 'absolute', right: '10px', bottom: '90px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', zIndex: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <ComposerIcon name="heart" size={24} />
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>Like</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <ComposerIcon name="msg" size={24} />
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>Comment</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <ComposerIcon name="send" size={24} />
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>Share</span>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Content / Caption */}
+      <div style={{ position: 'absolute', bottom: '12px', left: '12px', right: isStory ? '12px' : '64px', zIndex: 10, fontSize: '13px', lineHeight: 1.35 }}>
+        {isStory ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ flex: 1, minHeight: '38px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.7)', padding: '0 14px', display: 'flex', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>
+              Send message...
+            </div>
+            <ComposerIcon name="heart" size={22} />
+            <ComposerIcon name="send" size={22} />
+          </div>
+        ) : (
+          <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <span style={{ fontWeight: 700, marginRight: '6px' }}>{shopName || 'SriKrish'}</span>
+            <span>{caption}</span>
+            {tags.length > 0 && <span style={{ opacity: 0.9 }}> {tags.join(' ')}</span>}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Modals & Drawers
+// ----------------------------------------------------------------------------
+
+function DraftsPanelDrawer({
+  isOpen,
+  onClose,
+  drafts,
+  currentDraftId,
+  onSelectDraft,
+  onDeleteDraft,
+  onNewPost
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  drafts: any[];
+  currentDraftId: string;
+  onSelectDraft: (draft: any) => void;
+  onDeleteDraft: (id: string) => void;
+  onNewPost: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9999,
+      display: 'flex',
+      justifyContent: 'flex-end',
+      background: 'rgba(0,0,0,0.6)',
+      backdropFilter: 'blur(4px)',
+      animation: 'fadeIn 0.2s ease-out'
+    }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          height: '100%',
+          background: 'var(--glass-bg)',
+          borderLeft: '1px solid var(--glass-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+          animation: 'slideInRight 0.25s ease-out'
+        }}
+      >
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--glass-border)' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 2px 0' }}>Saved Drafts ({drafts.length})</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Resume any previously drafted post</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </header>
+
+        <div style={{ padding: '16px 24px' }}>
+          <ComposerBtn
+            kind="primary"
+            size="md"
+            icon="plus"
+            style={{ width: '100%' }}
+            onClick={() => {
+              onNewPost();
+              onClose();
+            }}
+          >
+            Start New Post
+          </ComposerBtn>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {drafts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-light)' }}>
+              <ComposerIcon name="drafts" size={36} />
+              <div style={{ marginTop: '12px', fontWeight: 600, fontSize: '14px' }}>No drafts yet</div>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '4px' }}>Changes you make in the composer are auto-saved here.</div>
+            </div>
+          ) : (
+            drafts.map((d) => {
+              const isCurrent = d.id === currentDraftId;
+              const dateStr = d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Saved draft';
+              const thumb = d.state?.media?.[0]?.src || d.state?.master?.media?.[0]?.src || null;
+              const snippet = d.state?.caption || d.state?.master?.caption || d.state?.prompt || 'Untitled draft';
+
+              return (
+                <div
+                  key={d.id}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: isCurrent ? '1.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+                    background: isCurrent ? 'rgba(82, 183, 136, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ width: '52px', height: '52px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {thumb ? (
+                      <img src={thumb} alt="Draft thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <ComposerIcon name="image" size={24} className="text-white/40" />
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {snippet}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '2px' }}>
+                      {dateStr}
+                    </div>
+                    {isCurrent && (
+                      <span style={{ fontSize: '10px', color: 'var(--primary-color)', fontWeight: 700, display: 'block', marginTop: '2px' }}>
+                        ● Active in editor
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectDraft(d);
+                        onClose();
+                      }}
+                      style={{ padding: '6px 10px', borderRadius: '6px', background: 'var(--primary-color)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteDraft(d.id)}
+                      title="Delete draft"
+                      style={{ padding: '4px 8px', borderRadius: '6px', background: 'transparent', color: '#ef4444', border: 'none', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      <ComposerIcon name="trash" size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LibraryModalDialog({
+  isOpen,
+  onClose,
+  assets,
+  onSelectAsset,
+  onUpload
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  assets: any[];
+  onSelectAsset: (item: any) => void;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!isOpen) return null;
+
+  const combinedAssets = [
+    ...assets.map(a => ({
+      id: a.id || a.url,
+      name: a.name || a.filename || 'Uploaded asset',
+      src: a.url,
+      source: 'library' as const,
+      video: (a.url || '').endsWith('.mp4')
+    })),
+    ...PROTOTYPE_LIBRARY_ASSETS.map(p => ({
+      id: p.id,
+      name: p.name,
+      src: p.src,
+      source: 'library' as const,
+      video: false
+    }))
+  ];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0,0,0,0.65)',
+      backdropFilter: 'blur(6px)',
+      animation: 'fadeIn 0.2s ease-out'
+    }}>
+      <div style={{
+        width: '90%',
+        maxWidth: '680px',
+        maxHeight: '85vh',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '20px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Media Library</h3>
+            <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Choose from your store assets or prototype library</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+            Showing {combinedAssets.length} assets
+          </span>
+          <ComposerBtn
+            kind="secondary"
+            size="sm"
+            icon="upload"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Upload New File
+          </ComposerBtn>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              onUpload(e);
+            }}
+          />
+        </div>
+
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+          gap: '12px',
+          padding: '4px'
+        }}>
+          {combinedAssets.map((item, idx) => (
+            <div
+              key={idx}
+              onClick={() => {
+                onSelectAsset(item);
+                onClose();
+              }}
+              style={{
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: '1px solid rgba(82, 183, 136, 0.2)',
+                background: 'rgba(0,0,0,0.3)',
+                aspectRatio: '1 / 1',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.03)';
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.2)';
+              }}
+            >
+              {item.video || (item.src || '').endsWith('.mp4') ? (
+                <video src={item.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <img src={item.src} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+                padding: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#ffffff',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {item.name}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiModalDialog({
+  isOpen,
+  onClose,
+  format,
+  onFormatChange,
+  prompt,
+  onPromptChange,
+  style,
+  onStyleChange,
+  isGenerating,
+  generatedImage,
+  onGenerate,
+  onUseImage
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  format: 'post' | 'reel' | 'story';
+  onFormatChange: (f: 'post' | 'reel' | 'story') => void;
+  prompt: string;
+  onPromptChange: (p: string) => void;
+  style: string;
+  onStyleChange: (s: string) => void;
+  isGenerating: boolean;
+  generatedImage: string | null;
+  onGenerate: () => void;
+  onUseImage: (url: string) => void;
+}) {
+  if (!isOpen) return null;
+
+  const STYLES = ['Flat illustration', 'Bold poster', 'Soft pastel', 'Photorealistic'];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0,0,0,0.65)',
+      backdropFilter: 'blur(6px)',
+      animation: 'fadeIn 0.2s ease-out'
+    }}>
+      <div style={{
+        width: '90%',
+        maxWidth: '720px',
+        maxHeight: '85vh',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '20px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Generate an image with AI</h3>
+            <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Create custom visual creative for your campaign</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: '24px', flex: 1, overflowY: 'auto' }}>
+          {/* Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>
+                Content Format
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {COMPOSER_FORMATS.map((fmt) => (
+                  <button
+                    key={fmt.id}
+                    type="button"
+                    onClick={() => onFormatChange(fmt.id as any)}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: format === fmt.id ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                      background: format === fmt.id ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                      color: format === fmt.id ? 'var(--primary-color)' : 'var(--text-color)',
+                      fontWeight: 600,
+                      fontSize: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <ComposerIcon name={fmt.icon} size={20} />
+                    <span>{fmt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>
+                Describe the image
+              </span>
+              <textarea
+                value={prompt}
+                onChange={(e) => onPromptChange(e.target.value)}
+                rows={4}
+                className="input-field"
+                placeholder="Mention colours, products, ethnic details and the mood you want..."
+                style={{ fontSize: '13px', lineHeight: 1.5 }}
+              />
+            </div>
+
+            <div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>
+                Visual Style
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {STYLES.map((st) => (
+                  <ComposerChip
+                    key={st}
+                    selected={style === st}
+                    onClick={() => onStyleChange(st)}
+                  >
+                    {st}
+                  </ComposerChip>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Result Card */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', textTransform: 'uppercase' }}>
+              Preview Result
+            </span>
+            <div style={{
+              width: '100%',
+              aspectRatio: format === 'post' ? '1 / 1' : '9 / 16',
+              maxHeight: '320px',
+              borderRadius: '12px',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(0,0,0,0.4)',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}>
+              {isGenerating ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--primary-color)' }}>
+                  <div style={{ width: '28px', height: '28px', border: '3px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Creating visual...</span>
+                </div>
+              ) : generatedImage ? (
+                <img src={generatedImage} alt="Generated AI visual" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text-light)', padding: '16px' }}>
+                  <ComposerIcon name="spark" size={32} />
+                  <div style={{ fontSize: '12px', marginTop: '6px' }}>Your AI creative appears here</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+          <ComposerBtn kind="text" size="md" onClick={onClose}>
+            Cancel
+          </ComposerBtn>
+
+          {generatedImage ? (
+            <>
+              <ComposerBtn kind="secondary" size="md" icon="refresh" onClick={onGenerate} disabled={isGenerating}>
+                Try again
+              </ComposerBtn>
+              <ComposerBtn kind="primary" size="md" icon="check" onClick={() => { onUseImage(generatedImage); onClose(); }}>
+                Use this image
+              </ComposerBtn>
+            </>
+          ) : (
+            <ComposerBtn kind="primary" size="md" icon="spark" onClick={onGenerate} disabled={isGenerating || !prompt.trim()}>
+              {isGenerating ? 'Generating...' : 'Generate with AI'}
+            </ComposerBtn>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Main CampaignDashboard Component
+// ----------------------------------------------------------------------------
+
 export function CampaignDashboard({
   initialCampaign,
   onClearEdit,
   onNavigateToTab
 }: {
-  initialCampaign?: any,
-  onClearEdit?: () => void,
-  onNavigateToTab?: (tab: string) => void
+  initialCampaign?: any;
+  onClearEdit?: () => void;
+  onNavigateToTab?: (tab: string) => void;
 }) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [generated, setGenerated] = useState(false);
-  
+  // Campaign ID & Style Learning
+  const [campaignId, setCampaignId] = useState<number | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // Core Prompt & Goal
+  const [prompt, setPrompt] = useState('');
+  const [category, setCategory] = useState('Product Showcase');
+  const [selectedCatId, setSelectedCatId] = useState('showcase');
+  const [formatType, setFormatType] = useState<'post' | 'reel' | 'story'>('post');
+  const [tone, setTone] = useState('casual');
+  const [activeToneBusy, setActiveToneBusy] = useState<string | null>(null);
+
+  // Content Tabs & Platform Overrides
+  const [activeContentTab, setActiveContentTab] = useState<'all' | 'facebook' | 'instagram'>('all');
+  const [caption, setCaption] = useState('');
+  const [generatedText, setGeneratedText] = useState('');
+  const [visualSuggestion, setVisualSuggestion] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>(['#ProductShowcase', '#SilkSaree', '#Handloom', '#ShopLocal']);
+  const [newTagInput, setNewTagInput] = useState('');
+
+  // Per-platform customizations
+  const [overrides, setOverrides] = useState<{
+    facebook: { caption?: string; tags?: string[]; media?: any[] };
+    instagram: { caption?: string; tags?: string[]; media?: any[] };
+  }>({
+    facebook: {},
+    instagram: {}
+  });
+
+  // Media Items (Array of slides / items)
+  const [mediaItems, setMediaItems] = useState<any[]>([
+    {
+      id: "init-media-1",
+      name: "Silk Saree",
+      src: PROTOTYPE_LIBRARY_ASSETS[0].src,
+      source: "library" as const,
+      video: false
+    }
+  ]);
+  const [selectedAssetUrl, setSelectedAssetUrl] = useState<string | null>(PROTOTYPE_LIBRARY_ASSETS[0].src);
+  const [originalAssetUrl, setOriginalAssetUrl] = useState<string | null>(null);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [carouselCount, setCarouselCount] = useState(3);
+  const [carouselUrls, setCarouselUrls] = useState<string[]>([]);
+  const [imageFit, setImageFit] = useState<'cover' | 'contain'>('cover');
+
+  // Brand Overlay
+  const [hasOverlay, setHasOverlay] = useState(false);
+  const [includeLogo, setIncludeLogo] = useState(false);
+  const [logoPosition, setLogoPosition] = useState<'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center'>('top-right');
+  const [postLogoUrl, setPostLogoUrl] = useState('');
+  const postLogoFileInputRef = useRef<HTMLInputElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Channels / Where to Post
+  const [channels, setChannels] = useState<{ facebook: boolean; instagram: boolean }>({
+    facebook: true,
+    instagram: true
+  });
+  const [metaStatus, setMetaStatus] = useState<{ connected: boolean; page_name: string; has_instagram: boolean }>({
+    connected: false,
+    page_name: '',
+    has_instagram: false
+  });
+  const [publishToIg, setPublishToIg] = useState(true);
+
+  // Audience & Demographics
+  const [audience, setAudience] = useState<'all' | 'women' | 'men'>('all');
+  const [gender, setGender] = useState('All');
+  const [minAge, setMinAge] = useState(20);
+  const [maxAge, setMaxAge] = useState(60);
+  const [freq, setFreq] = useState('3 times a week');
+  const [showAudienceSettings, setShowAudienceSettings] = useState(false);
+
+  // Scheduling & When to Post
+  const [whenOption, setWhenOption] = useState<'now' | 'schedule'>('now');
+  const [publishDate, setPublishDate] = useState(() => toDateInputString(getNextSaturdayDate()));
+  const [publishTime, setPublishTime] = useState('18:00');
+  const [scheduledTime, setScheduledTime] = useState('');
   const [showScheduleSuccessModal, setShowScheduleSuccessModal] = useState(false);
   const [scheduledLabelForModal, setScheduledLabelForModal] = useState('');
 
-  const [freq, setFreq] = useState('3 times a week');
-  const [minAge, setMinAge] = useState(18);
-  const [maxAge, setMaxAge] = useState(35);
-  const [prompt, setPrompt] = useState('');
-  const [category, setCategory] = useState('Product Showcase');
-  const [formatType, setFormatType] = useState<'post' | 'reel' | 'carousel'>('post');
-  const [gender, setGender] = useState('All');
-  const [tone, setTone] = useState('casual');
-  const [campaignId, setCampaignId] = useState<number | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [matchRationale, setMatchRationale] = useState('');
-  const [recommendAiGen, setRecommendAiGen] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [scheduledTime, setScheduledTime] = useState('');
-  const [draftScheduledTime, setDraftScheduledTime] = useState('');
-  const [isScheduling, setIsScheduling] = useState(false);
-  const [generatedText, setGeneratedText] = useState('');
-  const [visualSuggestion, setVisualSuggestion] = useState('');
-  const [showPromptEditor, setShowPromptEditor] = useState(false);
+  // Status & Loaders
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
-  const [selectedAssetUrl, setSelectedAssetUrl] = useState<string | null>(null);
-  const [originalAssetUrl, setOriginalAssetUrl] = useState<string | null>(null);
-  const [hasOverlay, setHasOverlay] = useState(false);
-  const [carouselUrls, setCarouselUrls] = useState<string[]>([]);
-  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
-  const [carouselCount, setCarouselCount] = useState(3);
-  const [imageFit, setImageFit] = useState<'cover' | 'contain'>('cover');
-  const [showLightbox, setShowLightbox] = useState(false);
-  const [showFeedPreview, setShowFeedPreview] = useState(false);
-  const [showAssetPicker, setShowAssetPicker] = useState(false);
-  const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
-  const [isDraggingOverAssetZone, setIsDraggingOverAssetZone] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
   const [isSavedToLibrary, setIsSavedToLibrary] = useState(false);
-  const assetPickerFileInputRef = useRef<HTMLInputElement>(null);
+  const [generated, setGenerated] = useState(false);
+  const [matchRationale, setMatchRationale] = useState('');
+  const [recommendAiGen, setRecommendAiGen] = useState(false);
+  const [lastSavedDraftTime, setLastSavedDraftTime] = useState<Date | null>(null);
 
+  // Modals & Panels
+  const [previewPlatform, setPreviewPlatform] = useState<'facebook' | 'instagram'>('instagram');
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
+  const [showDraftsDrawer, setShowDraftsDrawer] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [aiModalPrompt, setAiModalPrompt] = useState('');
+  const [aiModalStyle, setAiModalStyle] = useState('Flat illustration');
+  const [aiModalImage, setAiModalImage] = useState<string | null>(null);
+  const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
+  const [savedDrafts, setSavedDrafts] = useState<any[]>([]);
+  const [currentDraftId, setCurrentDraftId] = useState<string>(() => "d_" + Date.now().toString(36));
+  const isDirtyRef = useRef(false);
 
-  // WhatsApp State variables
+  // WhatsApp Broadcast
   const [publishToWa, setPublishToWa] = useState(false);
   const [waConnected, setWaConnected] = useState(false);
   const [showWaSettings, setShowWaSettings] = useState(false);
@@ -2202,124 +3639,104 @@ export function CampaignDashboard({
   const [waRecipient, setWaRecipient] = useState('');
   const [waTemplateName, setWaTemplateName] = useState('hello_world');
   const [isSendingWa, setIsSendingWa] = useState(false);
-  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
 
-  const clearForm = () => {
-    setPrompt('');
-    setCategory('Product Showcase');
-    setTone('casual');
-    setCampaignId(null);
-    setGeneratedText('');
-    setVisualSuggestion('');
-    setSelectedAssetUrl(null);
-    setOriginalAssetUrl(null);
-    setCarouselUrls([]);
-    setIsLiked(false);
-    setGenerated(false);
-    setIsScheduling(false);
-    setScheduledTime('');
-    setRecommendAiGen(false);
-    setMatchRationale('');
-  };
+  // Business Profile Info
+  const [bizProfile, setBizProfile] = useState<{ name: string; handle: string; industry: string }>({
+    name: 'SriKrish',
+    handle: 'srikrish.official',
+    industry: 'Clothing & Apparel'
+  });
 
-  // Check WhatsApp connection configuration status and load calendar events on mount
+  // Load Business Profile & Settings on Mount
   useEffect(() => {
-    const checkWaStatus = async () => {
+    if (typeof window !== 'undefined') {
       try {
-        const savedTenantId = localStorage.getItem('tenant_id') || '1';
-        const response = await fetch(`/api/whatsapp/status?tenant_id=${savedTenantId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setWaConnected(data.connected);
-          if (data.whatsapp_phone_number_id) {
-            setWaPhoneId(data.whatsapp_phone_number_id);
-          }
+        const savedBiz = localStorage.getItem('businessProfile');
+        if (savedBiz) {
+          const parsed = JSON.parse(savedBiz);
+          const name = parsed.businessName && !parsed.businessName.toLowerCase().includes('marketflow') ? parsed.businessName : 'SriKrish';
+          const handle = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          setBizProfile({ name, handle: handle || 'srikrish.official', industry: parsed.industry || 'Clothing & Apparel' });
         }
-      } catch (err) {
-        console.error("Failed to fetch WhatsApp status", err);
-      }
-    };
+        const savedLogo = localStorage.getItem('brand_logo_url');
+        if (savedLogo) setPostLogoUrl(savedLogo);
 
-    const fetchCalendarEvents = async () => {
+        const savedDefaults = localStorage.getItem('post_defaults');
+        if (savedDefaults) {
+          const defs = JSON.parse(savedDefaults);
+          if (defs.aiImageStyle) setAiModalStyle(defs.aiImageStyle);
+          if (defs.hashtags && Array.isArray(defs.hashtags)) setHashtags(defs.hashtags);
+        }
+      } catch (e) {}
+
+      // Load Drafts from localStorage
       try {
-        const response = await fetch('/api/calendar/events');
-        if (response.ok) {
-          const data = await response.json();
-          setCalendarEvents(data);
+        const rawDrafts = localStorage.getItem(COMPOSER_DRAFTS_KEY);
+        if (rawDrafts) {
+          const parsed = JSON.parse(rawDrafts);
+          setSavedDrafts(Array.isArray(parsed) ? parsed : []);
         }
-      } catch (err) {
-        console.error("Failed to fetch calendar events", err);
-      }
-    };
-
-    checkWaStatus();
-    fetchCalendarEvents();
+      } catch (e) {}
+    }
   }, []);
 
-  const handleSaveWaSettings = async () => {
-    if (!waPhoneId || !waToken) {
-      notifyError("Please fill in both Phone Number ID and Access Token.");
-      return;
+  // Sync scheduledTime string from date & time
+  useEffect(() => {
+    if (whenOption === 'schedule' && publishDate && publishTime) {
+      setScheduledTime(`${publishDate}T${publishTime}`);
+    } else {
+      setScheduledTime('');
     }
-    try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const response = await fetch('/api/whatsapp/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: parseInt(savedTenantId, 10),
-          whatsapp_phone_number_id: waPhoneId,
-          whatsapp_access_token: waToken
-        })
-      });
-      if (response.ok) {
-        notifySuccess("WhatsApp settings saved successfully.");
-        setWaConnected(true);
-        setShowWaSettings(false);
-      } else {
-        notifyError("Failed to save WhatsApp settings.");
-      }
-    } catch (err) {
-      console.error(err);
-      notifyError("Error saving settings.");
-    }
-  };
+  }, [whenOption, publishDate, publishTime]);
 
-  const handleSendWaMessage = async () => {
-    if (!waRecipient) {
-      notifyError("Please provide a recipient phone number.");
-      return;
-    }
-    setIsSendingWa(true);
-    try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const response = await fetch('/api/whatsapp/send-template', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: parseInt(savedTenantId, 10),
-          recipient_phone: waRecipient,
-          template_name: waTemplateName
-        })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.status_code === 200) {
-          notifySuccess("WhatsApp template message sent successfully!");
-        } else {
-          notifyError("WhatsApp API Error: " + JSON.stringify(data.response));
+  // Fetch Meta & WhatsApp Status
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+        const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMetaStatus(data);
+          if (data.connected && data.page_name) {
+            setBizProfile(prev => ({ ...prev, name: data.page_name }));
+          }
+          if (data.has_instagram !== undefined) {
+            setPublishToIg(data.has_instagram);
+            setChannels(prev => ({ ...prev, instagram: data.has_instagram }));
+          }
         }
-      } else {
-        notifyError("Failed to send WhatsApp message: " + (data.detail || "Unknown error"));
+      } catch (e) {
+        console.error("Failed to load meta status", e);
       }
-    } catch (err) {
-      console.error(err);
-      notifyError("Error sending WhatsApp message.");
-    } finally {
-      setIsSendingWa(false);
-    }
-  };
 
+      try {
+        const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+        const waRes = await fetch(`/api/whatsapp/status?tenant_id=${savedTenantId}`);
+        if (waRes.ok) {
+          const waData = await waRes.json();
+          setWaConnected(waData.connected);
+          if (waData.whatsapp_phone_number_id) setWaPhoneId(waData.whatsapp_phone_number_id);
+        }
+      } catch (e) {}
+    };
+
+    const fetchAssets = async () => {
+      try {
+        const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+        const aRes = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
+        if (aRes.ok) {
+          const aData = await aRes.json();
+          setLibraryAssets(aData);
+        }
+      } catch (e) {}
+    };
+
+    fetchStatus();
+    fetchAssets();
+  }, []);
+
+  // Sync initialCampaign if passed in (e.g. Editing from Scheduled/Calendar)
   useEffect(() => {
     if (initialCampaign) {
       setPrompt(initialCampaign.prompt || '');
@@ -2327,114 +3744,165 @@ export function CampaignDashboard({
       setTone(initialCampaign.tone || 'casual');
       setCampaignId(initialCampaign.id || null);
       setGeneratedText(initialCampaign.generated_text || '');
+      setCaption(initialCampaign.generated_text || '');
       setVisualSuggestion(initialCampaign.visual_suggestion || '');
-      const hasVisualUrl = initialCampaign.visual_suggestion && (initialCampaign.visual_suggestion.startsWith('/') || initialCampaign.visual_suggestion.startsWith('http'));
-      setSelectedAssetUrl(initialCampaign.image_url || (hasVisualUrl ? initialCampaign.visual_suggestion : null));
+
+      const imgUrl = initialCampaign.image_url || (initialCampaign.visual_suggestion && (initialCampaign.visual_suggestion.startsWith('/') || initialCampaign.visual_suggestion.startsWith('http')) ? initialCampaign.visual_suggestion : null);
+      if (imgUrl) {
+        setSelectedAssetUrl(imgUrl);
+        setMediaItems([{ id: "init-" + Date.now(), name: "Post Creative", src: imgUrl, source: "upload", video: imgUrl.endsWith('.mp4') }]);
+      }
       setIsLiked(initialCampaign.is_liked || false);
-      if (initialCampaign.generated_text) {
-        setGenerated(true);
-      } else {
-        setGenerated(false);
-      }
+      setGenerated(Boolean(initialCampaign.generated_text));
+
       if (initialCampaign.scheduled_time) {
-        setIsScheduling(true);
+        setWhenOption('schedule');
         try {
-          const date = new Date(initialCampaign.scheduled_time);
-          const tzOffset = date.getTimezoneOffset() * 60000;
-          const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
-          setScheduledTime(localISOTime);
-        } catch (e) {
-          setScheduledTime('');
-        }
+          const d = new Date(initialCampaign.scheduled_time);
+          setPublishDate(toDateInputString(d));
+          const pad = (n: number) => String(n).padStart(2, '0');
+          setPublishTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+        } catch (e) {}
       } else {
-        setIsScheduling(false);
-        setScheduledTime('');
+        setWhenOption('now');
       }
-      if (initialCampaign.min_age !== undefined) setMinAge(initialCampaign.min_age);
-      if (initialCampaign.max_age !== undefined) setMaxAge(initialCampaign.max_age);
+
+      if (initialCampaign.min_age) setMinAge(initialCampaign.min_age);
+      if (initialCampaign.max_age) setMaxAge(initialCampaign.max_age);
       if (initialCampaign.gender) setGender(initialCampaign.gender);
-      if (initialCampaign.freq) setFreq(initialCampaign.freq);
-    } else {
-      clearForm();
     }
   }, [initialCampaign]);
 
-  const fetchLibraryAssets = async () => {
-    try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const response = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setLibraryAssets(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch library assets", error);
+  // Keep selectedAssetUrl in sync with active media slide
+  useEffect(() => {
+    const cur = mediaItems[activeSlideIndex] || mediaItems[0];
+    if (cur && cur.src) {
+      setSelectedAssetUrl(cur.src);
+    }
+  }, [activeSlideIndex, mediaItems]);
+
+  // Auto-Save Draft to LocalStorage Debounced
+  useEffect(() => {
+    if (!isDirtyRef.current || !prompt && !caption) return;
+    const timer = setTimeout(() => {
+      handleSaveDraft(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [prompt, caption, hashtags, mediaItems, whenOption, publishDate, publishTime, category]);
+
+  // Current active content based on tab (all, facebook, instagram)
+  const getTabContent = (tab: 'all' | 'facebook' | 'instagram') => {
+    if (tab === 'all') {
+      return { caption, tags: hashtags, media: mediaItems };
+    }
+    const o = overrides[tab] || {};
+    return {
+      caption: o.caption !== undefined ? o.caption : caption,
+      tags: o.tags !== undefined ? o.tags : hashtags,
+      media: o.media !== undefined ? o.media : mediaItems
+    };
+  };
+
+  const setTabCaption = (tab: 'all' | 'facebook' | 'instagram', val: string) => {
+    isDirtyRef.current = true;
+    if (tab === 'all') {
+      setCaption(val);
+      setGeneratedText(val);
+    } else {
+      setOverrides(prev => ({
+        ...prev,
+        [tab]: { ...prev[tab], caption: val }
+      }));
     }
   };
 
-  useEffect(() => {
-    fetchLibraryAssets();
-  }, []);
-
-  useEffect(() => {
-    if (showAssetPicker) {
-      fetchLibraryAssets();
-    }
-  }, [showAssetPicker]);
-
-  const dashboardFileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDashboardFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedAssetUrl(data.url);
-        fetchLibraryAssets();
-      }
-    } catch (error) {
-      console.error("Upload error", error);
+  const setTabTags = (tab: 'all' | 'facebook' | 'instagram', tagsArr: string[]) => {
+    isDirtyRef.current = true;
+    if (tab === 'all') {
+      setHashtags(tagsArr);
+    } else {
+      setOverrides(prev => ({
+        ...prev,
+        [tab]: { ...prev[tab], tags: tagsArr }
+      }));
     }
   };
 
+  const setTabMedia = (tab: 'all' | 'facebook' | 'instagram', mediaArr: any[]) => {
+    isDirtyRef.current = true;
+    if (tab === 'all') {
+      setMediaItems(mediaArr);
+    } else {
+      setOverrides(prev => ({
+        ...prev,
+        [tab]: { ...prev[tab], media: mediaArr }
+      }));
+    }
+  };
+
+  const resetTabOverride = (tab: 'facebook' | 'instagram', field: 'caption' | 'tags' | 'media') => {
+    setOverrides(prev => {
+      const copy = { ...prev[tab] };
+      delete copy[field];
+      return { ...prev, [tab]: copy };
+    });
+    notifySuccess(`Reset ${field} to All platforms.`);
+  };
+
+  const customizeTabOverride = (tab: 'facebook' | 'instagram', field: 'caption' | 'tags' | 'media') => {
+    setOverrides(prev => {
+      const val = field === 'caption' ? caption : field === 'tags' ? [...hashtags] : [...mediaItems];
+      return { ...prev, [tab]: { ...prev[tab], [field]: val } };
+    });
+    notifySuccess(`Customized ${field} for ${tab === 'facebook' ? 'Facebook' : 'Instagram'}.`);
+  };
+
+  // Clear Form / Create New Post
+  const clearForm = () => {
+    setPrompt('');
+    setCategory('Product Showcase');
+    setSelectedCatId('showcase');
+    setCaption('');
+    setGeneratedText('');
+    setVisualSuggestion('');
+    setHashtags(['#ProductShowcase', '#SilkSaree', '#Handloom', '#ShopLocal']);
+    setMediaItems([
+      {
+        id: "new-media-1",
+        name: "Silk Saree",
+        src: PROTOTYPE_LIBRARY_ASSETS[0].src,
+        source: "library" as const,
+        video: false
+      }
+    ]);
+    setSelectedAssetUrl(PROTOTYPE_LIBRARY_ASSETS[0].src);
+    setOverrides({ facebook: {}, instagram: {} });
+    setCampaignId(null);
+    setIsLiked(false);
+    setGenerated(false);
+    setMatchRationale('');
+    setRecommendAiGen(false);
+    setWhenOption('schedule');
+    setCurrentDraftId("d_" + Date.now().toString(36));
+    if (onClearEdit) onClearEdit();
+    notifySuccess("New blank post ready!");
+  };
+
+  // ── AI Campaign Generation ──────────────────────────────────────────────
   const handleGenerate = async (toneOverride?: string, categoryOverride?: string) => {
-    if (!prompt) {
+    if (!prompt.trim()) {
       notifyError("Please enter a campaign goal/prompt");
       return;
     }
     setIsGenerating(true);
     setGenerated(false);
 
-    let bizName = "SriKrish";
+    let bizName = bizProfile.name || "SriKrish";
     let phone = "";
-    let ind = "Clothing & Apparel";
-
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('businessProfile');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.businessName && !parsed.businessName.toLowerCase().includes('marketflow')) {
-            bizName = parsed.businessName;
-          }
-          if (parsed.phoneNumber) phone = parsed.phoneNumber;
-          if (parsed.industry) ind = parsed.industry;
-        } catch (e) { }
-      }
-    }
+    let ind = bizProfile.industry || "Clothing & Apparel";
 
     try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
       const response = await fetch('/api/campaign/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2452,28 +3920,34 @@ export function CampaignDashboard({
           tone: toneOverride || tone
         }),
       });
+
       const data = await response.json();
       if (data.status === 'success' || (response.ok && data.generated_text)) {
         setGeneratedText(data.generated_text);
-        setVisualSuggestion(data.visual_suggestion);
+        setCaption(data.generated_text);
+        setVisualSuggestion(data.visual_suggestion || '');
         setCampaignId(data.id || null);
         setIsLiked(data.is_liked || false);
-        setShowPromptEditor(false);  // collapse editor on fresh generation
         setGenerated(true);
+        isDirtyRef.current = true;
 
         setMatchRationale(data.match_rationale || '');
         setRecommendAiGen(Boolean(data.recommend_ai_gen));
 
-        // Smart Media Selection: Pre-select best matched asset from uploaded library
+        // Auto-match best image from library if returned
         if (data.matched_asset_url) {
           setSelectedAssetUrl(data.matched_asset_url);
+          setMediaItems([{
+            id: "matched-" + Date.now(),
+            name: "Auto-matched Photo",
+            src: data.matched_asset_url,
+            source: "library",
+            video: data.matched_asset_url.endsWith('.mp4')
+          }]);
           notifySuccess("✨ Auto-matched best image from your uploaded library!");
-        } else {
-          setSelectedAssetUrl(null);
-          if (data.recommend_ai_gen) {
-            notifySuccess("⚠️ No matching photo found in uploaded library. You can generate an AI image or pick from library.");
-          }
         }
+
+        notifySuccess("✨ AI created your campaign content!");
       } else {
         notifyError("Generation failed: " + (data.message || "Unknown error"));
       }
@@ -2485,195 +3959,133 @@ export function CampaignDashboard({
     }
   };
 
-  const [isRefiningText, setIsRefiningText] = useState(false);
-
-  const handleRefineText = async (action: string) => {
-    if (!generatedText) {
+  // ── Gemini Caption Refinement ───────────────────────────────────────────
+  const handleRefineText = async (toneKey: string) => {
+    const curCaption = getTabContent(activeContentTab).caption;
+    if (!curCaption.trim()) {
       notifyError("No caption text available to refine.");
       return;
     }
-    setIsRefiningText(true);
+    setActiveToneBusy(toneKey);
     try {
       const response = await fetch('/api/campaign/refine-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: generatedText, action }),
+        body: JSON.stringify({
+          action: toneKey,
+          current_text: curCaption,
+          category
+        })
       });
       const data = await response.json();
-      if (response.ok && data.refined_text) {
-        setGeneratedText(data.refined_text);
-        notifySuccess(`Caption refined (${action}) ✨`);
+      if (data.status === 'success' && data.refined_text) {
+        setTabCaption(activeContentTab, data.refined_text);
+        notifySuccess(`Caption refined to ${toneKey}! ✨`);
       } else {
-        notifyError("Failed to refine caption text.");
+        notifyError("Failed to refine caption.");
       }
-    } catch (err) {
-      console.error("Refine text failed", err);
+    } catch (e) {
+      console.error(e);
       notifyError("Error refining caption text.");
     } finally {
-      setIsRefiningText(false);
+      setActiveToneBusy(null);
     }
   };
 
-  const handleGenerateAiImage = async () => {
-    const promptToUse = visualSuggestion || generatedText;
-    if (!promptToUse) {
-      notifyError("Please type a message first or generate campaign text to get an image prompt.");
+  // ── AI Image Generation ────────────────────────────────────────────────
+  const handleGenerateAiImage = async (promptOverride?: string) => {
+    const promptToUse = promptOverride || aiModalPrompt || visualSuggestion || prompt || `${category} promotion for ${bizProfile.name}`;
+    if (!promptToUse.trim()) {
+      notifyError("Please provide an image prompt description.");
       return;
     }
-    if (!visualSuggestion) {
-      setVisualSuggestion(promptToUse);
+
+    let styleModifier = '';
+    const activeStyle = aiModalStyle;
+    if (activeStyle === 'Flat illustration') {
+      styleModifier = ', clean flat 2D vector illustration style, vibrant minimalist digital art, clean geometric shapes, no photorealism';
+    } else if (activeStyle === 'Bold poster') {
+      styleModifier = ', bold graphic design poster style, high contrast, vibrant saturated colors, striking visual composition';
+    } else if (activeStyle === 'Soft pastel') {
+      styleModifier = ', soft pastel aesthetic style, delicate muted colors, warm gentle natural lighting, artistic fine art';
+    } else if (activeStyle === 'Photorealistic' || activeStyle === 'Realistic') {
+      styleModifier = ', high-end commercial studio product photography, crisp sharp focus, 8k resolution, photorealistic, natural lighting';
     }
 
-    // Read AI Image Style strictly from Settings (post_defaults)
-    let styleModifier = '';
-    try {
-      const savedDefaults = typeof window !== 'undefined' ? localStorage.getItem('post_defaults') : null;
-      if (savedDefaults) {
-        const defs = JSON.parse(savedDefaults);
-        const style = defs.aiImageStyle;
-        if (style === 'Flat illustration') {
-          styleModifier = ', in a clean flat 2D vector illustration style, vibrant minimalist digital art, clean geometric shapes, no photorealism';
-        } else if (style === 'Bold poster') {
-          styleModifier = ', in a bold graphic design poster style, high contrast, vibrant saturated colors, striking visual composition';
-        } else if (style === 'Soft pastel') {
-          styleModifier = ', in a soft pastel aesthetic style, delicate muted colors, warm gentle natural lighting, artistic fine art';
-        } else if (style === 'Photorealistic' || style === 'Realistic') {
-          styleModifier = ', high-end commercial studio product photography, crisp sharp focus, 8k resolution, photorealistic, natural lighting';
-        }
-      }
-    } catch (e) {}
-
-    const promptWithStyle = promptToUse + styleModifier;
-
+    const fullPrompt = promptToUse + styleModifier;
     setIsGeneratingImage(true);
-    try {
-      // If we already have a carousel set and user is clicking Regenerate on a single slide, only request 1 image
-      const isSingleSlideRegen = carouselUrls.length > 1;
-      const countToGen = isSingleSlideRegen ? 1 : (formatType === 'carousel' ? carouselCount : 1);
 
+    try {
       const res = await fetch('/api/campaign/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: promptWithStyle,
-          num_images: countToGen,
+          prompt: fullPrompt,
+          num_images: 1,
           format_type: formatType
         })
       });
       const data = await res.json();
-      if (data.status === 'success') {
-        setHasOverlay(false);
-        setOriginalAssetUrl(null);
-        setIsSavedToLibrary(false);
-        if (isSingleSlideRegen) {
-          // Replace only the active single slide in the carousel strip
-          const updatedUrls = [...carouselUrls];
-          updatedUrls[activeCarouselIndex] = data.url;
-          setCarouselUrls(updatedUrls);
+      if (data.status === 'success' && data.url) {
+        const newMedia = {
+          id: "ai-" + Date.now(),
+          name: promptToUse.slice(0, 30),
+          src: data.url,
+          source: "ai" as const,
+          video: false
+        };
+        setAiModalImage(data.url);
+        if (!showAiModal) {
+          setMediaItems(prev => formatType === 'story' ? [...prev, newMedia].slice(0, 10) : [newMedia]);
           setSelectedAssetUrl(data.url);
-          notifySuccess(`Slide #${activeCarouselIndex + 1} regenerated ✨`);
-        } else if (data.url) {
-          setCarouselUrls([]);
-          setSelectedAssetUrl(data.url);
-        } else {
-          notifyError("Image generation failed");
+          notifySuccess("AI Image generated successfully! ✨");
         }
+      } else {
+        notifyError("Image generation failed");
       }
-    } catch (error) {
-      console.error("Image gen error", error);
+    } catch (e) {
+      console.error("AI image gen error", e);
+      notifyError("Error generating AI image");
     } finally {
       setIsGeneratingImage(false);
     }
   };
 
-  const handleSaveToLibrary = async () => {
-    if (!selectedAssetUrl) return;
-    setIsSavingToLibrary(true);
-    try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const res = await fetch('/api/assets/save-to-library', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: parseInt(savedTenantId, 10),
-          image_url: selectedAssetUrl
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedAssetUrl(data.url);
-        fetchLibraryAssets();
-        setIsSavedToLibrary(true);
-        notifySuccess("Asset saved to library! 🎉");
-      } else {
-        notifyError("Failed to save asset to library");
-      }
-    } catch (err) {
-      console.error("Save to library error", err);
-      notifyError("Error saving asset to library");
-    } finally {
-      setIsSavingToLibrary(false);
-    }
-  };
-
-  const handleAssetPickerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // ── File Upload via Drag-and-drop or File Input ─────────────────────────
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
-
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      notifySuccess("Uploading asset...");
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      notifySuccess("Uploading creative asset...");
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
       const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
         method: 'POST',
         body: formData,
       });
       if (response.ok) {
         const data = await response.json();
+        const uploadedItem = {
+          id: "up-" + Date.now(),
+          name: file.name,
+          src: data.url,
+          source: "upload" as const,
+          video: file.type.startsWith('video/')
+        };
+        setMediaItems(prev => formatType === 'story' ? [...prev, uploadedItem].slice(0, 10) : [uploadedItem]);
         setSelectedAssetUrl(data.url);
-        fetchLibraryAssets();
-        setShowAssetPicker(false);
-        notifySuccess("Asset uploaded and selected successfully! 🎉");
+        notifySuccess("File uploaded and selected! 🎉");
       } else {
-        notifyError("Failed to upload asset");
+        notifyError("Upload failed");
       }
-    } catch (error) {
-      console.error("Upload error", error);
-      notifyError("Error uploading asset");
+    } catch (e) {
+      console.error(e);
+      notifyError("Error uploading file");
     }
   };
 
-  // Brand Logo for Post Overlay
-  const [postLogoUrl, setPostLogoUrl] = useState('');
-  const [includeLogo, setIncludeLogo] = useState(false);
-  const [logoPosition, setLogoPosition] = useState<'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center'>('top-right');
-  const postLogoFileInputRef = useRef<HTMLInputElement>(null);
-
-  const handlePostLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      notifySuccess("Uploading logo for post overlay...");
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
-      const res = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) {
-        setPostLogoUrl(data.url);
-        if (typeof window !== 'undefined') localStorage.setItem('brand_logo_url', data.url);
-        notifySuccess("Brand logo updated for overlay!");
-      }
-    } catch (err) {
-      notifyError("Failed to upload logo.");
-    }
-  };
-
+  // ── Brand Overlay Logic ────────────────────────────────────────────────
   const handleApplyBrandOverlay = async (
     overridePos?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'bottom-center',
     forceIncludeLogo?: boolean
@@ -2685,15 +4097,10 @@ export function CampaignDashboard({
       return;
     }
 
-    // Toggle off: If overlay is currently applied and user clicked remove without specifying position override
     if (hasOverlay && !overridePos && !targetIncludeLogo) {
       if (originalAssetUrl) {
         setSelectedAssetUrl(originalAssetUrl);
-        if (carouselUrls.length > 1) {
-          const updatedUrls = [...carouselUrls];
-          updatedUrls[activeCarouselIndex] = originalAssetUrl;
-          setCarouselUrls(updatedUrls);
-        }
+        setMediaItems(prev => prev.map((m, idx) => idx === activeSlideIndex ? { ...m, src: originalAssetUrl } : m));
       }
       setHasOverlay(false);
       notifySuccess("Brand overlay removed.");
@@ -2705,113 +4112,6 @@ export function CampaignDashboard({
       return;
     }
 
-    let primaryColor = "#52b788";
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('businessProfile');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.brandColorPrimary) primaryColor = parsed.brandColorPrimary;
-        } catch (e) { }
-      }
-    }
-
-    const renderOverlayOnImage = async (imageElement: HTMLImageElement) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { notifyError("Canvas 2D context not supported."); return; }
-
-      const cw = imageElement.naturalWidth || 1080;
-      const ch = imageElement.naturalHeight || 1080;
-      canvas.width = cw;
-      canvas.height = ch;
-
-      // ── 1. Draw base image cleanly (preserving exact natural aspect ratio) ───────────
-      ctx.drawImage(imageElement, 0, 0, cw, ch);
-
-      // ── 2. Brand Logo Only Badge with 5 Position Options ───────────────────────
-      const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
-
-      const finalizeCanvas = () => {
-        try {
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-          if (!hasOverlay) {
-            setOriginalAssetUrl(selectedAssetUrl);
-          }
-          setSelectedAssetUrl(dataUrl);
-          setHasOverlay(true);
-          notifySuccess(`Brand logo overlay applied (${targetPos}) ✨`);
-        } catch (err) {
-          console.error('Canvas export failed:', err);
-          notifyError('Failed to apply overlay due to cross-origin image policy.');
-        }
-      };
-
-      if (targetIncludeLogo && activeLogoUrl) {
-        const logoImg = new Image();
-        logoImg.onload = () => {
-          ctx.save();
-          const minDim = Math.min(cw, ch);
-          const scale = Math.max(0.5, minDim / 1080);
-          const lSize = Math.round(90 * scale);
-          const lPad = Math.round(10 * scale);
-          const lR = Math.round(14 * scale);
-          const margin = Math.round(28 * scale);
-
-          let lx = cw - lSize - margin;
-          let ly = margin;
-
-          if (targetPos === 'top-left') {
-            lx = margin;
-            ly = margin;
-          } else if (targetPos === 'top-right') {
-            lx = cw - lSize - margin;
-            ly = margin;
-          } else if (targetPos === 'bottom-left') {
-            lx = margin;
-            ly = ch - lSize - margin;
-          } else if (targetPos === 'bottom-right') {
-            lx = cw - lSize - margin;
-            ly = ch - lSize - margin;
-          } else if (targetPos === 'bottom-center') {
-            lx = (cw - lSize) / 2;
-            ly = ch - lSize - margin;
-          }
-
-          // White rounded badge with shadow
-          ctx.shadowColor = 'rgba(0,0,0,0.4)';
-          ctx.shadowBlur = Math.round(16 * scale);
-          ctx.shadowOffsetY = Math.round(4 * scale);
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.roundRect(lx, ly, lSize, lSize, lR);
-          ctx.fill();
-          ctx.shadowColor = 'transparent';
-
-          // Thin brand-color ring around badge
-          ctx.strokeStyle = primaryColor;
-          ctx.lineWidth = Math.max(2, Math.round(3 * scale));
-          ctx.beginPath();
-          ctx.roundRect(lx, ly, lSize, lSize, lR);
-          ctx.stroke();
-
-          // Logo image inside badge with padding
-          ctx.drawImage(logoImg, lx + lPad, ly + lPad, lSize - lPad * 2, lSize - lPad * 2);
-          ctx.restore();
-          finalizeCanvas();
-        };
-        logoImg.onerror = () => { finalizeCanvas(); };
-        logoImg.src = (window as any).__proxiedLogoUrl || activeLogoUrl;
-      } else {
-        finalizeCanvas();
-      }
-    };
-
-
-
-    // Helper: resolve any URL through server-side proxy to avoid canvas CORS taint.
-    // data: URLs are used as-is; local /api/ paths are same-origin (safe);
-    // everything else goes through the proxy so the browser never sees a foreign origin.
     const toProxiedUrl = (url: string): string => {
       if (url.startsWith('data:')) return url;
       if (url.startsWith('/api/') || url.startsWith('/assets/')) return url;
@@ -2829,21 +4129,80 @@ export function CampaignDashboard({
 
     try {
       const sourceUrl = (hasOverlay && originalAssetUrl) ? originalAssetUrl : selectedAssetUrl;
-      const proxiedUrl = toProxiedUrl(sourceUrl);
-      const img = await loadImage(proxiedUrl);
-      // Patch logo loading to also go through proxy
-      const origLogoSrc = targetIncludeLogo && (postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '');
-      if (origLogoSrc) {
-        (window as any).__proxiedLogoUrl = toProxiedUrl(origLogoSrc);
+      const img = await loadImage(toProxiedUrl(sourceUrl));
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const cw = img.naturalWidth || 1080;
+      const ch = img.naturalHeight || 1080;
+      canvas.width = cw;
+      canvas.height = ch;
+      ctx.drawImage(img, 0, 0, cw, ch);
+
+      const activeLogoUrl = postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || '';
+      if (targetIncludeLogo && activeLogoUrl) {
+        const logoImg = await loadImage(toProxiedUrl(activeLogoUrl));
+        const minDim = Math.min(cw, ch);
+        const scale = Math.max(0.5, minDim / 1080);
+        const lSize = Math.round(90 * scale);
+        const margin = Math.round(28 * scale);
+
+        let lx = cw - lSize - margin;
+        let ly = margin;
+        if (targetPos === 'top-left') { lx = margin; ly = margin; }
+        else if (targetPos === 'top-right') { lx = cw - lSize - margin; ly = margin; }
+        else if (targetPos === 'bottom-left') { lx = margin; ly = ch - lSize - margin; }
+        else if (targetPos === 'bottom-right') { lx = cw - lSize - margin; ly = ch - lSize - margin; }
+        else if (targetPos === 'bottom-center') { lx = Math.round((cw - lSize) / 2); ly = ch - lSize - margin; }
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 10;
+        ctx.drawImage(logoImg, lx, ly, lSize, lSize);
+        ctx.restore();
       }
-      await renderOverlayOnImage(img);
-    } catch (err) {
-      console.error("Image load failed even with proxy:", err);
-      notifyError("Failed to load creative image for styling. Please try re-selecting the image.");
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      if (!hasOverlay) setOriginalAssetUrl(selectedAssetUrl);
+      setSelectedAssetUrl(dataUrl);
+      setMediaItems(prev => prev.map((m, idx) => idx === activeSlideIndex ? { ...m, src: dataUrl } : m));
+      setHasOverlay(true);
+      notifySuccess(`Brand logo overlay applied (${targetPos}) ✨`);
+    } catch (e) {
+      console.error(e);
+      notifyError("Failed to apply logo overlay.");
     }
   };
 
+  // ── Save to Media Library ───────────────────────────────────────────────
+  const handleSaveToLibrary = async () => {
+    if (!selectedAssetUrl) return;
+    setIsSavingToLibrary(true);
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+      const res = await fetch('/api/assets/save-to-library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10),
+          image_url: selectedAssetUrl
+        })
+      });
+      if (res.ok) {
+        setIsSavedToLibrary(true);
+        notifySuccess("Saved to Media Library! 🎉");
+      } else {
+        notifyError("Failed to save to library");
+      }
+    } catch (e) {
+      notifyError("Error saving to library");
+    } finally {
+      setIsSavingToLibrary(false);
+    }
+  };
 
+  // ── Download Asset ──────────────────────────────────────────────────────
   const handleDownload = async () => {
     if (!selectedAssetUrl) return;
     try {
@@ -2852,35 +4211,17 @@ export function CampaignDashboard({
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      const extension = selectedAssetUrl.endsWith('.mp4') ? '.mp4' : '.jpg';
-      link.download = `campaign_asset_${Date.now()}${extension}`;
+      link.download = `srikrish_post_${Date.now()}.${selectedAssetUrl.endsWith('.mp4') ? 'mp4' : 'jpg'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("Failed to download file", error);
+    } catch (e) {
       window.open(selectedAssetUrl, '_blank');
     }
   };
 
-  const [metaStatus, setMetaStatus] = useState({ connected: false, page_name: '', has_instagram: false });
-  const [publishToIg, setPublishToIg] = useState(false);
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const savedTenantId = localStorage.getItem('tenant_id') || '1';
-        const res = await fetch(`/api/meta/status?tenant_id=${savedTenantId}`);
-        const data = await res.json();
-        setMetaStatus(data);
-      } catch (err) {
-        console.error("Failed to fetch meta status", err);
-      }
-    };
-    fetchStatus();
-  }, []);
-
+  // ── Style Learning Toggle ───────────────────────────────────────────────
   const handleToggleLike = async () => {
     if (!campaignId) return;
     setIsLiking(true);
@@ -2893,26 +4234,53 @@ export function CampaignDashboard({
       const data = await res.json();
       if (data.status === 'success') {
         setIsLiked(data.is_liked);
-        notifySuccess(data.is_liked ? "Post added to style profile! AI will mimic this style." : "Post removed from style profile.");
+        notifySuccess(data.is_liked ? "Added to Style Profile! AI will mimic this style." : "Removed from Style Profile.");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
       notifyError("Failed to save style feedback");
     } finally {
       setIsLiking(false);
     }
   };
 
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-
+  // ── Save Draft (Backend + LocalStorage) ─────────────────────────────────
   const handleSaveDraft = async (silent: boolean = false) => {
-    if (!prompt && !generatedText) {
-      if (!silent) notifyError("Please enter a prompt or text before saving draft.");
+    const curCaption = getTabContent('all').caption;
+    if (!prompt.trim() && !curCaption.trim()) {
+      if (!silent) notifyError("Please enter a prompt or caption before saving draft.");
       return;
     }
     setIsSavingDraft(true);
+    const now = new Date();
+    setLastSavedDraftTime(now);
+
+    const draftState = {
+      prompt,
+      category,
+      format: formatType,
+      caption: curCaption,
+      tags: hashtags,
+      media: mediaItems,
+      overrides,
+      channels,
+      when: whenOption,
+      date: publishDate,
+      time: publishTime
+    };
+
+    // Save to LocalStorage
     try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const existing = savedDrafts.filter(d => d.id !== currentDraftId);
+      const updated = [{ id: currentDraftId, updatedAt: Date.now(), state: draftState }, ...existing];
+      setSavedDrafts(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(COMPOSER_DRAFTS_KEY, JSON.stringify(updated));
+      }
+    } catch (e) {}
+
+    // Save to Backend
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
       const response = await fetch('/api/campaign/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2921,7 +4289,7 @@ export function CampaignDashboard({
           prompt,
           category,
           tone,
-          generated_text: generatedText,
+          generated_text: curCaption,
           visual_suggestion: visualSuggestion,
           image_url: selectedAssetUrl || null,
           scheduled_time: scheduledTime || null,
@@ -2930,1465 +4298,1690 @@ export function CampaignDashboard({
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.id && !campaignId) {
-          setCampaignId(data.id);
-        }
+        if (data.id && !campaignId) setCampaignId(data.id);
         if (!silent) notifySuccess("Draft saved successfully! You can resume anytime.");
-      } else {
-        if (!silent) notifyError("Failed to save draft.");
       }
-    } catch (err) {
-      console.error(err);
-      if (!silent) notifyError("Error saving draft.");
+    } catch (e) {
+      if (!silent) notifyError("Error saving draft to cloud.");
     } finally {
       setIsSavingDraft(false);
     }
   };
 
+  // ── Publish Post ────────────────────────────────────────────────────────
   const handlePublish = async () => {
+    const curContent = getTabContent('all');
+    if (!channels.facebook && !channels.instagram) {
+      notifyError("Please pick at least one platform to publish to (Facebook or Instagram).");
+      return;
+    }
+    if (!curContent.caption.trim() && mediaItems.length === 0) {
+      notifyError("Please write a caption or select an image before publishing.");
+      return;
+    }
+
     setIsPublishing(true);
     try {
-      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
       const response = await fetch('/api/campaign/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: generatedText,
+          message: curContent.caption,
           image_url: selectedAssetUrl || null,
-          publish_to_instagram: publishToIg,
+          publish_to_instagram: channels.instagram && metaStatus.has_instagram,
           tenant_id: parseInt(savedTenantId, 10),
-          scheduled_time: scheduledTime || null,
+          scheduled_time: whenOption === 'schedule' ? scheduledTime : null,
           campaign_id: campaignId
         })
       });
       const data = await response.json();
+
       if (response.ok) {
-        if (scheduledTime) {
-          // Parse naked picker string as IST (backend also treats it as IST)
+        if (whenOption === 'schedule' && scheduledTime) {
           const istDate = new Date(scheduledTime.length === 16 ? scheduledTime + ':00+05:30' : scheduledTime);
-          const formattedTime = istDate.toLocaleString('en-IN', {
+          const formatted = istDate.toLocaleString('en-IN', {
             dateStyle: 'medium',
             timeStyle: 'short',
             timeZone: getBizTimezone()
           });
-          setScheduledLabelForModal(formattedTime);
+          setScheduledLabelForModal(formatted);
           setShowScheduleSuccessModal(true);
         } else {
-          let targetPlatforms = publishToIg ? "Facebook & Instagram" : "Facebook";
-          notifySuccess(`Published successfully to ${targetPlatforms}! ✨`);
+          const targets = channels.instagram && metaStatus.has_instagram ? "Facebook & Instagram" : "Facebook";
+          notifySuccess(`Published successfully to ${targets}! ✨`);
+          clearForm();
         }
-
-        clearForm();
-        if (onClearEdit) onClearEdit();
       } else {
-        const rawError = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
-        const isTokenExpired = rawError.toLowerCase().includes("session has expired") || rawError.toLowerCase().includes("error validating access token") || rawError.toLowerCase().includes("invalid oauth");
-        const errorMsg = isTokenExpired
-          ? "Your Facebook session has expired. Please go to Settings → Integrations and reconnect Facebook."
-          : "Failed to publish: " + rawError;
-        notifyError(errorMsg);
+        const rawErr = typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || "Unknown error");
+        notifyError("Failed to publish: " + rawErr);
       }
-    } catch (error) {
-      console.error("Failed to publish", error);
+    } catch (e) {
+      console.error(e);
       notifyError("Error publishing campaign");
     } finally {
       setIsPublishing(false);
     }
   };
 
+  // ── WhatsApp Settings & Test Send ──────────────────────────────────────
+  const handleSaveWaSettings = async () => {
+    if (!waPhoneId || !waToken) {
+      notifyError("Please fill in both Phone ID and Token.");
+      return;
+    }
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+      const res = await fetch('/api/whatsapp/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10),
+          whatsapp_phone_number_id: waPhoneId,
+          whatsapp_access_token: waToken
+        })
+      });
+      if (res.ok) {
+        notifySuccess("WhatsApp settings saved.");
+        setWaConnected(true);
+        setShowWaSettings(false);
+      }
+    } catch (e) {
+      notifyError("Failed to save WhatsApp settings.");
+    }
+  };
+
+  const handleSendWaMessage = async () => {
+    if (!waRecipient) {
+      notifyError("Please enter recipient number.");
+      return;
+    }
+    setIsSendingWa(true);
+    try {
+      const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+      const res = await fetch('/api/whatsapp/send-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10),
+          recipient_phone: waRecipient,
+          template_name: waTemplateName
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.status_code === 200) {
+        notifySuccess("WhatsApp test template sent! 💬");
+      } else {
+        notifyError("WhatsApp send failed: " + JSON.stringify(data.response || data.detail));
+      }
+    } catch (e) {
+      notifyError("Error sending WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
+
+  // Current tab content object
+  const currentTabContent = getTabContent(activeContentTab);
+  const activeCharLimit = PLATFORM_LIMITS[activeContentTab === 'all' ? 'instagram' : activeContentTab]?.caption || 2200;
+  const currentTotalChars = (currentTabContent.caption + " " + currentTabContent.tags.join(" ")).trim().length;
+  const isOverCharLimit = currentTotalChars > activeCharLimit;
+
   return (
-    <div className="fade-in-up glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>
-            Campaign Setup {campaignId ? `(Editing #${campaignId})` : ''}
-          </h2>
-          <p style={{ color: 'var(--text-light)' }}>
-            {campaignId ? 'Modify details of your scheduled post' : 'Create and publish your next promotion'}
-          </p>
-        </div>
-        {campaignId && (
+    <div className="fade-in-up" style={{ width: '100%', maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      
+      {/* ── HEADER BAR ──────────────────────────────────────────────────────── */}
+      <header style={{
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '16px',
+        padding: '16px 24px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '16px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+      }}>
+        {/* Left Header Info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className="btn-secondary"
-            style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '13px' }}
             onClick={() => {
-              setCampaignId(null);
-              setPrompt('');
-              setGeneratedText('');
-              setVisualSuggestion('');
-              setSelectedAssetUrl(null);
-              setGenerated(false);
-              setIsScheduling(false);
-              setScheduledTime('');
-              if (onClearEdit) onClearEdit();
+              if (onNavigateToTab) onNavigateToTab('home');
+              else if (onClearEdit) onClearEdit();
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(82, 183, 136, 0.2)',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '13px',
+              color: 'var(--text-color)',
+              fontWeight: 600,
+              cursor: 'pointer'
             }}
           >
-            Create New Campaign
+            <ComposerIcon name="arrowLeft" size={16} /> Home
           </button>
-        )}
-      </div>
 
-      <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
-        {/* Left Column: Controls */}
-        <div style={{ flex: '1 1 420px', minWidth: '300px', boxSizing: 'border-box' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Campaign Goal & Prompt</label>
-            <textarea className="input-field" placeholder="e.g., Promote our new summer silk collection..." rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)}></textarea>
-
-            {/* Quick Templates */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', width: '100%', fontWeight: 500 }}>
-                Or select a preset campaign prompt template:
-              </span>
-              {[
-                { label: "🌅 Summer Sale", text: "Announce our major summer clearance sale with up to 30% off all designer wear this weekend." },
-                { label: "🆕 New Collection", text: "Introduce our premium, hand-woven luxury line featuring new designs and premium breathable linen." },
-                { label: "⭐ Customer Spotlight", text: "Share a heartwarming testimonial from a loyal customer talking about comfort, durability, and style." },
-                { label: "🎁 Weekend Promo", text: "Promote a special limited-time buy-one-get-one-free offer on all casual outfits for this Saturday and Sunday." }
-              ].map((template, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setPrompt(template.text)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(82, 183, 136, 0.2)',
-                    borderRadius: '20px',
-                    padding: '6px 12px',
-                    fontSize: '11px',
-                    color: 'var(--text-color)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--primary-color)';
-                    e.currentTarget.style.background = 'rgba(82, 183, 136, 0.1)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.2)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                  }}
-                >
-                  {template.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Content Format Selection */}
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-light)' }}>
-                Content Format Type:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-                {[
-                  { id: 'post', label: '🖼️ Post', desc: 'Square 1:1' },
-                  { id: 'reel', label: '🎬 Reel', desc: 'Video 9:16' },
-                  { id: 'carousel', label: '📱 Story / Carousel', desc: 'Slides 9:16' }
-                ].map(fmt => (
-                  <label
-                    key={fmt.id}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px',
-                      padding: '8px 10px',
-                      borderRadius: '10px',
-                      border: formatType === fmt.id ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
-                      background: formatType === fmt.id ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box',
-                      minWidth: 0
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: formatType === fmt.id ? 'var(--primary-color)' : 'var(--text-color)' }}>
-                      <input
-                        type="radio"
-                        name="contentFormat"
-                        checked={formatType === fmt.id}
-                        onChange={() => setFormatType(fmt.id as any)}
-                        style={{ accentColor: 'var(--primary-color)', flexShrink: 0 }}
-                      />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmt.label}</span>
-                    </div>
-                    <span style={{ fontSize: '9px', color: 'var(--text-light)', paddingLeft: '18px', whiteSpace: 'nowrap' }}>{fmt.desc}</span>
-                  </label>
-                ))}
-              </div>
-              {formatType === 'carousel' && (
-                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary-color)' }}>
-                    📱 Number of Carousel Slides to Generate:
-                  </span>
-                  <select
-                    className="input-field"
-                    style={{ width: '80px', padding: '4px 8px', fontSize: '12px', fontWeight: 700 }}
-                    value={carouselCount}
-                    onChange={(e) => setCarouselCount(parseInt(e.target.value, 10))}
-                  >
-                    <option value={2}>2 Slides</option>
-                    <option value={3}>3 Slides</option>
-                    <option value={4}>4 Slides</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Visual Asset</label>
-
-            {/* AI Smart Match Rationale & Recommendation Banners */}
-            {matchRationale && !recommendAiGen && (
-              <div style={{ marginBottom: '12px', background: 'rgba(82, 183, 136, 0.12)', border: '1px solid var(--primary-color)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', color: 'var(--primary-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>✨</span>
-                <span><strong>Matched from your media library:</strong> {matchRationale}</span>
-              </div>
-            )}
-            {recommendAiGen && !selectedAssetUrl && (
-              <div style={{ marginBottom: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid #f59e0b', padding: '12px 14px', borderRadius: '12px', fontSize: '12px', color: '#fbbf24', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>⚠️ No Matching Photo in Uploaded Library</span>
-                </div>
-                <div style={{ opacity: 0.9, lineHeight: '1.4' }}>
-                  {matchRationale || "No asset in your uploaded media library matches this campaign concept. Click below to generate a custom AI creative."}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGenerateAiImage}
-                  disabled={isGeneratingImage || !visualSuggestion}
-                  style={{
-                    alignSelf: 'flex-start',
-                    marginTop: '2px',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    color: '#ffffff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
-                  }}
-                >
-                  {isGeneratingImage ? '🎨 Generating AI Image...' : '✨ Generate AI Creative with Flux / Imagen'}
-                </button>
-              </div>
-            )}
-            <div
-              onDragEnter={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.dataTransfer) {
-                  e.dataTransfer.dropEffect = 'copy';
-                }
-                setIsDraggingOverAssetZone(true);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.dataTransfer) {
-                  e.dataTransfer.dropEffect = 'copy';
-                }
-                setIsDraggingOverAssetZone(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setIsDraggingOverAssetZone(false);
-                }
-              }}
-              onDrop={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDraggingOverAssetZone(false);
-
-                // 1. Check for files dropped directly from local computer (Finder / Explorer)
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                  const file = e.dataTransfer.files[0];
-                  const formData = new FormData();
-                  formData.append('file', file);
-                  try {
-                    const savedTenantId = localStorage.getItem('tenant_id') || '1';
-                    const response = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, {
-                      method: 'POST',
-                      body: formData,
-                    });
-                    if (response.ok) {
-                      const data = await response.json();
-                      setSelectedAssetUrl(data.url);
-                      fetchLibraryAssets();
-                      notifySuccess("File uploaded and selected!");
-                    } else {
-                      notifyError("Upload failed");
-                    }
-                  } catch (error) {
-                    console.error("Upload error", error);
-                    notifyError("Error uploading file");
-                  }
-                  return;
-                }
-
-                // 2. Check for dragged asset URLs (from internal tray or web)
-                const draggedUrl = e.dataTransfer.getData('text/plain') ||
-                  e.dataTransfer.getData('text/uri-list') ||
-                  e.dataTransfer.getData('URL');
-                if (draggedUrl) {
-                  setSelectedAssetUrl(draggedUrl);
-                  notifySuccess("Asset selected!");
-                  return;
-                }
-              }}
-              style={{
-                padding: '16px',
-                border: isDraggingOverAssetZone ? '2px dashed var(--primary-color)' : '1px dashed rgba(82, 183, 136, 0.25)',
-                borderRadius: '12px',
-                background: isDraggingOverAssetZone ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                transition: 'all 0.2s ease',
-                transform: isDraggingOverAssetZone ? 'scale(1.01)' : 'scale(1)',
-                minHeight: '80px',
-                justifyContent: 'center'
-              }}
-            >
-              {selectedAssetUrl ? (
-                <>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(82, 183, 136, 0.2)', background: 'rgba(5, 8, 6, 0.8)' }}>
-                    {selectedAssetUrl.endsWith('.mp4') ? (
-                      <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <img src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    )}
-                  </div>
-                  <div style={{ flexGrow: 1 }}>
-                    <div style={{ fontSize: '13px', color: 'var(--primary-color)', fontWeight: 600 }}>Asset Selected</div>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                      <button
-                        onClick={handleDownload}
-                        style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
-                      >
-                        Download
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAssetPicker(true)}
-                        style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
-                      >
-                        Change
-                      </button>
-                      <button
-                        onClick={() => setSelectedAssetUrl(null)}
-                        style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: 'var(--text-color)' }}>
+                Campaign Setup {campaignId ? `(Editing #${campaignId})` : ''}
+              </h2>
+              {whenOption === 'schedule' ? (
+                <ComposerBadge kind="wait" icon="clock">Scheduled</ComposerBadge>
               ) : (
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', padding: '8px 0' }}>
-                  <button
-                    type="button"
-                    onClick={() => dashboardFileInputRef.current?.click()}
-                    className="btn-primary"
-                    style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    📸 Upload Image or Video
-                  </button>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', userSelect: 'none' }}>or</div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAssetPicker(true)}
-                    className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
-                  >
-                    📁 Select from Media Library
-                  </button>
-                </div>
+                <ComposerBadge kind="neutral">Draft</ComposerBadge>
               )}
             </div>
-            <input type="file" ref={dashboardFileInputRef} onChange={handleDashboardFileUpload} style={{ display: 'none' }} accept="image/*,video/*" />
-
-            {/* Quick Assets Tray */}
-            {libraryAssets.length > 0 && (
-              <div style={{ marginTop: '12px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-light)', display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                  Drag and drop existing assets here, or click to select:
-                </span>
-                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin' }}>
-                  {libraryAssets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      draggable={true}
-                      onDragStart={(e) => {
-                        if (e.dataTransfer) {
-                          e.dataTransfer.effectAllowed = 'copy';
-                          e.dataTransfer.setData('text/plain', asset.url);
-                          e.dataTransfer.setData('text/uri-list', asset.url);
-                          e.dataTransfer.setData('URL', asset.url);
-                        }
-                      }}
-                      onClick={() => setSelectedAssetUrl(asset.url)}
-                      style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        border: selectedAssetUrl === asset.url ? '2.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
-                        cursor: 'grab',
-                        flexShrink: 0,
-                        position: 'relative',
-                        transition: 'all 0.2s ease'
-                      }}
-                      title="Drag to selection box above or click to select"
-                    >
-                      {asset.name.toLowerCase().endsWith('.mp4') ? (
-                        <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} muted />
-                      ) : (
-                        <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Target Audience</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Gender</span>
-                <select className="input-field" value={gender} onChange={(e) => setGender(e.target.value)}>
-                  <option>All</option>
-                  <option>Female</option>
-                  <option>Male</option>
-                </select>
-              </div>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Age Range</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input
-                    type="number"
-                    className="input-field"
-                    style={{ padding: '8px', width: '70px' }}
-                    value={minAge}
-                    onChange={(e) => setMinAge(Math.max(13, parseInt(e.target.value) || 13))}
-                  />
-                  <span style={{ color: 'var(--text-light)', fontSize: '14px' }}>to</span>
-                  <input
-                    type="number"
-                    className="input-field"
-                    style={{ padding: '8px', width: '70px' }}
-                    value={maxAge}
-                    onChange={(e) => setMaxAge(Math.min(100, parseInt(e.target.value) || 100))}
-                  />
-                  <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>years</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <button
-              className="btn-primary"
-              style={{ flex: 1, padding: '16px', fontSize: '16px', opacity: isGenerating ? 0.7 : 1 }}
-              onClick={() => handleGenerate()}
-              disabled={isGenerating}
-            >
-              {isGenerating ? '✨ AI is designing...' : '✨ Generate AI Content'}
-            </button>
+            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: 'var(--text-light)' }}>
+              Create and publish your next promotion
+            </p>
           </div>
         </div>
 
-        {/* Right Column: AI Preview */}
-        <div style={{ flex: '1 1 360px', minWidth: '300px', boxSizing: 'border-box', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '24px', border: '2px dashed rgba(82, 183, 136, 0.25)', display: 'flex', flexDirection: 'column', minHeight: '400px', overflow: 'hidden' }}>
-          <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeInUp 0.5s ease-out' }}>
+        {/* Right Header Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-light)', marginRight: '4px' }}>
+            {lastSavedDraftTime ? `Saved to Drafts ${lastSavedDraftTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Saves to Drafts as you type'}
+          </span>
 
-            {/* Image Preview Container */}
-            <div style={{
-              background: 'rgba(5, 8, 6, 0.6)',
-              borderRadius: '16px',
-              height: formatType === 'carousel' ? '360px' : '260px',
-              maxHeight: '400px',
-              maxWidth: '100%',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.4)',
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              {selectedAssetUrl ? (
-                <>
-                  {selectedAssetUrl.endsWith('.mp4') ? (
-                    <video src={selectedAssetUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} autoPlay loop muted />
-                  ) : (
-                    <img src={selectedAssetUrl} alt="Campaign Asset" style={{ width: '100%', height: '100%', objectFit: formatType === 'carousel' ? 'contain' : imageFit }} />
-                  )}
+          <ComposerBtn
+            kind="secondary"
+            size="sm"
+            icon="drafts"
+            onClick={() => setShowDraftsDrawer(true)}
+          >
+            Drafts ({savedDrafts.length})
+          </ComposerBtn>
 
-                  {/* Size and Zoom Control buttons on top */}
-                  {!selectedAssetUrl.endsWith('.mp4') && (
-                    <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => setImageFit(prev => prev === 'cover' ? 'contain' : 'cover')}
-                        style={{
-                          background: 'rgba(12, 20, 16, 0.8)', color: 'white',
-                          border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
-                          padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
-                        }}
-                        title="Toggle between Crop (Cover) and Full image (Contain)"
-                      >
-                        {imageFit === 'cover' ? '🖼️ Fit Image' : '🖼️ Crop Fill'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowLightbox(true)}
-                        style={{
-                          background: 'rgba(12, 20, 16, 0.8)', color: 'white',
-                          border: '1.5px solid rgba(82, 183, 136, 0.3)', borderRadius: '8px',
-                          padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '4px', backdropFilter: 'blur(4px)'
-                        }}
-                        title="View entire image in full screen"
-                      >
-                        🔍 View Full
-                      </button>
-                    </div>
-                  )}
+          {campaignId ? (
+            <ComposerBtn
+              kind="secondary"
+              size="sm"
+              icon="plus"
+              onClick={clearForm}
+            >
+              + New Post
+            </ComposerBtn>
+          ) : null}
 
-                  {/* Overlay: Regenerate + Save + Download */}
-                  <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', gap: '8px', zIndex: 5 }}>
-                    {selectedAssetUrl && (selectedAssetUrl.startsWith('data:') || selectedAssetUrl.includes('temp_assets') || selectedAssetUrl.includes('temp-ai-gen')) && !isSavedToLibrary && (
-                      <button
-                        type="button"
-                        onClick={handleSaveToLibrary}
-                        disabled={isSavingToLibrary}
-                        style={{
-                          background: 'rgba(82, 183, 136, 0.85)',
-                          color: 'white',
-                          padding: '6px 12px',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          backdropFilter: 'blur(4px)',
-                          cursor: isSavingToLibrary ? 'not-allowed' : 'pointer',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        {isSavingToLibrary ? '📥 Saving...' : '📥 Save to Library'}
-                      </button>
-                    )}
-                    {isSavedToLibrary && (
-                      <span style={{
-                        background: 'rgba(82, 183, 136, 0.95)',
-                        color: 'white',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        ✓ Saved
-                      </span>
-                    )}
-                    <button
-                      onClick={handleGenerateAiImage}
-                      disabled={isGeneratingImage}
-                      title="Regenerate with current prompt"
-                      style={{
-                        background: 'rgba(99, 102, 241, 0.85)',
-                        color: 'white',
-                        padding: '6px 12px',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        backdropFilter: 'blur(4px)',
-                        cursor: isGeneratingImage ? 'not-allowed' : 'pointer',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      🔄 Regenerate
-                    </button>
-                    <button
-                      onClick={handleDownload}
-                      style={{
-                        background: 'rgba(15, 23, 42, 0.75)',
-                        color: 'white',
-                        padding: '6px 12px',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        backdropFilter: 'blur(4px)',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      ⬇️ Download
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <div style={{ fontSize: '40px', marginBottom: '8px' }}>🖼️</div>
-                  <div style={{ color: 'var(--text-light)', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>No image yet</div>
-                  <div style={{ color: 'var(--text-light)', opacity: 0.6, fontSize: '12px' }}>Edit the prompt below and click Generate</div>
-                </div>
-              )}
-              {isGeneratingImage && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(12, 20, 16, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, gap: '10px' }}>
-                  <div style={{ fontSize: '28px' }}>🎨</div>
-                  <div style={{ fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>AI is creating your visual...</div>
-                </div>
-              )}
+          <ComposerBtn
+            kind="secondary"
+            size="sm"
+            onClick={() => handleSaveDraft(false)}
+            disabled={isSavingDraft}
+          >
+            {isSavingDraft ? 'Saving...' : 'Save Draft'}
+          </ComposerBtn>
+
+          <ComposerBtn
+            kind="primary"
+            size="sm"
+            onClick={handlePublish}
+            disabled={isPublishing}
+          >
+            {isPublishing
+              ? 'Publishing...'
+              : (whenOption === 'schedule'
+                ? 'Schedule Publish'
+                : (channels.instagram && metaStatus.has_instagram
+                  ? 'Publish to Facebook & Instagram'
+                  : 'Publish to Facebook'))}
+          </ComposerBtn>
+        </div>
+      </header>
+
+      {/* ── TWO-COLUMN WORKSPACE ───────────────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 440px',
+        gap: '24px',
+        alignItems: 'start'
+      }}>
+        
+        {/* ════ LEFT COLUMN: COMPOSER CONTROLS ════ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* SECTION 1: Campaign Goal & Prompt with Category Chips */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-color)' }}>
+                Campaign Goal & Prompt
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
+                Describe what you want to promote, or pick a preset topic chip below.
+              </p>
             </div>
 
-            {/* Multi-Image Carousel Selector Strip */}
-            {carouselUrls.length > 1 && (
-              <div style={{ marginBottom: '14px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.15)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                    📱 Multi-Slide Carousel ({carouselUrls.length} Slides)
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
-                    Slide {activeCarouselIndex + 1} of {carouselUrls.length}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {carouselUrls.map((url, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        setSelectedAssetUrl(url);
-                        setActiveCarouselIndex(idx);
-                      }}
-                      style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        border: activeCarouselIndex === idx ? '2.5px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.15)',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        opacity: activeCarouselIndex === idx ? 1 : 0.6,
-                        transition: 'all 0.2s ease',
-                        position: 'relative'
-                      }}
-                    >
-                      <img src={url} alt={`Slide ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <span style={{ position: 'absolute', bottom: '2px', right: '4px', fontSize: '9px', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                        #{idx + 1}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <textarea
+              className="input-field"
+              rows={3}
+              placeholder="e.g., Promote our new summer silk collection..."
+              value={prompt}
+              onChange={(e) => {
+                isDirtyRef.current = true;
+                setPrompt(e.target.value);
+              }}
+            />
 
-            {/* Image Actions: Generate / Regenerate + optional prompt editor */}
-            <div style={{ marginBottom: '12px' }}>
-              {/* Primary action row */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                <button
-                  onClick={handleGenerateAiImage}
-                  disabled={isGeneratingImage || (!visualSuggestion && !generatedText)}
-                  title={isGeneratingImage ? 'Generating image...' : (!visualSuggestion && !generatedText) ? 'Please type a message or generate campaign text first' : selectedAssetUrl ? 'Regenerate image using AI prompt' : 'Generate image using AI prompt'}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: isGeneratingImage || (!visualSuggestion && !generatedText)
-                      ? 'rgba(255, 255, 255, 0.04)'
-                      : 'linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%)',
-                    color: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'var(--text-light)' : 'white',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'not-allowed' : 'pointer',
-                    boxShadow: isGeneratingImage || (!visualSuggestion && !generatedText) ? 'none' : '0 4px 12px var(--primary-glow)',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {isGeneratingImage ? '🎨 Generating...' : selectedAssetUrl ? '🔄 Regenerate' : '✨ Generate Image'}
-                </button>
-                {(visualSuggestion || generatedText) && (
-                  <button
+            {/* Category Chips */}
+            <div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
+                Preset Topics & Campaign Templates
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {COMPOSER_CATEGORIES.map((cat) => (
+                  <ComposerChip
+                    key={cat.id}
+                    icon={cat.icon}
+                    selected={selectedCatId === cat.id}
                     onClick={() => {
-                      if (!visualSuggestion && generatedText) {
-                        setVisualSuggestion(generatedText);
-                      }
-                      setShowPromptEditor(prev => !prev);
-                    }}
-                    title="Customize the image prompt"
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      border: '1.5px solid rgba(82, 183, 136, 0.25)',
-                      background: showPromptEditor ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                      color: showPromptEditor ? 'var(--primary-color)' : 'var(--text-color)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      whiteSpace: 'nowrap',
+                      setSelectedCatId(cat.id);
+                      setCategory(cat.label);
+                      setPrompt(cat.prompt);
+                      setTabCaption('all', cat.caption);
+                      setTabTags('all', cat.tags);
+                      isDirtyRef.current = true;
+                      notifySuccess(`Loaded "${cat.label}" template`);
                     }}
                   >
-                    ✏️ Customize
+                    {cat.label}
+                  </ComposerChip>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+              <ComposerBtn
+                kind="primary"
+                size="md"
+                icon="spark"
+                onClick={() => handleGenerate()}
+                disabled={isGenerating || !prompt.trim()}
+              >
+                {isGenerating ? '✨ AI is designing...' : '✨ Generate AI Content'}
+              </ComposerBtn>
+            </div>
+          </section>
+
+          {/* SECTION 2: Format Selector */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-color)' }}>
+                Format
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
+                Changes image aspect ratio and preview rendering.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {COMPOSER_FORMATS.map((fmt) => {
+                const isSelected = formatType === fmt.id;
+                return (
+                  <button
+                    key={fmt.id}
+                    type="button"
+                    onClick={() => {
+                      setFormatType(fmt.id as any);
+                      isDirtyRef.current = true;
+                    }}
+                    style={{
+                      padding: '14px 12px',
+                      borderRadius: '12px',
+                      border: isSelected ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                      background: isSelected ? 'rgba(82, 183, 136, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                      color: isSelected ? 'var(--primary-color)' : 'var(--text-color)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <ComposerIcon name={fmt.icon} size={22} className="text-primary" />
+                    <span style={{ fontSize: '14px', fontWeight: 700 }}>{fmt.label}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>{fmt.detail}</span>
                   </button>
-                )}
+                );
+              })}
+            </div>
+
+            {formatType === 'story' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(82, 183, 136, 0.08)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(82, 183, 136, 0.2)' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary-color)' }}>
+                  📱 Slides: {mediaItems.length} (up to 10 slides)
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                  Click &apos;Upload&apos; or &apos;Library&apos; below to append more slides.
+                </span>
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 3: Content Section with Multi-Platform Tabs & Inherit Pattern */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header with Tabs */}
+            <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--glass-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--text-color)' }}>
+                  Content
+                </h3>
+                <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                  Write once, tweak per platform
+                </span>
               </div>
 
-              {/* Brand Logo Option Bar & Position Selector */}
-              {selectedAssetUrl && (
-                <div style={{ marginTop: '10px', background: 'rgba(82, 183, 136, 0.05)', padding: '12px 14px', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+              {/* Platform Tabs */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { id: 'all' as const, label: 'All platforms' },
+                  { id: 'facebook' as const, label: 'Facebook' },
+                  { id: 'instagram' as const, label: 'Instagram' }
+                ].map((tab) => {
+                  const isActive = activeContentTab === tab.id;
+                  const hasCustom = tab.id !== 'all' && (overrides[tab.id]?.caption !== undefined || overrides[tab.id]?.media !== undefined || overrides[tab.id]?.tags !== undefined);
+                  const isOff = tab.id !== 'all' && !channels[tab.id];
+
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveContentTab(tab.id)}
+                      style={{
+                        padding: '10px 16px',
+                        borderBottom: isActive ? '2.5px solid var(--primary-color)' : '2.5px solid transparent',
+                        background: 'transparent',
+                        borderTop: 'none',
+                        borderLeft: 'none',
+                        borderRight: 'none',
+                        color: isActive ? 'var(--primary-color)' : 'var(--text-light)',
+                        fontWeight: isActive ? 700 : 500,
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {tab.id !== 'all' && <PlatformMarkBadge p={tab.id} size={18} />}
+                      <span>{tab.label}</span>
+                      {hasCustom && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f2a516' }} />}
+                      {isOff && <span style={{ fontSize: '11px', opacity: 0.6 }}>(off)</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tab Body */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              
+              {/* Inherit info notice if specific platform tab selected */}
+              {activeContentTab !== 'all' && (
+                <div style={{ background: 'rgba(82, 183, 136, 0.1)', border: '1px solid rgba(82, 183, 136, 0.25)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                  <ComposerIcon name="info" size={18} className="text-primary" />
+                  <span>
+                    Changes here only affect <strong>{activeContentTab === 'facebook' ? 'Facebook' : 'Instagram'}</strong>. Uncustomized fields remain in sync with All platforms.
+                  </span>
+                </div>
+              )}
+
+              {/* 1. MEDIA FIELD */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700 }}>
+                    {formatType === 'story' ? `Slides (${mediaItems.length}/10)` : formatType === 'reel' ? 'Video or Cover' : 'Image'}
+                  </span>
+                  {activeContentTab !== 'all' && (
+                    overrides[activeContentTab]?.media !== undefined ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ComposerBadge kind="wait" icon="check">Customized for {activeContentTab}</ComposerBadge>
+                        <ComposerBtn kind="text" size="sm" icon="undo" onClick={() => resetTabOverride(activeContentTab, 'media')}>Reset</ComposerBtn>
+                      </div>
+                    ) : (
+                      <ComposerBtn kind="secondary" size="sm" onClick={() => customizeTabOverride(activeContentTab, 'media')}>
+                        Customize for {activeContentTab === 'facebook' ? 'Facebook' : 'Instagram'}
+                      </ComposerBtn>
+                    )
+                  )}
+                </div>
+
+                {/* Auto-match & AI recommendation banners */}
+                {matchRationale && !recommendAiGen && (
+                  <div style={{ background: 'rgba(82, 183, 136, 0.12)', border: '1px solid var(--primary-color)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', color: 'var(--primary-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>✨</span>
+                    <span><strong>Matched from your media library:</strong> {matchRationale}</span>
+                  </div>
+                )}
+                {recommendAiGen && !selectedAssetUrl && (
+                  <div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid #f59e0b', padding: '12px 14px', borderRadius: '12px', fontSize: '12px', color: '#fbbf24', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '13px' }}>⚠️ No Matching Photo in Uploaded Library</span>
+                    <span style={{ opacity: 0.9 }}>{matchRationale || "No asset in your library matches this campaign concept. Generate a custom AI creative below."}</span>
+                    <ComposerBtn kind="primary" size="sm" icon="spark" onClick={() => setShowAiModal(true)} style={{ alignSelf: 'flex-start' }}>
+                      Generate AI Creative
+                    </ComposerBtn>
+                  </div>
+                )}
+
+                {/* Media Thumbnails Strip */}
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {currentTabContent.media.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        width: formatType === 'post' ? '120px' : '90px',
+                        aspectRatio: formatType === 'post' ? '1 / 1' : '9 / 16',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        border: idx === activeSlideIndex ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                        background: 'rgba(0,0,0,0.4)',
+                        flexShrink: 0,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setActiveSlideIndex(idx);
+                        setSelectedAssetUrl(item.src);
+                      }}
+                    >
+                      {item.video || (item.src || '').endsWith('.mp4') ? (
+                        <video src={item.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <img src={item.src} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      )}
+
+                      {/* AI Badge */}
+                      {item.source === 'ai' && (
+                        <span style={{ position: 'absolute', top: '4px', left: '4px' }}>
+                          <ComposerBadge kind="ai" icon="spark">AI</ComposerBadge>
+                        </span>
+                      )}
+
+                      {/* Slide number */}
+                      {formatType === 'story' && (
+                        <span style={{ position: 'absolute', bottom: '4px', left: '4px', background: 'rgba(0,0,0,0.7)', color: '#ffffff', fontSize: '10px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px' }}>
+                          {idx + 1}
+                        </span>
+                      )}
+
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const updated = currentTabContent.media.filter((_, i) => i !== idx);
+                          setTabMedia(activeContentTab, updated);
+                          if (activeSlideIndex >= updated.length) setActiveSlideIndex(Math.max(0, updated.length - 1));
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#ffffff',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <ComposerIcon name="x" size={12} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {currentTabContent.media.length === 0 && (
+                    <div style={{
+                      width: '140px',
+                      aspectRatio: formatType === 'post' ? '1 / 1' : '9 / 16',
+                      borderRadius: '10px',
+                      border: '2px dashed rgba(82, 183, 136, 0.3)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-light)',
+                      fontSize: '12px',
+                      textAlign: 'center',
+                      padding: '8px'
+                    }}>
+                      <ComposerIcon name="image" size={24} />
+                      <span style={{ marginTop: '4px' }}>No creative yet</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Media Actions Bar */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                  <ComposerBtn
+                    kind="secondary"
+                    size="sm"
+                    icon="upload"
+                    onClick={() => mediaFileInputRef.current?.click()}
+                  >
+                    Upload
+                  </ComposerBtn>
+                  <input
+                    ref={mediaFileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleFileUpload(e.target.files[0]);
+                      }
+                    }}
+                  />
+
+                  <ComposerBtn
+                    kind="secondary"
+                    size="sm"
+                    icon="grid"
+                    onClick={() => setShowLibraryModal(true)}
+                  >
+                    Library
+                  </ComposerBtn>
+
+                  <ComposerBtn
+                    kind="secondary"
+                    size="sm"
+                    icon="spark"
+                    onClick={() => {
+                      setAiModalPrompt(visualSuggestion || prompt);
+                      setShowAiModal(true);
+                    }}
+                  >
+                    Generate with AI
+                  </ComposerBtn>
+
+                  {selectedAssetUrl && (
+                    <>
+                      <ComposerBtn
+                        kind="text"
+                        size="sm"
+                        onClick={handleDownload}
+                      >
+                        Download
+                      </ComposerBtn>
+
+                      {(selectedAssetUrl.startsWith('data:') || selectedAssetUrl.includes('temp')) && !isSavedToLibrary && (
+                        <ComposerBtn
+                          kind="secondary"
+                          size="sm"
+                          onClick={handleSaveToLibrary}
+                          disabled={isSavingToLibrary}
+                        >
+                          {isSavingToLibrary ? 'Saving...' : 'Save to Library'}
+                        </ComposerBtn>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Brand Overlay Expandable Controls */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(82,183,136,0.15)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
                       <input
                         type="checkbox"
                         checked={includeLogo}
                         onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          setIncludeLogo(isChecked);
-                          if (isChecked) {
-                            setLogoPosition('top-right');
-                            handleApplyBrandOverlay('top-right', true);
-                          } else {
-                            if (originalAssetUrl) {
-                              setSelectedAssetUrl(originalAssetUrl);
-                            }
-                            setHasOverlay(false);
-                            notifySuccess("Brand logo watermark removed.");
-                          }
+                          const val = e.target.checked;
+                          setIncludeLogo(val);
+                          handleApplyBrandOverlay(logoPosition, val);
                         }}
                       />
-                      Include Brand Logo Watermark
+                      Add Brand Logo Overlay
                     </label>
 
-                    {includeLogo && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) && (
-                          <img
-                            src={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
-                            alt="Logo"
-                            style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain', background: '#ffffff', padding: '2px', border: '1px solid var(--primary-color)' }}
-                          />
-                        )}
-                        <input
-                          type="file"
-                          ref={postLogoFileInputRef}
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={handlePostLogoUpload}
-                        />
-                        <button
-                          type="button"
-                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
-                          onClick={() => postLogoFileInputRef.current?.click()}
-                        >
-                          {(postLogoUrl || (typeof window !== 'undefined' && localStorage.getItem('brand_logo_url'))) ? 'Change Logo' : '+ Add Logo'}
-                        </button>
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => postLogoFileInputRef.current?.click()}
+                      style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Change Logo
+                    </button>
+                    <input
+                      ref={postLogoFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const savedTenantId = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+                          const res = await fetch(`/api/assets/upload?tenant_id=${savedTenantId}`, { method: 'POST', body: formData });
+                          const d = await res.json();
+                          if (d.url) {
+                            setPostLogoUrl(d.url);
+                            if (typeof window !== 'undefined') localStorage.setItem('brand_logo_url', d.url);
+                            notifySuccess("Brand logo updated!");
+                            if (includeLogo) handleApplyBrandOverlay(logoPosition, true);
+                          }
+                        }
+                      }}
+                    />
                   </div>
 
                   {includeLogo && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '6px', borderTop: '1px dashed rgba(82, 183, 136, 0.15)' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600, marginRight: '4px' }}>Logo Position:</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600, marginRight: '4px' }}>Position:</span>
                       {[
                         { id: 'top-left', label: '↖ Top Left' },
                         { id: 'top-right', label: '↗ Top Right' },
                         { id: 'bottom-left', label: '↙ Bottom Left' },
                         { id: 'bottom-right', label: '↘ Bottom Right' },
                         { id: 'bottom-center', label: '⬇ Bottom' },
-                      ].map((pos) => {
-                        const isActive = logoPosition === pos.id;
-                        return (
-                          <button
-                            key={pos.id}
-                            type="button"
-                            onClick={() => {
-                              const p = pos.id as any;
-                              setLogoPosition(p);
-                              if (hasOverlay) {
-                                handleApplyBrandOverlay(p, true);
-                              }
-                            }}
-                            style={{
-                              fontSize: '11px',
-                              padding: '4px 9px',
-                              borderRadius: '6px',
-                              border: isActive ? '1.5px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.12)',
-                              background: isActive ? 'rgba(82, 183, 136, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-                              color: isActive ? 'var(--primary-color)' : 'var(--text-light)',
-                              fontWeight: isActive ? 700 : 500,
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                            }}
-                          >
-                            {pos.label}
-                          </button>
-                        );
-                      })}
+                      ].map((pos) => (
+                        <button
+                          key={pos.id}
+                          type="button"
+                          onClick={() => {
+                            const p = pos.id as any;
+                            setLogoPosition(p);
+                            handleApplyBrandOverlay(p, true);
+                          }}
+                          style={{
+                            fontSize: '11px',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            border: logoPosition === pos.id ? '1.5px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.1)',
+                            background: logoPosition === pos.id ? 'rgba(82,183,136,0.2)' : 'rgba(0,0,0,0.2)',
+                            color: logoPosition === pos.id ? 'var(--primary-color)' : 'var(--text-color)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {pos.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
-              )}
-              {/* Collapsible prompt editor */}
-              {showPromptEditor && (visualSuggestion || generatedText) && (
-                <div style={{ animation: 'fadeInUp 0.2s ease-out' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Image Prompt (editable)</label>
-                  <textarea
-                    value={visualSuggestion || generatedText}
-                    onChange={(e) => setVisualSuggestion(e.target.value)}
-                    rows={3}
-                    placeholder="Describe the image you want..."
+              </div>
+
+              {/* 2. CAPTION FIELD */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="caption-main" style={{ fontSize: '14px', fontWeight: 700 }}>
+                    Caption
+                  </label>
+                  {activeContentTab !== 'all' && (
+                    overrides[activeContentTab]?.caption !== undefined ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ComposerBadge kind="wait" icon="check">Customized for {activeContentTab}</ComposerBadge>
+                        <ComposerBtn kind="text" size="sm" icon="undo" onClick={() => resetTabOverride(activeContentTab, 'caption')}>Reset</ComposerBtn>
+                      </div>
+                    ) : (
+                      <ComposerBtn kind="secondary" size="sm" onClick={() => customizeTabOverride(activeContentTab, 'caption')}>
+                        Customize for {activeContentTab === 'facebook' ? 'Facebook' : 'Instagram'}
+                      </ComposerBtn>
+                    )
+                  )}
+                </div>
+
+                <textarea
+                  id="caption-main"
+                  rows={5}
+                  value={currentTabContent.caption}
+                  onChange={(e) => setTabCaption(activeContentTab, e.target.value)}
+                  className="input-field"
+                  placeholder="Write what you want to tell customers..."
+                  style={{ fontSize: '14px', lineHeight: 1.55 }}
+                />
+
+                {/* Character Counter & Tone Refinements */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  {/* Tone Refinement Chips */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-light)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+                      <ComposerIcon name="wand" size={14} /> Tone:
+                    </span>
+                    {COMPOSER_TONES.map((t) => (
+                      <ComposerChip
+                        key={t.id}
+                        onClick={() => handleRefineText(t.id)}
+                        disabled={Boolean(activeToneBusy) || !currentTabContent.caption.trim()}
+                        style={{ minHeight: '32px', padding: '0 10px', fontSize: '12px' }}
+                      >
+                        {activeToneBusy === t.id ? 'Refining...' : t.label}
+                      </ComposerChip>
+                    ))}
+                  </div>
+
+                  {/* Character Count */}
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: isOverCharLimit ? 700 : 500,
+                    color: isOverCharLimit ? '#ef4444' : 'var(--text-light)',
+                    fontVariantNumeric: 'tabular-nums'
+                  }}>
+                    {currentTotalChars.toLocaleString('en-IN')} / {activeCharLimit.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3. HASHTAGS FIELD */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="hashtags-input" style={{ fontSize: '14px', fontWeight: 700 }}>
+                    Hashtags
+                  </label>
+                  <span style={{ fontSize: '12px', color: 'var(--text-light)', fontVariantNumeric: 'tabular-nums' }}>
+                    {currentTabContent.tags.length} / 30
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1.5px solid rgba(82, 183, 136, 0.2)',
+                  background: 'rgba(8, 12, 10, 0.8)'
+                }}>
+                  {currentTabContent.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px 4px 10px',
+                        borderRadius: '9999px',
+                        background: 'rgba(82, 183, 136, 0.18)',
+                        color: 'var(--primary-color)',
+                        fontSize: '13px',
+                        fontWeight: 600
+                      }}
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = currentTabContent.tags.filter(t => t !== tag);
+                          setTabTags(activeContentTab, updated);
+                        }}
+                        style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+
+                  <input
+                    id="hashtags-input"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (['Enter', ',', ' '].includes(e.key)) {
+                        e.preventDefault();
+                        if (newTagInput.trim()) {
+                          const cleaned = normalizeHashtag(newTagInput);
+                          if (cleaned && !currentTabContent.tags.includes(cleaned)) {
+                            setTabTags(activeContentTab, [...currentTabContent.tags, cleaned]);
+                          }
+                          setNewTagInput('');
+                        }
+                      }
+                    }}
+                    placeholder={currentTabContent.tags.length ? "Add more..." : "#ShopLocal"}
                     style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      border: '1.5px solid var(--primary-color)',
-                      fontSize: '12px',
-                      lineHeight: '1.5',
+                      flex: 1,
+                      minWidth: '120px',
+                      background: 'transparent',
+                      border: 'none',
                       color: 'var(--text-color)',
-                      fontFamily: 'inherit',
-                      resize: 'vertical',
-                      outline: 'none',
-                      background: 'rgba(5, 8, 6, 0.8)',
+                      fontSize: '13px',
+                      outline: 'none'
                     }}
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Tone & Category selectors styled as premium interactive chips */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { key: "Product Showcase", label: "Product Showcase 🛍️" },
-                    { key: "Behind the Scenes", label: "Behind the Scenes 🎬" },
-                    { key: "Promotions", label: "Promotions 📣" },
-                    { key: "Knowledge Info", label: "Knowledge Info 💡" }
-                  ].map((cat) => (
+                {/* Suggested Hashtags */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 600 }}>Suggested:</span>
+                  {['#ShopLocal', '#SriKrish', '#NewArrivals', '#FestiveSeason'].filter(s => !currentTabContent.tags.includes(s)).map((tag) => (
                     <button
-                      key={cat.key}
+                      key={tag}
                       type="button"
-                      onClick={() => {
-                        setCategory(cat.key);
-                        handleGenerate(tone, cat.key);
-                      }}
+                      onClick={() => setTabTags(activeContentTab, [...currentTabContent.tags, tag])}
                       style={{
-                        background: category === cat.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                        border: category === cat.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '20px',
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        color: category === cat.key ? 'var(--primary-color)' : 'var(--text-color)',
-                        fontWeight: category === cat.key ? 700 : 500,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseOver={(e) => {
-                        if (category !== cat.key) {
-                          e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (category !== cat.key) {
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                        }
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        border: '1px dashed rgba(82, 183, 136, 0.3)',
+                        background: 'transparent',
+                        color: 'var(--text-light)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
                       }}
                     >
-                      {cat.label}
+                      + {tag}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tone</span>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { key: "casual", label: "Casual 😊" },
-                    { key: "formal", label: "Formal 👔" },
-                    { key: "elaborate", label: "Elaborate 📝" },
-                    { key: "shorten", label: "Shorten ✂️" }
-                  ].map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      onClick={() => {
-                        setTone(t.key);
-                        if (generated && generatedText) {
-                          handleRefineText(t.key);
-                        }
-                      }}
-                      disabled={isRefiningText}
-                      style={{
-                        background: tone === t.key ? 'rgba(82, 183, 136, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                        border: tone === t.key ? '2px solid var(--primary-color)' : '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '20px',
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        color: tone === t.key ? 'var(--primary-color)' : 'var(--text-color)',
-                        fontWeight: tone === t.key ? 700 : 500,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseOver={(e) => {
-                        if (tone !== t.key) {
-                          e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.4)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (tone !== t.key) {
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                        }
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+            </div>
+          </section>
+
+          {/* SECTION 4: Where to Post */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-color)' }}>
+                Where to post
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
+                Choose which connected social channels to publish this post to.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              {/* Facebook Card */}
+              <div
+                onClick={() => setChannels(prev => ({ ...prev, facebook: !prev.facebook }))}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: channels.facebook ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                  background: channels.facebook ? 'rgba(82, 183, 136, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <PlatformMarkBadge p="facebook" size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-color)' }}>
+                    Facebook Page
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {metaStatus.connected ? `Connected as ${metaStatus.page_name || 'SriKrish'}` : 'SriKrish'}
+                  </div>
+                </div>
+                <div style={{
+                  width: '38px',
+                  height: '22px',
+                  borderRadius: '9999px',
+                  background: channels.facebook ? 'var(--primary-color)' : 'rgba(255,255,255,0.15)',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: channels.facebook ? 'flex-end' : 'flex-start',
+                  transition: 'all 0.15s ease'
+                }}>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#ffffff' }} />
+                </div>
+              </div>
+
+              {/* Instagram Card */}
+              <div
+                onClick={() => {
+                  if (!metaStatus.has_instagram) {
+                    notifyError("No Instagram Business account linked to your Facebook Page.");
+                    return;
+                  }
+                  setChannels(prev => ({ ...prev, instagram: !prev.instagram }));
+                }}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: channels.instagram && metaStatus.has_instagram ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                  background: channels.instagram && metaStatus.has_instagram ? 'rgba(82, 183, 136, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: metaStatus.has_instagram ? 'pointer' : 'not-allowed',
+                  opacity: metaStatus.has_instagram ? 1 : 0.6,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <PlatformMarkBadge p="instagram" size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-color)' }}>
+                    Instagram Business
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                    {metaStatus.has_instagram ? `@${bizProfile.handle}` : 'Not Linked'}
+                  </div>
+                </div>
+                <div style={{
+                  width: '38px',
+                  height: '22px',
+                  borderRadius: '9999px',
+                  background: channels.instagram && metaStatus.has_instagram ? 'var(--primary-color)' : 'rgba(255,255,255,0.15)',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: channels.instagram && metaStatus.has_instagram ? 'flex-end' : 'flex-start',
+                  transition: 'all 0.15s ease'
+                }}>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#ffffff' }} />
                 </div>
               </div>
             </div>
+          </section>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Generated Post Copy</span>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowFeedPreview(true)}
-                  style={{
-                    background: 'rgba(82, 183, 136, 0.12)',
-                    border: '1px solid var(--primary-color)',
-                    color: 'var(--primary-color)',
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  👁️ Feed Preview (FB / IG)
-                </button>
-                {campaignId && (
-                  <button
-                    onClick={handleToggleLike}
-                    disabled={isLiking}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: isLiked ? '#52b788' : '#94a3b8',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontWeight: 600,
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {isLiked ? '❤️ Style Saved' : '🖤 Save Style (Train AI)'}
-                  </button>
-                )}
+          {/* SECTION 5: Audience & Demographics Accordion */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}>
+            <div
+              onClick={() => setShowAudienceSettings(!showAudienceSettings)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+            >
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 2px 0', color: 'var(--text-color)' }}>
+                  Audience & Targeting
+                </h3>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                  {audience === 'all' ? 'All shoppers' : audience === 'women' ? 'Women' : 'Men'}, age {minAge}–{maxAge >= 65 ? '65+' : maxAge}
+                </span>
               </div>
+              <span style={{ fontSize: '18px', color: 'var(--primary-color)' }}>
+                {showAudienceSettings ? '▲' : '▼'}
+              </span>
             </div>
 
-            <SocialFeedPreviewModal
-              isOpen={showFeedPreview}
-              onClose={() => setShowFeedPreview(false)}
-              imageUrl={selectedAssetUrl}
-              caption={generatedText}
-              businessName={typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('businessProfile') || '{}').businessName || '') : ''}
-              logoUrl={postLogoUrl || (typeof window !== 'undefined' ? localStorage.getItem('brand_logo_url') : '') || ''}
-            />
+            {showAudienceSettings && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
+                <div>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
+                    Target Audience
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[
+                      { id: 'all' as const, label: 'All' },
+                      { id: 'women' as const, label: 'Women' },
+                      { id: 'men' as const, label: 'Men' }
+                    ].map((aud) => (
+                      <ComposerChip
+                        key={aud.id}
+                        selected={audience === aud.id}
+                        onClick={() => {
+                          setAudience(aud.id);
+                          setGender(aud.label);
+                        }}
+                      >
+                        {aud.label}
+                      </ComposerChip>
+                    ))}
+                  </div>
+                </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(82, 183, 136, 0.15)', flexGrow: 1, display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', minHeight: '300px' }}>
-              <textarea
-                value={generatedText}
-                onChange={(e) => setGeneratedText(e.target.value)}
-                style={{ width: '100%', flexGrow: 1, border: 'none', resize: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.6', color: 'var(--text-color)', fontFamily: 'inherit', background: 'transparent' }}
-                placeholder="Edit your post content here..."
-              />
-            </div>
-
-            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                <input type="checkbox" checked={isScheduling} onChange={(e) => {
-                  setIsScheduling(e.target.checked);
-                  if (!e.target.checked) setScheduledTime('');
-                }} />
-                Schedule post for later date/time
-              </label>
-              {isScheduling && !scheduledTime && (
-                <MetaPostScheduler
-                  initialValue={draftScheduledTime}
-                  onSchedule={(isoString) => {
-                    setScheduledTime(isoString);
-                    setDraftScheduledTime(isoString);
-                  }}
-                  onCancel={() => {
-                    setIsScheduling(false);
-                    setScheduledTime('');
+                <AgeRangeSliderControl
+                  min={minAge}
+                  max={maxAge}
+                  onChange={(newMin, newMax) => {
+                    setMinAge(newMin);
+                    setMaxAge(newMax);
                   }}
                 />
-              )}
-              {isScheduling && scheduledTime && (
-                <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(82, 183, 136, 0.1)', border: '1.5px solid var(--primary-color)', borderRadius: '8px', padding: '10px 14px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                    ✅ Scheduled: {new Date(scheduledTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })}
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 6: When to Post */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-color)' }}>
+                When to post
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
+                Publish immediately or schedule for optimal reach.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setWhenOption('now')}
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  border: whenOption === 'now' ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                  background: whenOption === 'now' ? 'rgba(82, 183, 136, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                  color: whenOption === 'now' ? 'var(--primary-color)' : 'var(--text-color)',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <ComposerIcon name="send" size={18} /> Post now
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWhenOption('schedule')}
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  border: whenOption === 'schedule' ? '2px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.2)',
+                  background: whenOption === 'schedule' ? 'rgba(82, 183, 136, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                  color: whenOption === 'schedule' ? 'var(--primary-color)' : 'var(--text-color)',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <ComposerIcon name="clock" size={18} /> Schedule for later
+              </button>
+            </div>
+
+            {whenOption === 'schedule' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '10px' }}>
+                {/* Quick Suggestion Chips */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sat = getNextSaturdayDate();
+                      setPublishDate(toDateInputString(sat));
+                      setPublishTime('18:00');
+                    }}
+                    style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.25)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-color)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Suggested: Sat 6:00 PM
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tom = new Date();
+                      tom.setDate(tom.getDate() + 1);
+                      setPublishDate(toDateInputString(tom));
+                      setPublishTime('11:00');
+                    }}
+                    style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.25)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-color)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Tomorrow 11:00 AM
+                  </button>
+                </div>
+
+                {/* Pickers */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Date</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={publishDate}
+                      onChange={(e) => setPublishDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Time</label>
+                    <input
+                      type="time"
+                      className="input-field"
+                      value={publishTime}
+                      onChange={(e) => setPublishTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 7: WhatsApp Template Broadcast */}
+          <section style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                checked={publishToWa}
+                onChange={(e) => setPublishToWa(e.target.checked)}
+              />
+              Send template broadcast via WhatsApp 💬
+            </label>
+
+            {publishToWa && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                    Status: {waConnected ? '🟢 Connected' : '🔴 Credentials Missing'}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setScheduledTime('')}
-                    style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => setShowWaSettings(!showWaSettings)}
+                    style={{ fontSize: '12px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
                   >
-                    Change
+                    {showWaSettings ? 'Close' : 'Configure'}
                   </button>
                 </div>
-              )}
-              {(() => {
-                if (!scheduledTime) return null;
-                const selectedDate = new Date(scheduledTime);
-                const sYear = selectedDate.getFullYear();
-                const sMonth = selectedDate.getMonth();
-                const sDay = selectedDate.getDate();
 
-                const matchingEvents = calendarEvents.filter(e => {
-                  const parts = e.date.split('-');
-                  const eYear = parseInt(parts[0], 10);
-                  const eMonth = parseInt(parts[1], 10) - 1;
-                  const eDay = parseInt(parts[2], 10);
-                  return eYear === sYear && eMonth === sMonth && eDay === sDay;
-                });
-
-                if (matchingEvents.length === 0) return null;
-
-                return (
-                  <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.12)', border: '1px solid #fbbf24', fontSize: '12px' }}>
-                    {matchingEvents.map(event => (
-                      <div key={event.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          📅 {event.name} ({event.type.replace('_', ' ')})
-                        </span>
-                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>
-                          {event.description}
-                        </span>
-                        <span style={{ color: '#52b788', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
-                          ✨ Idea: Tailor your campaign copy or run promotions matching this festive occasion!
-                        </span>
-                      </div>
-                    ))}
+                {showWaSettings && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px' }}>
+                    <input
+                      className="input-field"
+                      placeholder="WhatsApp Phone Number ID"
+                      value={waPhoneId}
+                      onChange={(e) => setWaPhoneId(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      className="input-field"
+                      placeholder="Access Token"
+                      value={waToken}
+                      onChange={(e) => setWaToken(e.target.value)}
+                    />
+                    <ComposerBtn kind="secondary" size="sm" onClick={handleSaveWaSettings}>
+                      Save WhatsApp Settings
+                    </ComposerBtn>
                   </div>
-                );
-              })()}
-            </div>
+                )}
 
-            {/* WhatsApp Broadcast Option */}
-            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '12px', border: '1px solid rgba(82, 183, 136, 0.1)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                <input type="checkbox" checked={publishToWa} onChange={(e) => {
-                  setPublishToWa(e.target.checked);
-                }} />
-                Send template broadcast via WhatsApp 💬
-              </label>
-              {publishToWa && (
-                <div className="fade-in-up" style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {/* Setup Status */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
-                      Status: {waConnected ? '🟢 Connected' : '🔴 Credentials Missing'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowWaSettings(!showWaSettings)}
-                      style={{ fontSize: '11px', color: 'var(--primary-color)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
-                    >
-                      {showWaSettings ? 'Close Settings' : 'Configure API'}
-                    </button>
-                  </div>
-
-                  {showWaSettings && (
-                    <div style={{ background: 'rgba(5, 8, 6, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(82, 183, 136, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>Phone Number ID</span>
-                        <input
-                          className="input-field"
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }}
-                          placeholder="e.g. 10452718..."
-                          value={waPhoneId}
-                          onChange={(e) => setWaPhoneId(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '2px' }}>System Access Token</span>
-                        <input
-                          type="password"
-                          className="input-field"
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px' }}
-                          placeholder="EAAG..."
-                          value={waToken}
-                          onChange={(e) => setWaToken(e.target.value)}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer' }}
-                        onClick={handleSaveWaSettings}
-                      >
-                        Save Credentials
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Recipient Phone & Template */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Recipient Number</span>
-                      <input
-                        className="input-field"
-                        style={{ padding: '8px 12px', fontSize: '13px' }}
-                        placeholder="e.g., +919988776655"
-                        value={waRecipient}
-                        onChange={(e) => setWaRecipient(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '11px', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Template Name</span>
-                      <input
-                        className="input-field"
-                        style={{ padding: '8px 12px', fontSize: '13px' }}
-                        placeholder="hello_world"
-                        value={waTemplateName}
-                        onChange={(e) => setWaTemplateName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    style={{ padding: '10px', fontSize: '13px', borderRadius: '8px', width: '100%', opacity: isSendingWa ? 0.7 : 1 }}
-                    disabled={isSendingWa}
-                    onClick={handleSendWaMessage}
-                  >
-                    {isSendingWa ? 'Sending...' : '⚡ Send Test WhatsApp Template'}
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <input
+                    className="input-field"
+                    placeholder="Recipient (+919876543210)"
+                    value={waRecipient}
+                    onChange={(e) => setWaRecipient(e.target.value)}
+                  />
+                  <input
+                    className="input-field"
+                    placeholder="Template (e.g. hello_world)"
+                    value={waTemplateName}
+                    onChange={(e) => setWaTemplateName(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button
-                type="button"
-                className="btn-secondary"
-                style={{ padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => handleSaveDraft(false)}
-                disabled={isSavingDraft}
-              >
-                💾 {isSavingDraft ? 'Saving...' : 'Save Draft'}
-              </button>
-
-              <button
-                className="btn-primary"
-                style={{ flexGrow: 1, background: 'linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)', opacity: isPublishing ? 0.7 : 1 }}
-                onClick={handlePublish}
-                disabled={isPublishing}
-              >
-                {isPublishing ? 'Publishing...' : (isScheduling ? 'Schedule Publish' : (publishToIg ? 'Publish to FB & IG' : 'Publish to Facebook'))}
-              </button>
-
-              {metaStatus.connected && (
-                <button
-                  onClick={() => {
-                    if (!metaStatus.has_instagram) {
-                      notifyError("To post to Instagram, make sure an Instagram Business Account is linked to your Facebook Page.");
-                      return;
-                    }
-                    setPublishToIg(!publishToIg);
-                  }}
-                  style={{
-                    padding: '0 20px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(82, 183, 136, 0.2)',
-                    background: !metaStatus.has_instagram
-                      ? 'rgba(255, 255, 255, 0.02)'
-                      : publishToIg
-                        ? 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)'
-                        : 'rgba(255, 255, 255, 0.04)',
-                    color: !metaStatus.has_instagram
-                      ? 'var(--text-light)'
-                      : publishToIg
-                        ? 'white'
-                        : 'var(--text-color)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: !metaStatus.has_instagram ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: publishToIg && metaStatus.has_instagram ? '0 4px 12px rgba(220, 39, 67, 0.3)' : 'none'
-                  }}
-                  title={!metaStatus.has_instagram ? "No Instagram Business account linked to this Facebook Page" : "Toggle Instagram posting"}
+                <ComposerBtn
+                  kind="primary"
+                  size="sm"
+                  onClick={handleSendWaMessage}
+                  disabled={isSendingWa}
                 >
-                  IG: {!metaStatus.has_instagram ? 'Not Linked' : publishToIg ? 'ON' : 'OFF'}
+                  {isSendingWa ? 'Sending...' : '⚡ Send Test WhatsApp Template'}
+                </ComposerBtn>
+              </div>
+            )}
+          </section>
+
+        </div>
+
+        {/* ════ RIGHT COLUMN: STICKY LIVE PREVIEW ════ */}
+        <aside style={{
+          position: 'sticky',
+          top: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
+          {/* Preview Controls Bar */}
+          <div style={{
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '16px',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px'
+          }}>
+            {/* Platform switch */}
+            <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)' }}>
+              {(['facebook', 'instagram'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPreviewPlatform(p)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: previewPlatform === p ? 'var(--primary-color)' : 'transparent',
+                    color: previewPlatform === p ? '#ffffff' : 'var(--text-light)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <PlatformMarkBadge p={p} size={14} />
+                  <span>{p === 'facebook' ? 'Facebook' : 'Instagram'}</span>
                 </button>
-              )}
+              ))}
+            </div>
+
+            {/* Device switch */}
+            <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)' }}>
+              {(['mobile', 'desktop'] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setPreviewDevice(d)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: previewDevice === d ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: previewDevice === d ? 'var(--text-color)' : 'var(--text-light)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <ComposerIcon name={d === 'mobile' ? 'phone' : 'monitor'} size={14} />
+                  <span>{d === 'mobile' ? 'Mobile' : 'Desktop'}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+
+          {/* Off Warning Notice */}
+          {!channels[previewPlatform] && (
+            <div style={{ background: 'rgba(242, 165, 22, 0.15)', border: '1px solid rgba(242, 165, 22, 0.3)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ComposerIcon name="info" size={16} />
+              <span>{previewPlatform === 'facebook' ? 'Facebook' : 'Instagram'} is off for this post. This is a preview of how it would appear.</span>
+            </div>
+          )}
+
+          {/* Device Frame Rendering */}
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            {previewDevice === 'mobile' ? (
+              // Mobile Frame
+              <div style={{
+                width: '340px',
+                maxWidth: '100%',
+                borderRadius: '40px',
+                background: '#16211f',
+                padding: '12px',
+                boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                border: '2px solid rgba(82, 183, 136, 0.2)'
+              }}>
+                <div style={{
+                  borderRadius: '30px',
+                  overflow: 'hidden',
+                  background: formatType !== 'post' ? '#000000' : '#f0f2f5',
+                  minHeight: '520px',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {/* Phone notch */}
+                  <div style={{ height: '24px', background: previewPlatform === 'facebook' && formatType === 'post' ? '#ffffff' : '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '60px', height: '4px', borderRadius: '9999px', background: '#333333' }} />
+                  </div>
+
+                  {/* Feed post or tall post */}
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {formatType === 'post' ? (
+                      <FeedPostPreview
+                        platform={previewPlatform}
+                        shopName={bizProfile.name}
+                        shopHandle={bizProfile.handle}
+                        caption={currentTabContent.caption}
+                        tags={currentTabContent.tags}
+                        mediaUrl={selectedAssetUrl}
+                        whenLabel={whenOption === 'now' ? 'Just now' : (publishDate ? `${publishDate} ${publishTime}` : 'Scheduled')}
+                        onImageClick={() => setShowLightbox(true)}
+                        imageFit={imageFit}
+                      />
+                    ) : (
+                      <TallPostPreview
+                        platform={previewPlatform}
+                        shopName={bizProfile.name}
+                        shopHandle={bizProfile.handle}
+                        format={formatType}
+                        caption={currentTabContent.caption}
+                        tags={currentTabContent.tags}
+                        slides={currentTabContent.media}
+                        onImageClick={() => setShowLightbox(true)}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Desktop Frame
+              <div style={{
+                width: '100%',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)',
+                boxShadow: '0 16px 40px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ height: '32px', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', padding: '0 12px', gap: '6px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
+                  <div style={{ flex: 1, margin: '0 16px', height: '18px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
+                </div>
+                <div style={{ padding: '16px', background: formatType === 'post' ? '#f0f2f5' : '#000000', display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', maxWidth: '380px' }}>
+                    {formatType === 'post' ? (
+                      <FeedPostPreview
+                        platform={previewPlatform}
+                        shopName={bizProfile.name}
+                        shopHandle={bizProfile.handle}
+                        caption={currentTabContent.caption}
+                        tags={currentTabContent.tags}
+                        mediaUrl={selectedAssetUrl}
+                        whenLabel={whenOption === 'now' ? 'Just now' : (publishDate ? `${publishDate} ${publishTime}` : 'Scheduled')}
+                        onImageClick={() => setShowLightbox(true)}
+                        imageFit={imageFit}
+                      />
+                    ) : (
+                      <TallPostPreview
+                        platform={previewPlatform}
+                        shopName={bizProfile.name}
+                        shopHandle={bizProfile.handle}
+                        format={formatType}
+                        caption={currentTabContent.caption}
+                        tags={currentTabContent.tags}
+                        slides={currentTabContent.media}
+                        onImageClick={() => setShowLightbox(true)}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Style Profile Like Button */}
+          {campaignId ? (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={handleToggleLike}
+                disabled={isLiking}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  border: isLiked ? '1.5px solid #ec4899' : '1px solid rgba(255,255,255,0.15)',
+                  background: isLiked ? 'rgba(236, 72, 153, 0.15)' : 'rgba(255,255,255,0.04)',
+                  color: isLiked ? '#ec4899' : 'var(--text-light)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: isLiking ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <span>{isLiked ? '❤️ In Style Profile' : '🤍 Add to Style Profile'}</span>
+                <span style={{ fontSize: '11px', opacity: 0.8 }}>(AI learns this tone)</span>
+              </button>
+            </div>
+          ) : null}
+        </aside>
+
       </div>
 
-      {/* Asset Picker Modal */}
-      {showAssetPicker && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-        }}>
-          <div className="glass-panel" style={{
-            width: '90%',
-            maxWidth: '650px',
-            maxHeight: '80vh',
-            padding: '32px',
-            background: 'var(--glass-bg)',
-            borderRadius: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Select from Media Library</h3>
-              <button
-                onClick={() => setShowAssetPicker(false)}
-                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%' }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
-              <p style={{ color: 'var(--text-light)', fontSize: '14px', margin: 0 }}>Choose an existing image or video asset for your campaign.</p>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => assetPickerFileInputRef.current?.click()}
-                style={{ padding: '8px 14px', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
-              >
-                📤 Upload New Asset
-              </button>
-            </div>
-            <input type="file" ref={assetPickerFileInputRef} onChange={handleAssetPickerUpload} style={{ display: 'none' }} accept="image/*,video/*" />
+      {/* ── DRAWERS & MODALS ───────────────────────────────────────────────── */}
+      <DraftsPanelDrawer
+        isOpen={showDraftsDrawer}
+        onClose={() => setShowDraftsDrawer(false)}
+        drafts={savedDrafts}
+        currentDraftId={currentDraftId}
+        onSelectDraft={(draft) => {
+          if (draft && draft.state) {
+            const st = draft.state;
+            if (st.prompt) setPrompt(st.prompt);
+            if (st.category) setCategory(st.category);
+            if (st.format) setFormatType(st.format);
+            if (st.caption) {
+              setCaption(st.caption);
+              setGeneratedText(st.caption);
+            }
+            if (st.tags) setHashtags(st.tags);
+            if (st.media && Array.isArray(st.media)) {
+              setMediaItems(st.media);
+              if (st.media[0]?.src) setSelectedAssetUrl(st.media[0].src);
+            }
+            if (st.overrides) setOverrides(st.overrides);
+            if (st.channels) setChannels(st.channels);
+            if (st.when) setWhenOption(st.when);
+            if (st.date) setPublishDate(st.date);
+            if (st.time) setPublishTime(st.time);
+            setCurrentDraftId(draft.id);
+            notifySuccess("Draft loaded into composer!");
+          }
+        }}
+        onDeleteDraft={(id) => {
+          const filtered = savedDrafts.filter(d => d.id !== id);
+          setSavedDrafts(filtered);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(COMPOSER_DRAFTS_KEY, JSON.stringify(filtered));
+          }
+          notifySuccess("Draft deleted.");
+        }}
+        onNewPost={clearForm}
+      />
 
-            <div style={{
-              flexGrow: 1,
-              overflowY: 'auto',
-              paddingRight: '4px',
-              minHeight: '200px',
-            }}>
-              {libraryAssets.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-light)' }}>
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>📁</div>
-                  <p style={{ fontWeight: 500, margin: 0 }}>No assets in library</p>
-                  <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '4px' }}>Upload assets in the "Asset Library" tab first.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
-                  {libraryAssets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      onClick={() => {
-                        setSelectedAssetUrl(asset.url);
-                        setShowAssetPicker(false);
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        border: selectedAssetUrl === asset.url ? '3px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        transition: 'transform 0.2s, border-color 0.2s',
-                        background: 'rgba(255, 255, 255, 0.02)',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#e2e8f0' }}>
-                        {asset.name.toLowerCase().endsWith('.mp4') ? (
-                          <video src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
-                        ) : (
-                          <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        )}
-                      </div>
-                      <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: 'var(--text-color)' }}>
-                        {asset.name}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <LibraryModalDialog
+        isOpen={showLibraryModal}
+        onClose={() => setShowLibraryModal(false)}
+        assets={libraryAssets}
+        onSelectAsset={(item) => {
+          const newItem = {
+            id: "lib-" + Date.now(),
+            name: item.name,
+            src: item.src,
+            source: "library" as const,
+            video: item.video
+          };
+          setMediaItems(prev => formatType === 'story' ? [...prev, newItem].slice(0, 10) : [newItem]);
+          setSelectedAssetUrl(item.src);
+          isDirtyRef.current = true;
+          notifySuccess("Asset selected from library!");
+        }}
+        onUpload={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFileUpload(e.target.files[0]);
+            setShowLibraryModal(false);
+          }
+        }}
+      />
+
+      <AiModalDialog
+        isOpen={showAiModal}
+        onClose={() => {
+          setShowAiModal(false);
+          setAiModalImage(null);
+        }}
+        format={formatType}
+        onFormatChange={(fmt) => setFormatType(fmt)}
+        prompt={aiModalPrompt}
+        onPromptChange={(p) => setAiModalPrompt(p)}
+        style={aiModalStyle}
+        onStyleChange={(s) => setAiModalStyle(s)}
+        isGenerating={isGeneratingImage}
+        generatedImage={aiModalImage}
+        onGenerate={() => handleGenerateAiImage(aiModalPrompt)}
+        onUseImage={(imgUrl) => {
+          const aiMedia = {
+            id: "ai-" + Date.now(),
+            name: aiModalPrompt.slice(0, 30) || "AI Creative",
+            src: imgUrl,
+            source: "ai" as const,
+            video: false
+          };
+          setMediaItems(prev => formatType === 'story' ? [...prev, aiMedia].slice(0, 10) : [aiMedia]);
+          setSelectedAssetUrl(imgUrl);
+          isDirtyRef.current = true;
+          notifySuccess("AI Creative added to post!");
+        }}
+      />
+
+      {/* Lightbox / Zoom View */}
       {showLightbox && selectedAssetUrl && (
         <div
           onClick={() => setShowLightbox(false)}
           style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(5, 8, 6, 0.95)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 99999, cursor: 'zoom-out',
-            animation: 'fadeIn 0.25s ease-out'
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.92)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out'
           }}
         >
-          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} onClick={(e) => e.stopPropagation()}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
             {selectedAssetUrl.endsWith('.mp4') ? (
-              <video src={selectedAssetUrl} style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }} controls autoPlay loop muted />
+              <video src={selectedAssetUrl} controls autoPlay loop style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px' }} />
             ) : (
-              <img src={selectedAssetUrl} alt="Full Preview" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
+              <img src={selectedAssetUrl} alt="Zoomed Asset" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', objectFit: 'contain' }} />
             )}
             <button
               type="button"
               onClick={() => setShowLightbox(false)}
-              style={{
-                position: 'absolute', top: '-40px', right: '0',
-                background: 'transparent', border: 'none', color: 'white',
-                fontSize: '18px', cursor: 'pointer', fontWeight: 'bold'
-              }}
+              style={{ position: 'absolute', top: '-40px', right: 0, background: 'none', border: 'none', color: '#ffffff', fontSize: '20px', cursor: 'pointer' }}
             >
               ✕ Close
             </button>
           </div>
         </div>
       )}
-      
+
+      {/* Schedule Success Modal */}
       {showScheduleSuccessModal && (
         <div style={{
           position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
+          inset: 0,
           background: 'rgba(0, 0, 0, 0.85)',
           backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999,
-          animation: 'fadeIn 0.25s ease-out'
+          zIndex: 9999
         }}>
           <div style={{
             background: '#1a1d20',
             border: '1px solid rgba(82, 183, 136, 0.3)',
             borderRadius: '24px',
-            padding: '40px',
-            maxWidth: '480px',
+            padding: '36px',
+            maxWidth: '460px',
             width: '90%',
             textAlign: 'center',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-            animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
           }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: 'rgba(82, 183, 136, 0.1)',
-              border: '2px solid var(--primary-color)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-              fontSize: '40px',
-              animation: 'bounceIn 0.5s ease-out'
-            }}>
+            <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(82, 183, 136, 0.15)', border: '2px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px' }}>
               ⏰
             </div>
-            
-            <h3 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
               Post Successfully Scheduled!
             </h3>
-            
-            <p style={{ color: 'var(--text-light)', fontSize: '15px', lineHeight: 1.6, marginBottom: '32px' }}>
-              Your social media post is queued and scheduled for:<br />
-              <strong style={{ color: 'var(--primary-color)', fontSize: '16px' }}>{scheduledLabelForModal}</strong>
+            <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: 1.6, marginBottom: '28px' }}>
+              Your campaign is queued and scheduled for:<br />
+              <strong style={{ color: 'var(--primary-color)', fontSize: '15px' }}>{scheduledLabelForModal}</strong>
             </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                className="btn-primary"
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <ComposerBtn
+                kind="primary"
+                size="md"
                 onClick={() => {
                   setShowScheduleSuccessModal(false);
                   if (onNavigateToTab) onNavigateToTab('calendar');
                 }}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
               >
                 📅 View on Calendar
-              </button>
-              
-              <button
-                className="btn-secondary"
+              </ComposerBtn>
+              <ComposerBtn
+                kind="secondary"
+                size="md"
                 onClick={() => {
                   setShowScheduleSuccessModal(false);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'transparent',
-                  color: '#ffffff'
+                  clearForm();
                 }}
               >
-                ➕ Create Another Campaign
-              </button>
+                ➕ Create Another Post
+              </ComposerBtn>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
 
 function AssetsLibrary() {
   const [assets, setAssets] = useState<any[]>([]);
