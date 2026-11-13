@@ -1,16 +1,66 @@
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Mukta:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+/* DigiM colours: light */
 :root {
-  --primary-color: #52B788;
-  --primary-glow: rgba(82, 183, 136, 0.4);
-  --secondary-color: #2D6A4F;
-  --bg-dark: #050806;
-  --glass-bg: rgba(12, 20, 16, 0.95);
-  --glass-border: rgba(82, 183, 136, 0.15);
-  --text-color: #ECFDF5;
-  --text-light: #839C8F;
-  --accent-purple: #1B4332;
+  --primary: #2f6b2f;
+  --accent: #e2a21a;
+  --canvas: #f4f6f2;
+  --surface: #ffffff;
+  --ink: #171f16;
+  --muted: #566054;
+  --hair: #d7ddd3;
+  --danger: #b42318;
+  --onprimary: #ffffff;
+  --onaccent: #101614;
+  --hover: #275827;
+  --tint: #e6ede6;
+  --sunken: #e9ebe7;
+  --border: #979a96;
+  --atint: #fbf1dd;
+  --aink: #71510d;
+  --dtint: #f8e9e8;
+
+  --primary-color: var(--primary);
+  --primary-glow: rgba(47, 107, 47, 0.4);
+  --secondary-color: var(--hover);
+  --bg-dark: var(--canvas);
+  --glass-bg: rgba(23, 31, 22, 0.95);
+  --glass-border: rgba(47, 107, 47, 0.15);
+  --text-color: var(--ink);
+  --text-light: var(--muted);
+  --accent-purple: var(--tint);
+}
+
+/* DigiM colours: dark (also used for the navigation in the mixed theme) */
+:root[data-theme="dark"], .nav-dark {
+  --primary: #7cc47c;
+  --accent: #efb540;
+  --canvas: #0e140d;
+  --surface: #172016;
+  --ink: #e6eee4;
+  --muted: #a1ae9e;
+  --hair: #2a3628;
+  --danger: #f0796b;
+  --onprimary: #101614;
+  --onaccent: #101614;
+  --hover: #90cd90;
+  --tint: #2d442c;
+  --sunken: #191f18;
+  --border: #747d73;
+  --atint: #3e3b1e;
+  --aink: #f2c466;
+  --dtint: #423227;
+
+  --primary-color: var(--primary);
+  --primary-glow: rgba(124, 196, 124, 0.4);
+  --secondary-color: var(--hover);
+  --bg-dark: var(--canvas);
+  --glass-bg: rgba(23, 32, 22, 0.95);
+  --glass-border: rgba(124, 196, 124, 0.15);
+  --text-color: var(--ink);
+  --text-light: var(--muted);
+  --accent-purple: var(--tint);
 }
 
 * {
