@@ -36,24 +36,14 @@ def login_via_google(
         ).first()
         
         if not tenant:
-            # If demo tenant 1 exists and has no linked Google account, claim it for the first user
-            demo_tenant = db.query(Tenant).filter(Tenant.id == 1).first()
-            if demo_tenant and not demo_tenant.google_sso_id:
-                tenant = demo_tenant
-                tenant.email = email
-                if name:
-                    tenant.name = name
-                tenant.google_sso_id = google_id
-            else:
-                # Create dedicated new commercial tenant
-                tenant = Tenant(
-                    email=email,
-                    name=name or "Business Owner",
-                    google_sso_id=google_id,
-                    is_active=True
-                )
-                db.add(tenant)
-                
+            # Always create a brand new, isolated commercial tenant
+            tenant = Tenant(
+                email=email,
+                name=name or "Business Owner",
+                google_sso_id=google_id,
+                is_active=True
+            )
+            db.add(tenant)
             db.commit()
             db.refresh(tenant)
             
