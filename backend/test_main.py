@@ -364,3 +364,40 @@ def test_meta_disconnect_removes_account(monkeypatch):
     assert response.status_code == 200
     assert response.json()["status"] == "success"
     assert len(deleted) == 1, "disconnect should have deleted the MetaAccount record"
+
+
+def test_google_login_creates_isolated_tenant_without_piggybacking():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from db.schema import Base, Tenant, MetaAccount
+    from api.auth import login_via_google
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    # Seed demo tenant 1
+    t1 = Tenant(id=1, name="Demo Tenant", email="demo@tenant1.com", google_sso_id=None)
+    db.add(t1)
+    db.add(MetaAccount(tenant_id=1, page_id="p123", access_token="tok1", page_name="Page 1"))
+    db.commit()
+
+    # Client 1 logs in
+    p1 = {"email": "client1@test.com", "name": "Client 1", "sub": "sub_101"}
+    r1 = login_via_google(token_payload=p1, db=db)
+    assert r1.tenant_id == 2, f"Expected tenant 2, got {r1.tenant_id}"
+
+    # Verify tenant 1 is untouched
+    t1_check = db.query(Tenant).filter_by(id=1).first()
+    assert t1_check.email == "demo@tenant1.com"
+    assert t1_check.google_sso_id is None
+
+    # Client 2 logs in
+    p2 = {"email": "client2@test.com", "name": "Client 2", "sub": "sub_102"}
+    r2 = login_via_google(token_payload=p2, db=db)
+    assert r2.tenant_id == 3, f"Expected tenant 3, got {r2.tenant_id}"
+
+    # Verify no tokens leaked to tenant 2 or 3
+    assert db.query(MetaAccount).filter_by(tenant_id=2).first() is None
+    assert db.query(MetaAccount).filter_by(tenant_id=3).first() is None
