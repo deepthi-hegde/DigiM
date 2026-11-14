@@ -6663,6 +6663,7 @@ function CalendarTab({
   onNavigateToTab,
   onSelectDate,
   onSelectHoliday,
+  metaStatus,
   activeSubTab = 'upcoming',
   onSubTabChange
 }: {
@@ -6670,6 +6671,7 @@ function CalendarTab({
   onNavigateToTab?: (tab: string) => void;
   onSelectDate?: (dateStr: string) => void;
   onSelectHoliday?: (event: any, dateStr: string) => void;
+  metaStatus?: any;
   activeSubTab?: 'upcoming' | 'drafts' | 'past';
   onSubTabChange?: (sub: 'upcoming' | 'drafts' | 'past') => void;
 }) {
@@ -6748,15 +6750,121 @@ function CalendarTab({
     daysGrid.push(d);
   }
 
-  // Filter campaigns into scheduled calendar items vs unscheduled drafts
+  // View mode: 'list' (default per design specification) vs 'calendar' (monthly grid)
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
+
+  const fetchCampaigns = () => {
+    const savedTenantId = localStorage.getItem('tenant_id') || '1';
+    fetch('/api/campaigns?tenant_id=' + savedTenantId)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setCampaigns(data))
+      .catch(() => {});
+  };
+
+  const handlePostNow = async (post: any) => {
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaign/publish?tenant_id=${savedTenantId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10) || 1,
+          campaign_id: post.id,
+          message: post.generated_text || post.prompt,
+          caption: post.generated_text || post.prompt,
+          image_url: post.visual_suggestion || post.image_url,
+          format: post.format || 'post',
+          publish_to_facebook: post.publish_to_facebook ?? true,
+          publish_to_instagram: post.publish_to_instagram ?? true,
+          category: post.category || 'new_collection',
+          when: 'now'
+        })
+      });
+      if (res.ok) {
+        fetchCampaigns();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActiveMenuPostId(null);
+    }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm('Are you sure you want to delete this scheduled post?')) return;
+    try {
+      const savedTenantId = localStorage.getItem('tenant_id') || '1';
+      const res = await fetch(`/api/campaigns/${postId}?tenant_id=${savedTenantId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchCampaigns();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActiveMenuPostId(null);
+    }
+  };
+
+  const handleRetryPost = async (post: any) => {
+    await handlePostNow(post);
+  };
+
+  // Filter campaigns:
+  // - Upcoming: posts that have not yet succeeded (scheduled, failed, waiting for approval)
+  // - Published posts move to Past posts
   const isUpcomingCampaign = (c: any) => {
     if (!c || !c.scheduled_time) return false;
-    if (c.status === 'archived' || c.status === 'failed' || c.status === 'published') return false;
-    const d = new Date(c.scheduled_time).getTime();
-    return !isNaN(d) && d > Date.now();
+    if (c.status === 'published' || c.status === 'archived') return false;
+    return true;
   };
   const scheduledCampaigns = campaigns.filter(isUpcomingCampaign);
   const unscheduledDrafts = campaigns.filter(c => !c.scheduled_time && c.status === 'draft');
+
+  // Instagram error check: Only show warning if Instagram is disconnected AND upcoming posts target Instagram
+  const isInstaDisconnected = !metaStatus?.has_instagram && !metaStatus?.ig_user_id;
+  const postsBlockedByInsta = scheduledCampaigns.filter(
+    (c) => (c.publish_to_instagram || c.publish_instagram) && isInstaDisconnected
+  );
+  const showInstaWarning = postsBlockedByInsta.length > 0;
+
+  // Helper helpers for post rows
+  const formatCategoryLabel = (cat?: string) => {
+    if (!cat) return "Post";
+    if (cat === "summer_sale" || cat === "summer") return "Summer Sale";
+    if (cat === "new_collection" || cat === "collection") return "New Collection";
+    if (cat === "customer_spotlight" || cat === "spotlight") return "Customer Spotlight";
+    if (cat === "festival_offer" || cat === "festival") return "Festival Offer";
+    if (cat === "product_showcase" || cat === "showcase") return "Product Showcase";
+    if (cat === "behind_the_scenes" || cat === "bts") return "Behind the Scenes";
+    if (cat === "promotion" || cat === "promo") return "Promotions";
+    if (cat === "knowledge_info" || cat === "info") return "Knowledge Info";
+    return cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, " ");
+  };
+
+  const formatFormatLabel = (fmt?: string) => {
+    if (fmt === "reel") return "Reel";
+    if (fmt === "story") return "Story";
+    return "Post";
+  };
+
+  const getFirstLine = (text?: string) => {
+    if (!text) return "";
+    const lines = (text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    return lines[0] || text.slice(0, 90);
+  };
+
+  const getFallbackColor = (cat?: string, id?: number) => {
+    const colors = ["#164e43", "#701a40", "#d97706", "#1e3a8a", "#c2410c", "#5c4033", "#283618"];
+    if (cat === "summer_sale" || cat === "promotion") return "#164e43";
+    if (cat === "product_showcase") return "#701a40";
+    if (cat === "new_collection") return "#d97706";
+    if (cat === "customer_spotlight") return "#1e3a8a";
+    if (cat === "festival_offer") return "#854d0e";
+    return colors[(id || 0) % colors.length];
+  };
 
   return (
     <div className="fade-in-up glass-panel" style={{ padding: '32px', borderRadius: '20px' }}>
@@ -6830,8 +6938,9 @@ function CalendarTab({
           )}
         </div>
 
-        {/* Sub-Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '14px' }}>
+        {/* Sub-Navigation Tabs & View Switcher */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1.5px solid var(--border, #979a96)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => handleSubChange('upcoming')}
@@ -6913,13 +7022,626 @@ function CalendarTab({
           >
             📜 Past posts
           </button>
+          </div>
+
+          {/* List vs Month View Toggles */}
+          {subTab === 'upcoming' && (
+            <div style={{ display: 'inline-flex', padding: '3px', background: 'var(--sunken, #f4f6f3)', borderRadius: '10px', border: '1.5px solid var(--border, #979a96)', gap: '2px' }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: viewMode === 'list' ? '1.5px solid #2F6B2F' : '1.5px solid transparent',
+                  background: viewMode === 'list' ? '#ffffff' : 'transparent',
+                  color: viewMode === 'list' ? 'var(--ink, #171f16)' : 'var(--muted, #566054)',
+                  fontWeight: viewMode === 'list' ? 700 : 500,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                List
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('calendar')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: viewMode === 'calendar' ? '1.5px solid #2F6B2F' : '1.5px solid transparent',
+                  background: viewMode === 'calendar' ? '#ffffff' : 'transparent',
+                  color: viewMode === 'calendar' ? 'var(--ink, #171f16)' : 'var(--muted, #566054)',
+                  fontWeight: viewMode === 'calendar' ? 700 : 500,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: viewMode === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Week / Month
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* 1. UPCOMING VIEW */}
       {subTab === 'upcoming' && (
         <div>
-{/* Weekday headers */}
+          {viewMode === 'list' ? (
+            (() => {
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+
+              const days = [];
+              for (let i = 0; i < 7; i++) {
+                const d = new Date(now);
+                d.setDate(now.getDate() + i);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const dayNum = String(d.getDate()).padStart(2, '0');
+                const dateKey = `${y}-${m}-${dayNum}`;
+
+                let label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+                if (i === 0) label = `Today, ${label}`;
+                else if (i === 1) label = `Tomorrow, ${label}`;
+
+                const dayPosts = scheduledCampaigns.filter(c => {
+                  if (!c.scheduled_time) return false;
+                  const cd = new Date(c.scheduled_time);
+                  const cKey = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+                  return cKey === dateKey;
+                }).sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
+
+                days.push({
+                  dateKey,
+                  label,
+                  weekday: d.toLocaleDateString('en-US', { weekday: 'long' }),
+                  posts: dayPosts
+                });
+              }
+
+              const sevenDaysLater = new Date(now);
+              sevenDaysLater.setDate(now.getDate() + 7);
+              const laterPosts = scheduledCampaigns.filter(c => {
+                if (!c.scheduled_time) return false;
+                return new Date(c.scheduled_time).getTime() >= sevenDaysLater.getTime();
+              }).sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Warning message: ONLY shown if Instagram is disconnected AND scheduled posts target Instagram */}
+                  {showInstaWarning && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '14px',
+                        background: '#fee2e2',
+                        border: '1.5px solid #fca5a5',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        flexWrap: 'wrap'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', fontSize: '14px', fontWeight: 600 }}>
+                        <span style={{ fontSize: '18px' }}>⚠️</span>
+                        <span>
+                          {postsBlockedByInsta.length} post{postsBlockedByInsta.length > 1 ? 's' : ''} won't go out. Instagram is disconnected: {postsBlockedByInsta.map(p => p.prompt || p.category || 'Post').slice(0, 2).join(' and ')}.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToTab?.('settings')}
+                        style={{
+                          background: '#ffffff',
+                          border: '1.5px solid #dc2626',
+                          color: '#dc2626',
+                          borderRadius: '8px',
+                          padding: '7px 16px',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span>🔄</span> Reconnect Instagram
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 7 Day Groups */}
+                  {days.map(d => (
+                    <div key={d.dateKey} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink, #171f16)', margin: '12px 0 2px' }}>
+                        {d.label}
+                      </h3>
+
+                      {d.posts.length > 0 ? (
+                        d.posts.map(post => {
+                          const postTime = post.scheduled_time ? new Date(post.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+                          const isTall = post.format === 'reel' || post.format === 'story';
+                          const isFailed = post.status === 'failed';
+                          const isInstaBlocked = Boolean((post.publish_to_instagram || post.publish_instagram) && isInstaDisconnected);
+                          const isWaiting = post.status === 'waiting_for_approval';
+
+                          return (
+                            <div
+                              key={post.id}
+                              style={{
+                                background: '#ffffff',
+                                border: '1.5px solid var(--border, #979a96)',
+                                borderRadius: '14px',
+                                padding: '12px 18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '16px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                position: 'relative'
+                              }}
+                            >
+                              {/* Left: Time + Thumbnail in post shape + Post Details */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                                <span style={{ width: '74px', fontSize: '14px', fontWeight: 700, color: 'var(--ink, #171f16)', flexShrink: 0 }}>
+                                  {postTime}
+                                </span>
+
+                                {/* Thumbnail in post shape: square for Post, tall for Reel/Story */}
+                                <div
+                                  style={{
+                                    width: isTall ? '36px' : '48px',
+                                    height: isTall ? '54px' : '48px',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    flexShrink: 0,
+                                    background: getFallbackColor(post.category, post.id),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#ffffff',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                  }}
+                                >
+                                  {(post.image_url || post.visual_suggestion) ? (
+                                    <img
+                                      src={post.image_url || post.visual_suggestion}
+                                      alt="Thumbnail"
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                  ) : (
+                                    <span style={{ fontSize: isTall ? '14px' : '18px', fontWeight: 700 }}>
+                                      {isTall ? '📱' : '🖼️'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Post Details: Title + Subtitle */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink, #171f16)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {post.title || post.prompt || formatCategoryLabel(post.category)}
+                                  </div>
+                                  <div style={{ fontSize: '13px', color: 'var(--muted, #566054)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {formatCategoryLabel(post.category)} · {formatFormatLabel(post.format)} · {getFirstLine(post.generated_text || post.caption || post.prompt)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right: Social Logos + One Status Badge + Actions (NO MOVE BUTTON) */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                                {/* Small Facebook / Instagram logos */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  {post.publish_to_facebook !== false && (
+                                    <span
+                                      title="Facebook"
+                                      style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        borderRadius: '50%',
+                                        background: '#1877f2',
+                                        color: '#ffffff',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '12px',
+                                        fontWeight: 800
+                                      }}
+                                    >
+                                      f
+                                    </span>
+                                  )}
+                                  {(post.publish_to_instagram || post.publish_instagram) && (
+                                    <span
+                                      title="Instagram"
+                                      style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #f9a03f, #d92e7f, #7b3fe4)',
+                                        color: '#ffffff',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '10px'
+                                      }}
+                                    >
+                                      📸
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* One Status Badge */}
+                                {isFailed ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span
+                                      title={post.failure_reason || 'Failed to publish'}
+                                      style={{
+                                        padding: '3px 10px',
+                                        borderRadius: '999px',
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        background: 'rgba(239, 68, 68, 0.12)',
+                                        color: '#dc2626',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      ✕ Failed
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleRetryPost(post); }}
+                                      style={{
+                                        padding: '3px 8px',
+                                        borderRadius: '6px',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        background: '#dc2626',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      🔄 Retry
+                                    </button>
+                                  </div>
+                                ) : isInstaBlocked ? (
+                                  <span
+                                    style={{
+                                      padding: '3px 10px',
+                                      borderRadius: '999px',
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      background: 'rgba(239, 68, 68, 0.12)',
+                                      color: '#dc2626',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    ⊘ Won't post
+                                  </span>
+                                ) : isWaiting ? (
+                                  <span
+                                    style={{
+                                      padding: '3px 10px',
+                                      borderRadius: '999px',
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      background: 'rgba(245, 158, 11, 0.12)',
+                                      color: '#b45309',
+                                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    🕒 Waiting for approval
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      padding: '3px 10px',
+                                      borderRadius: '999px',
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      background: 'rgba(47, 107, 47, 0.1)',
+                                      color: '#2F6B2F',
+                                      border: '1px solid rgba(47, 107, 47, 0.25)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    🕒 Scheduled
+                                  </span>
+                                )}
+
+                                {/* Action: Edit */}
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectCampaign?.(post)}
+                                  style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '8px',
+                                    border: '1.5px solid var(--border, #979a96)',
+                                    background: '#ffffff',
+                                    color: 'var(--ink, #171f16)',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                  }}
+                                >
+                                  ✏️ Edit
+                                </button>
+
+                                {/* Action: ⋯ menu with Post now & Delete */}
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id);
+                                    }}
+                                    style={{
+                                      padding: '6px 10px',
+                                      borderRadius: '8px',
+                                      border: '1.5px solid var(--border, #979a96)',
+                                      background: activeMenuPostId === post.id ? 'var(--sunken, #f4f6f3)' : '#ffffff',
+                                      color: 'var(--ink, #171f16)',
+                                      fontSize: '13px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    ⋯
+                                  </button>
+
+                                  {activeMenuPostId === post.id && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        right: 0,
+                                        top: '110%',
+                                        background: '#ffffff',
+                                        border: '1.5px solid var(--border, #979a96)',
+                                        borderRadius: '10px',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                        zIndex: 50,
+                                        minWidth: '140px',
+                                        padding: '4px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '2px'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => handlePostNow(post)}
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          border: 'none',
+                                          background: 'transparent',
+                                          color: '#2F6B2F',
+                                          fontSize: '13px',
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          textAlign: 'left',
+                                          width: '100%'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--tint, #e6ede6)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                      >
+                                        <span>⚡</span> Post now
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePost(post.id)}
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          border: 'none',
+                                          background: 'transparent',
+                                          color: '#dc2626',
+                                          fontSize: '13px',
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          textAlign: 'left',
+                                          width: '100%'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                      >
+                                        <span>🗑️</span> Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div
+                          onClick={() => onSelectDate?.(d.dateKey)}
+                          style={{
+                            background: 'transparent',
+                            border: '1.5px dashed var(--border, #979a96)',
+                            borderRadius: '12px',
+                            padding: '14px 18px',
+                            color: 'var(--muted, #566054)',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#2F6B2F';
+                            e.currentTarget.style.color = '#2F6B2F';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border, #979a96)';
+                            e.currentTarget.style.color = 'var(--muted, #566054)';
+                          }}
+                        >
+                          <span>+</span> Nothing planned {d.weekday}. <span style={{ textDecoration: 'underline' }}>Add a post</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Later Section */}
+                  {laterPosts.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink, #171f16)', margin: '12px 0 2px' }}>
+                        Later
+                      </h3>
+                      {laterPosts.map(post => {
+                        const postDateStr = post.scheduled_time ? new Date(post.scheduled_time).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Later';
+                        const postTime = post.scheduled_time ? new Date(post.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+                        const isTall = post.format === 'reel' || post.format === 'story';
+                        const isFailed = post.status === 'failed';
+                        const isInstaBlocked = Boolean((post.publish_to_instagram || post.publish_instagram) && isInstaDisconnected);
+                        const isWaiting = post.status === 'waiting_for_approval';
+
+                        return (
+                          <div
+                            key={post.id}
+                            style={{
+                              background: '#ffffff',
+                              border: '1.5px solid var(--border, #979a96)',
+                              borderRadius: '14px',
+                              padding: '12px 18px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '16px',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                              <div style={{ width: '74px', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink, #171f16)' }}>{postTime}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--muted, #566054)' }}>{postDateStr}</span>
+                              </div>
+
+                              <div
+                                style={{
+                                  width: isTall ? '36px' : '48px',
+                                  height: isTall ? '54px' : '48px',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  flexShrink: 0,
+                                  background: getFallbackColor(post.category, post.id),
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#ffffff'
+                                }}
+                              >
+                                {(post.image_url || post.visual_suggestion) ? (
+                                  <img src={post.image_url || post.visual_suggestion} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  <span style={{ fontSize: isTall ? '14px' : '18px', fontWeight: 700 }}>{isTall ? '📱' : '🖼️'}</span>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink, #171f16)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {post.title || post.prompt || formatCategoryLabel(post.category)}
+                                </div>
+                                <div style={{ fontSize: '13px', color: 'var(--muted, #566054)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {formatCategoryLabel(post.category)} · {formatFormatLabel(post.format)} · {getFirstLine(post.generated_text || post.caption || post.prompt)}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                {post.publish_to_facebook !== false && (
+                                  <span title="Facebook" style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#1877f2', color: '#ffffff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>f</span>
+                                )}
+                                {(post.publish_to_instagram || post.publish_instagram) && (
+                                  <span title="Instagram" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'linear-gradient(135deg, #f9a03f, #d92e7f, #7b3fe4)', color: '#ffffff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>📸</span>
+                                )}
+                              </div>
+
+                              {isFailed ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, background: 'rgba(239, 68, 68, 0.12)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.3)' }}>✕ Failed</span>
+                                  <button type="button" onClick={() => handleRetryPost(post)} style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, background: '#dc2626', color: '#ffffff', border: 'none', cursor: 'pointer' }}>🔄 Retry</button>
+                                </div>
+                              ) : isInstaBlocked ? (
+                                <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, background: 'rgba(239, 68, 68, 0.12)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.3)' }}>⊘ Won't post</span>
+                              ) : isWaiting ? (
+                                <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, background: 'rgba(245, 158, 11, 0.12)', color: '#b45309', border: '1px solid rgba(245, 158, 11, 0.3)' }}>🕒 Waiting for approval</span>
+                              ) : (
+                                <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, background: 'rgba(47, 107, 47, 0.1)', color: '#2F6B2F', border: '1px solid rgba(47, 107, 47, 0.25)' }}>🕒 Scheduled</span>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => onSelectCampaign?.(post)}
+                                style={{ padding: '6px 14px', borderRadius: '8px', border: '1.5px solid var(--border, #979a96)', background: '#ffffff', color: 'var(--ink, #171f16)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                              >
+                                ✏️ Edit
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePost(post.id)}
+                                title="Delete scheduled post"
+                                style={{ padding: '6px 10px', borderRadius: '8px', border: '1.5px solid var(--border, #979a96)', background: '#ffffff', color: '#dc2626', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          ) : (
+            <div>
+              {/* Weekday headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 600, fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}
       </div>
@@ -7185,6 +7907,8 @@ function CalendarTab({
           </div>
         )}
       </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -10244,6 +10968,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
         )}
         {isCalendarActive && (
           <CalendarTab
+            metaStatus={metaStatus}
             activeSubTab={calendarSubTab}
             onSubTabChange={setCalendarSubTab}
             onNavigateToTab={(tab) => handleTabChange(tab)}
