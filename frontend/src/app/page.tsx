@@ -6662,12 +6662,14 @@ function CalendarTab({
   onSelectCampaign,
   onNavigateToTab,
   onSelectDate,
+  onSelectHoliday,
   activeSubTab = 'upcoming',
   onSubTabChange
 }: {
   onSelectCampaign?: (campaign: any) => void;
   onNavigateToTab?: (tab: string) => void;
   onSelectDate?: (dateStr: string) => void;
+  onSelectHoliday?: (event: any, dateStr: string) => void;
   activeSubTab?: 'upcoming' | 'drafts' | 'past';
   onSubTabChange?: (sub: 'upcoming' | 'drafts' | 'past') => void;
 }) {
@@ -6992,7 +6994,7 @@ function CalendarTab({
                 )}
               </div>
 
-              {/* Calendar Events (Festivals / Holidays) */}
+              {/* Calendar Events (Festivals / Holidays) - Clickable to draft post */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 {dayEvents.map(event => {
                   let emoji = "🎉";
@@ -7003,23 +7005,46 @@ function CalendarTab({
                   return (
                     <div
                       key={event.name}
-                      title={`${event.name}: ${event.description}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectHoliday) {
+                          onSelectHoliday(event, dayDateStr);
+                        } else if (onSelectDate) {
+                          onSelectDate(dayDateStr);
+                        }
+                      }}
+                      title={`Click to draft a post for ${event.name} (${dayDateStr}): ${event.description || ''}`}
                       style={{
-                        background: event.type === 'season' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(251, 191, 36, 0.12)',
-                        border: event.type === 'season' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(251, 191, 36, 0.4)',
-                        borderRadius: '4px',
-                        padding: '2px 4px',
-                        fontSize: '9px',
+                        background: event.type === 'season' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(251, 191, 36, 0.16)',
+                        border: event.type === 'season' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(251, 191, 36, 0.5)',
+                        borderRadius: '6px',
+                        padding: '3px 6px',
+                        fontSize: '10px',
                         color: 'var(--text-color)',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         lineHeight: '1.2',
                         textOverflow: 'ellipsis',
                         overflow: 'hidden',
                         whiteSpace: 'nowrap',
-                        cursor: 'default'
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.borderColor = 'var(--primary, #2f6b2f)';
+                        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.borderColor = event.type === 'season' ? 'rgba(56, 189, 248, 0.5)' : 'rgba(251, 191, 36, 0.5)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
-                      {emoji} {event.name}
+                      <span style={{ flexShrink: 0 }}>{emoji}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.name}</span>
                     </div>
                   );
                 })}
@@ -8943,19 +8968,20 @@ export function HomeView({
 
   return (
     <div className="fade-in-up" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* ── 1. GREETING & DATE HEADER ────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 500, letterSpacing: '0.02em' }}>
-          {currentDateStr || 'Today'}
-        </span>
-        <h1 style={{
-          margin: 0,
-          fontSize: '30px',
-          lineHeight: '36px',
-          fontWeight: 800,
-          color: 'var(--text-color)',
-          letterSpacing: '-0.02em'
-        }}>
+      {/* ── 1. GREETING HEADER ────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <h1
+          className="font-display"
+          style={{
+            margin: 0,
+            fontSize: '34px',
+            lineHeight: '42px',
+            fontWeight: 800,
+            fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+            color: 'var(--text-color)',
+            letterSpacing: '-0.01em'
+          }}
+        >
           {greeting}, {displayName}
         </h1>
       </div>
@@ -8969,13 +8995,18 @@ export function HomeView({
         gap: '20px'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <h2 style={{
-            margin: 0,
-            fontSize: '22px',
-            lineHeight: '28px',
-            fontWeight: 800,
-            color: 'var(--text-color)'
-          }}>
+          <h2
+            className="font-display"
+            style={{
+              margin: 0,
+              fontSize: '24px',
+              lineHeight: '30px',
+              fontWeight: 800,
+              fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+              color: 'var(--text-color)',
+              letterSpacing: '-0.01em'
+            }}
+          >
             What do you want to post today?
           </h2>
           <p style={{ margin: 0, fontSize: '14px', lineHeight: '20px', color: 'var(--text-light)' }}>
@@ -9135,13 +9166,18 @@ export function HomeView({
           gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <h2 style={{
-              margin: 0,
-              fontSize: '18px',
-              lineHeight: '24px',
-              fontWeight: 800,
-              color: 'var(--text-color)'
-            }}>
+            <h2
+              className="font-display"
+              style={{
+                margin: 0,
+                fontSize: '20px',
+                lineHeight: '26px',
+                fontWeight: 800,
+                fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+                color: 'var(--text-color)',
+                letterSpacing: '-0.01em'
+              }}
+            >
               Pick up where you left off
             </h2>
             <button
@@ -9256,13 +9292,18 @@ export function HomeView({
           gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <h2 style={{
-              margin: 0,
-              fontSize: '18px',
-              lineHeight: '24px',
-              fontWeight: 800,
-              color: 'var(--text-color)'
-            }}>
+            <h2
+              className="font-display"
+              style={{
+                margin: 0,
+                fontSize: '20px',
+                lineHeight: '26px',
+                fontWeight: 800,
+                fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
+                color: 'var(--text-color)',
+                letterSpacing: '-0.01em'
+              }}
+            >
               Coming up
             </h2>
             <button
@@ -10208,6 +10249,16 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             onNavigateToTab={(tab) => handleTabChange(tab)}
             onSelectDate={(dateStr) => {
               setComposerInitParams({ mode: 'calendar_date', date: dateStr, ts: Date.now() });
+              handleTabChange('create');
+            }}
+            onSelectHoliday={(holidayEvent, dateStr) => {
+              setComposerInitParams({
+                mode: 'holiday',
+                holiday: holidayEvent,
+                date: dateStr,
+                category: 'festival_offer',
+                ts: Date.now()
+              });
               handleTabChange('create');
             }}
             onSelectCampaign={(c) => {

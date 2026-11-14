@@ -593,6 +593,36 @@ export function PostComposer({
       if (state.scheduled_date) setScheduledDate(state.scheduled_date);
       if (state.scheduled_time) setScheduledTime(state.scheduled_time);
       if (state.category) setPostType(state.category);
+    } else if (initParams?.mode === "holiday" && initParams.holiday) {
+      const holiday = initParams.holiday;
+      const hDate = initParams.date || holiday.date;
+      if (hDate) setScheduledDate(hDate);
+      setWhen("schedule");
+
+      // Pre-select festival_offer category
+      const festCat = CATEGORIES.find((c) => c.id === "festival_offer") || CATEGORIES[0];
+      setPostType(festCat.id);
+
+      const hName = (holiday.name || "Special Festival").trim();
+      const hCleanTag = hName.replace(/[^a-zA-Z0-9]/g, "");
+
+      // Draft tailored holiday caption
+      const customCaption = `Celebrate ${hName} with ${shopData.name}! ✨ Wishing you and your family abundant joy, prosperity, and blessings on this auspicious occasion. Discover our special festive weaves and celebratory offers at ${shopData.area}.`;
+      setCaption(customCaption);
+
+      // Tailored festive hashtags
+      const tags = [
+        hCleanTag,
+        `${hCleanTag}Special`,
+        "FestiveVibes",
+        "EthnicCollection",
+        "FestivalOffer",
+        "ShopLocal"
+      ];
+      setHashtags(tags);
+      setOfferText(`${hName} Special`);
+      setNoticeBannerType(`${hName} (${hDate})`);
+      setShowNoticeBanner(true);
     } else if (initParams?.mode === "type" && (initParams.category || initParams.type)) {
       handleSelectCategory(initParams.category || initParams.type, false);
     } else if (initParams?.mode === "calendar_date" && initParams.date) {
