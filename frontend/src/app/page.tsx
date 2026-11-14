@@ -10178,9 +10178,470 @@ export function HomeView({
 }
 
 
+
+function HelpTab({
+  onBack,
+  onGoSettings,
+  metaStatus
+}: {
+  onBack: () => void;
+  onGoSettings: () => void;
+  metaStatus: { connected: boolean; page_name?: string } | null;
+}) {
+  const [subTab, setSubTab] = useState<'guide' | 'troubleshoot' | 'checklist' | 'links'>('guide');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('digim_help_checklist');
+        return saved ? JSON.parse(saved) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  });
+
+  const toggleCheck = (idx: number) => {
+    const next = { ...checkedItems, [idx]: !checkedItems[idx] };
+    setCheckedItems(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('digim_help_checklist', JSON.stringify(next));
+    }
+  };
+
+  const steps = [
+    {
+      num: 1,
+      title: 'Open Platform Settings',
+      desc: 'Inside DigiM, navigate to Settings from the sidebar, then select "Connected accounts".',
+      action: 'Go to Settings',
+      onAction: onGoSettings,
+      badge: 'In-App'
+    },
+    {
+      num: 2,
+      title: 'Connect Your Facebook Account',
+      desc: 'Click "Connect Facebook". In the Meta popup, log into your Facebook profile and grant all requested permissions. Do not deselect any pages or permissions.',
+      badge: 'Meta Auth'
+    },
+    {
+      num: 3,
+      title: 'Select Your Business Page',
+      desc: 'Once authenticated, select your target Facebook Business Page from the dropdown and confirm. DigiM saves your Page Access Token securely.',
+      badge: 'Page Selection'
+    },
+    {
+      num: 4,
+      title: 'Link Instagram Business / Creator Account',
+      desc: 'For Instagram publishing, ensure your Instagram account is switched to a Professional account (Business or Creator) and linked to your Facebook Page in Meta Business Suite.',
+      badge: 'Instagram Sync'
+    },
+    {
+      num: 5,
+      title: 'Create and Schedule Posts',
+      desc: 'Go to "Create post" or "Home". Compose your content, select Facebook and/or Instagram, set date & time, and schedule or publish instantly.',
+      badge: 'Publishing'
+    }
+  ];
+
+  const faqs = [
+    {
+      q: '❌ "No Facebook Pages found" when connecting',
+      fix: 'Your Facebook account does not manage any Business Pages. Create one at facebook.com/pages/create, or ask your Page admin to grant you the Admin role on the Page.'
+    },
+    {
+      q: '❌ Instagram "Connect" button is grayed out or not detected',
+      fix: 'Your Instagram account might still be a Personal account or not linked to your Facebook Page. Open Meta Business Suite (business.facebook.com) → Settings → Instagram Accounts → link your account and make sure it is a Professional/Creator account.'
+    },
+    {
+      q: '❌ Instagram publish fails with "media container" error',
+      fix: 'Instagram strictly requires an image or video URL that is publicly accessible over HTTPS. Text-only posts are not supported by the Instagram API.'
+    },
+    {
+      q: "❌ Post published successfully but does not appear on the Page",
+      fix: "Check your Facebook Page Meta Business Suite → Publishing Tools. The post may be held for page moderation or scheduled in a different timezone."
+    },
+    {
+      q: '❌ "Session expired" or "Permissions revoked" error',
+      fix: 'Facebook access tokens expire periodically or when your Facebook password changes. Go to Settings → Disconnect Account, then reconnect to refresh your security credentials.'
+    }
+  ];
+
+  const checklistItems = [
+    'I have an active Facebook Business Page and I am an Admin of it.',
+    'I have connected Facebook inside DigiM Settings with all permissions approved.',
+    'My target Business Page appears with a green Connected badge.',
+    'My Instagram account is set to Business or Creator (not Personal).',
+    'My Instagram account is linked to my Facebook Page in Meta Business Suite.',
+    'I have created a test post with an image to verify Facebook and Instagram publishing.'
+  ];
+
+  return (
+    <div className="fade-in-up glass-panel" style={{ padding: '36px', width: '100%', maxWidth: '960px', margin: '0 auto' }}>
+      {/* Top Header with Back Navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '10px',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: 'var(--text-color)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Back to Home
+          </button>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-baloo2), "Baloo 2", cursive', fontSize: '28px', fontWeight: 700, margin: 0, color: 'var(--text-color)' }}>
+              Help &amp; Setup Guide
+            </h1>
+            <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-light)' }}>
+              Everything you need to set up Facebook, Instagram, and DigiM workflows.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={onGoSettings}
+            className="btn-secondary"
+            style={{ padding: '9px 16px', fontSize: '13px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            ⚙️ Meta Settings
+          </button>
+          <a
+            href="/facebook-setup-guide.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open printable PDF guide in new window"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '9px 16px',
+              borderRadius: '10px',
+              background: 'var(--primary-color)',
+              color: 'white',
+              fontSize: '13px',
+              fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 4px 12px var(--primary-glow)'
+            }}
+          >
+            ⬇ Print / PDF Guide
+          </a>
+        </div>
+      </div>
+
+      {/* Account Status Card */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '14px',
+        padding: '16px 20px',
+        marginBottom: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: metaStatus?.connected ? 'rgba(82, 183, 136, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            {metaStatus?.connected ? '✅' : '⚠️'}
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-color)' }}>
+              {metaStatus?.connected
+                ? ('Connected to Facebook Page: ' + (metaStatus.page_name || 'Active'))
+                : 'Facebook & Instagram Disconnected'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px' }}>
+              {metaStatus?.connected
+                ? 'Your account is ready to schedule and publish posts automatically.'
+                : 'Connect your business accounts to publish directly from DigiM.'}
+            </div>
+          </div>
+        </div>
+        {!metaStatus?.connected ? (
+          <button
+            type="button"
+            onClick={onGoSettings}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: 'var(--primary-color)',
+              color: 'white',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Connect Account
+          </button>
+        ) : (
+          <span style={{ fontSize: '12px', color: '#52b788', background: 'rgba(82,183,136,0.15)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}>
+            Operational
+          </span>
+        )}
+      </div>
+
+      {/* Sub Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', marginBottom: '24px', overflowX: 'auto' }}>
+        {[
+          { id: 'guide', label: '📖 Step-by-Step Guide' },
+          { id: 'troubleshoot', label: '🔧 Troubleshooting' },
+          { id: 'checklist', label: '📎 Readiness Checklist' },
+          { id: 'links', label: '📚 Helpful Links' }
+        ].map(t => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setSubTab(t.id as any)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: subTab === t.id ? 'var(--primary-color)' : 'transparent',
+              color: subTab === t.id ? 'white' : 'var(--text-light)',
+              fontWeight: subTab === t.id ? 700 : 500,
+              fontSize: '13px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 1: Setup Guide */}
+      {subTab === 'guide' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {steps.map((s) => (
+            <div
+              key={s.num}
+              style={{
+                display: 'flex',
+                gap: '16px',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(255, 255, 255, 0.02)'
+              }}
+            >
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(82, 183, 136, 0.2)',
+                color: 'var(--primary-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: '16px',
+                flexShrink: 0
+              }}>
+                {s.num}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)' }}>
+                    {s.title}
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-light)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px' }}>
+                    {s.badge}
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'var(--text-light)', lineHeight: '1.5' }}>
+                  {s.desc}
+                </p>
+                {s.action && (
+                  <button
+                    type="button"
+                    onClick={s.onAction}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(82, 183, 136, 0.15)',
+                      color: 'var(--primary-color)',
+                      border: '1px solid rgba(82, 183, 136, 0.3)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {s.action} →
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab 2: Troubleshooting */}
+      {subTab === 'troubleshoot' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {faqs.map((faq, i) => {
+            const isOpen = openFaq === i;
+            return (
+              <div
+                key={i}
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  overflow: 'hidden'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? null : i)}
+                  style={{
+                    width: '100%',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-color)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span>{faq.q}</span>
+                  <span style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-light)', fontSize: '18px' }}>
+                    ⌄
+                  </span>
+                </button>
+                {isOpen && (
+                  <div style={{ padding: '0 20px 16px', fontSize: '13px', color: 'var(--text-light)', lineHeight: '1.6', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+                    <strong style={{ color: '#52b788' }}>Solution: </strong>
+                    {faq.fix}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tab 3: Checklist */}
+      {subTab === 'checklist' && (
+        <div style={{ background: 'rgba(255, 255, 255, 0.02)', borderRadius: '14px', border: '1px solid var(--glass-border)', padding: '20px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '14px', color: 'var(--text-color)' }}>
+            Account Readiness Checklist
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {checklistItems.map((item, idx) => {
+              const isChecked = !!checkedItems[idx];
+              return (
+                <div
+                  key={idx}
+                  onClick={() => toggleCheck(idx)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    background: isChecked ? 'rgba(82, 183, 136, 0.1)' : 'rgba(255, 255, 255, 0.02)',
+                    border: isChecked ? '1px solid rgba(82, 183, 136, 0.3)' : '1px solid var(--glass-border)',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {}}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '13px', color: isChecked ? 'var(--text-color)' : 'var(--text-light)', textDecoration: isChecked ? 'line-through' : 'none' }}>
+                    {item}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Helpful Links */}
+      {subTab === 'links' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {[
+            { title: '🏢 Create Facebook Business Page', url: 'https://www.facebook.com/pages/create', desc: 'Set up a new Facebook business page in minutes' },
+            { title: '📸 Switch Instagram to Professional', url: 'https://help.instagram.com/502981923235522', desc: 'Convert personal IG to Business or Creator' },
+            { title: '🔗 Link Instagram to Facebook Page', url: 'https://www.facebook.com/business/help/connect-instagram-to-page', desc: 'Connect your IG to Page in Meta Business Suite' },
+            { title: '🛠 Meta Business Suite', url: 'https://business.facebook.com', desc: 'Manage permissions, page roles, and assets' }
+          ].map((l, i) => (
+            <a
+              key={i}
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                padding: '18px',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(255, 255, 255, 0.02)',
+                textDecoration: 'none',
+                color: 'var(--text-color)',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '6px', color: 'var(--primary-color)' }}>
+                {l.title} ↗
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+                {l.desc}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam === 'help') return 'help';
+      if (tabParam) return tabParam;
       const saved = localStorage.getItem('activeTab') || 'home';
       if (saved === 'campaigns') return 'home';
       if (saved === 'assets') return 'library';
@@ -10222,7 +10683,16 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
       setCalendarSubTab(sub);
     }
     setActiveTab(resolvedTab);
-    if (typeof window !== 'undefined') localStorage.setItem('activeTab', resolvedTab);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeTab', resolvedTab);
+      const url = new URL(window.location.href);
+      if (resolvedTab === 'help') {
+        url.searchParams.set('tab', 'help');
+      } else {
+        url.searchParams.delete('tab');
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
   };
 
   const [showWelcome, setShowWelcome] = useState(true);
@@ -10238,6 +10708,15 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [archivalWarnings, setArchivalWarnings] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'help') {
+        setActiveTab('help');
+      }
+    }
+  }, []);
   const [storageStatus, setStorageStatus] = useState<any>(null);
 
   // Load business & user profiles from onboarding data
@@ -10316,6 +10795,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const isSettingsActive = activeTab === 'settings';
   const isProfileActive = activeTab === 'profile';
   const isAdminActive = activeTab === 'admin';
+  const isHelpActive = activeTab === 'help';
 
   return (
     <>
@@ -10801,26 +11281,29 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             <span style={{ flex: 1 }}>Settings</span>
           </button>
 
-          <a
-            href="/facebook-setup-guide.html"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => handleTabChange('help')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
               padding: '9px 12px',
               borderRadius: '10px',
-              color: 'var(--text-color)',
-              textDecoration: 'none',
+              border: 'none',
+              background: isHelpActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isHelpActive ? 'var(--primary-color)' : 'var(--text-color)',
+              cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: 500,
+              fontWeight: isHelpActive ? 700 : 500,
+              textAlign: 'left',
+              width: '100%',
               transition: 'all 0.2s'
             }}
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            <span style={{ flex: 1 }}>Help</span>
-          </a>
+            <span style={{ flex: 1 }}>Help & Guides</span>
+          </button>
 
           {/* User Row */}
           <div
@@ -11005,6 +11488,13 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           <SettingsView initialTab="shop_details" onLogout={() => setShowLogoutConfirm(true)} />
         )}
         {isAdminActive && <AdminPanel />}
+        {isHelpActive && (
+          <HelpTab
+            onBack={() => handleTabChange('home')}
+            onGoSettings={() => handleTabChange('settings')}
+            metaStatus={metaStatus}
+          />
+        )}
       </div>
     </div>
 
@@ -11235,10 +11725,10 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>Notifications, default audience</span>
             </button>
             <button
-              onClick={() => { setShowMobileAvatarMenu(false); window.open('/facebook-setup-guide.html', '_blank'); }}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'transparent', border: 'none', color: 'var(--text-color)', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => { setShowMobileAvatarMenu(false); handleTabChange('help'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: isHelpActive ? 'rgba(82, 183, 136, 0.15)' : 'transparent', border: 'none', color: isHelpActive ? 'var(--primary-color)' : 'var(--text-color)', textAlign: 'left', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
             >
-              ❓ Help & Documentation
+              ❓ Help & Guides
             </button>
             <button
               onClick={() => { setShowMobileAvatarMenu(false); setShowLogoutConfirm(true); }}

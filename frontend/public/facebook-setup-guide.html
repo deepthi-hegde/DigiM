@@ -28,7 +28,26 @@
       z-index: 1000;
       box-shadow: 0 2px 16px rgba(0,0,0,0.3);
     }
-    .print-bar span { color: #94a3b8; font-size: 13px; }
+    print-bar span { color: #94a3b8; font-size: 13px; }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-back:hover {
+      background: #334155;
+      border-color: rgba(255, 255, 255, 0.45);
+    }
     .btn-pdf {
       display: inline-flex;
       align-items: center;
@@ -343,10 +362,15 @@
 
   <!-- Fixed print bar -->
   <div class="print-bar">
-    <span>DigiM App — Facebook Business Setup Guide</span>
-    <button class="btn-pdf" onclick="window.print()">
-      ⬇ Save as PDF
-    </button>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="/" class="btn-back">← Back to DigiM</a>
+      <span>DigiM App — Facebook & Instagram Business Setup Guide</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button class="btn-pdf" onclick="window.print()">
+        ⬇ Save as PDF
+      </button>
+    </div>
   </div>
 
   <div class="page">
@@ -355,6 +379,11 @@
     <div class="hero">
       <div class="hero-badge">Setup Guide v1.0</div>
       <div class="hero-content">
+      <div style="margin-bottom: 20px;">
+        <a href="/" style="display: inline-flex; align-items: center; gap: 6px; color: #93c5fd; text-decoration: none; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+          ← Return to DigiM Dashboard
+        </a>
+      </div>
         <div class="hero-logos">
           <div class="logo-fb">f</div>
           <div class="logo-arrow">→</div>
@@ -553,9 +582,14 @@
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-      <span>© 2025 <strong>DigiM</strong> — All rights reserved</span>
-      <span>For support, contact your DigiM app administrator</span>
+    <div class="footer" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div>© 2025 <strong>DigiM</strong> — All rights reserved</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">For support, contact your DigiM app administrator</div>
+      </div>
+      <a href="/" style="display: inline-flex; align-items: center; gap: 6px; color: #1e3a5f; text-decoration: none; font-weight: 600; font-size: 13px; background: white; padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+        ← Back to DigiM Dashboard
+      </a>
     </div>
 
   </div>
