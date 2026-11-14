@@ -6662,6 +6662,7 @@ function CalendarTab({
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'upcoming' | 'drafts' | 'past'>(activeSubTab);
+  const [currentDate, setCurrentDate] = useState(() => new Date());
 
   useEffect(() => {
     if (activeSubTab) setSubTab(activeSubTab);
@@ -6693,6 +6694,9 @@ function CalendarTab({
       });
   }, []);
 
+  // Calendar month navigation state
+  const today = new Date();
+
   if (loading) {
     return (
       <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', borderRadius: '16px' }}>
@@ -6700,10 +6704,6 @@ function CalendarTab({
       </div>
     );
   }
-
-  // Calendar month navigation state
-  const today = new Date();
-  const [currentDate, setCurrentDate] = useState(() => new Date());
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
