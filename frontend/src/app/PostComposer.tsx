@@ -234,6 +234,12 @@ export function PostComposer({
   businessInfo,
   onSaveSuccess
 }) {
+  const shopInitial = useMemo(() => {
+    const parts = (businessInfo?.name || DEFAULT_SHOP.name).trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return (parts[0] || "LT").slice(0, 2).toUpperCase();
+  }, [businessInfo]);
+
   const shopData = useMemo(() => {
     return {
       name: businessInfo?.name || DEFAULT_SHOP.name,
@@ -281,6 +287,11 @@ export function PostComposer({
   const [image, setImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSavedToLib, setIsSavedToLib] = useState(false);
+
+  // Brand Overlay Controls
+  const [brandOverlayEnabled, setBrandOverlayEnabled] = useState(true);
+  const [overlayPosition, setOverlayPosition] = useState("bottom-right");
+  const [overlayType, setOverlayType] = useState("logo");
 
   // Drafts & IDs
   const [currentDraftId, setCurrentDraftId] = useState(null);
@@ -1387,9 +1398,10 @@ export function PostComposer({
                     role="group"
                     aria-label="No image yet"
                     style={{
+                      position: "relative",
                       borderRadius: "12px",
-                      border: "2px dashed var(--border, #747d73)",
-                      background: "var(--canvas, #0e140d)",
+                      border: "2px dashed var(--border, #979a96)",
+                      background: "var(--canvas, #f4f6f2)",
                       aspectRatio: format === "post" ? "1 / 1" : "9 / 16",
                       display: "flex",
                       flexDirection: "column",
@@ -1489,6 +1501,31 @@ export function PostComposer({
                         </button>
                       </div>
                     </div>
+
+                    {/* Brand Badge in Corner when overlay enabled */}
+                    {brandOverlayEnabled && overlayType === "logo" && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          bottom: "10px",
+                          right: "10px",
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          background: "#ffffff",
+                          color: "#2F6B2F",
+                          border: "1px solid var(--hair, #d7ddd3)",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontWeight: 700
+                        }}
+                      >
+                        {shopInitial}
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <div
@@ -1506,6 +1543,80 @@ export function PostComposer({
                       alt="Post preview"
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
+
+                    {/* Rendered Brand Overlay on Active Image */}
+                    {brandOverlayEnabled && (
+                      <>
+                        {overlayType === "logo" && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              ...(overlayPosition === "bottom-right" ? { bottom: "56px", right: "12px" } :
+                                  overlayPosition === "bottom-left" ? { bottom: "56px", left: "12px" } :
+                                  overlayPosition === "top-right" ? { top: "12px", right: "12px" } :
+                                  { top: "12px", left: "12px" }),
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              background: "#ffffff",
+                              color: "#2F6B2F",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "13px",
+                              fontWeight: 800,
+                              zIndex: 5
+                            }}
+                          >
+                            {shopInitial}
+                          </div>
+                        )}
+                        {overlayType === "name-strip" && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: "54px",
+                              left: 0,
+                              right: 0,
+                              background: "rgba(23, 31, 22, 0.85)",
+                              backdropFilter: "blur(4px)",
+                              color: "#ffffff",
+                              padding: "6px 12px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              textAlign: "center",
+                              letterSpacing: "0.5px",
+                              zIndex: 5
+                            }}
+                          >
+                            {shopData.name}
+                          </div>
+                        )}
+                        {overlayType === "offer-tag" && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              ...(overlayPosition === "bottom-right" ? { bottom: "56px", right: "12px" } :
+                                  overlayPosition === "bottom-left" ? { bottom: "56px", left: "12px" } :
+                                  overlayPosition === "top-right" ? { top: "12px", right: "12px" } :
+                                  { top: "12px", left: "12px" }),
+                              background: "#e2a21a",
+                              color: "#101614",
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 800,
+                              letterSpacing: "0.5px",
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                              zIndex: 5
+                            }}
+                          >
+                            SPECIAL WEAVE
+                          </div>
+                        )}
+                      </>
+                    )}
                     <div
                       style={{
                         position: "absolute",
@@ -1589,6 +1700,128 @@ export function PostComposer({
                     </div>
                   </div>
                 )}
+
+                {/* Brand Overlay Control Card matching user specification */}
+                <div
+                  style={{
+                    marginTop: "12px",
+                    borderRadius: "16px",
+                    border: "1px solid var(--border, #979a96)",
+                    background: "var(--surface, #ffffff)",
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    boxSizing: "border-box"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                      Brand overlay
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <select
+                        aria-label="Brand overlay position"
+                        value={overlayPosition}
+                        onChange={(e) => setOverlayPosition(e.target.value)}
+                        disabled={!brandOverlayEnabled}
+                        style={{
+                          fontSize: "13px",
+                          color: brandOverlayEnabled ? "var(--muted, #566054)" : "#979a96",
+                          border: "none",
+                          background: "transparent",
+                          cursor: brandOverlayEnabled ? "pointer" : "default",
+                          outline: "none",
+                          fontWeight: 500,
+                          textAlign: "right"
+                        }}
+                      >
+                        <option value="bottom-right">Bottom right</option>
+                        <option value="bottom-left">Bottom left</option>
+                        <option value="top-right">Top right</option>
+                        <option value="top-left">Top left</option>
+                      </select>
+
+                      {/* Green toggle switch */}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={brandOverlayEnabled}
+                        aria-label="Toggle brand overlay"
+                        onClick={() => setBrandOverlayEnabled(!brandOverlayEnabled)}
+                        style={{
+                          width: "48px",
+                          height: "26px",
+                          borderRadius: "13px",
+                          background: brandOverlayEnabled ? "#2F6B2F" : "#979a96",
+                          border: "none",
+                          padding: "2px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          transition: "background 0.2s ease"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "50%",
+                            background: "#ffffff",
+                            transform: brandOverlayEnabled ? "translateX(22px)" : "translateX(0)",
+                            transition: "transform 0.2s ease",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
+                          }}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3 Segments: Logo | Name strip | Offer tag */}
+                  <div
+                    style={{
+                      display: "flex",
+                      background: "var(--sunken, #e9ebe7)",
+                      borderRadius: "10px",
+                      padding: "3px",
+                      gap: "2px"
+                    }}
+                  >
+                    {[
+                      { id: "logo", label: "Logo" },
+                      { id: "name-strip", label: "Name strip" },
+                      { id: "offer-tag", label: "Offer tag" }
+                    ].map((tab) => {
+                      const isSelected = overlayType === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => {
+                            setOverlayType(tab.id);
+                            if (!brandOverlayEnabled) setBrandOverlayEnabled(true);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            border: "none",
+                            background: isSelected ? "#ffffff" : "transparent",
+                            color: isSelected ? "var(--ink, #171f16)" : "var(--muted, #566054)",
+                            fontWeight: isSelected ? 700 : 500,
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            boxShadow: isSelected ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                            transition: "all 0.15s ease",
+                            textAlign: "center"
+                          }}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Right Column: Post Content */}
