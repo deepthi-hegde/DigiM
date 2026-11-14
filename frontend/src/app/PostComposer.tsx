@@ -593,8 +593,8 @@ export function PostComposer({
       if (state.scheduled_date) setScheduledDate(state.scheduled_date);
       if (state.scheduled_time) setScheduledTime(state.scheduled_time);
       if (state.category) setPostType(state.category);
-    } else if (initParams?.mode === "type" && initParams.category) {
-      handleSelectCategory(initParams.category, false);
+    } else if (initParams?.mode === "type" && (initParams.category || initParams.type)) {
+      handleSelectCategory(initParams.category || initParams.type, false);
     } else if (initParams?.mode === "calendar_date" && initParams.date) {
       setScheduledDate(initParams.date);
       setWhen("schedule");
@@ -650,9 +650,38 @@ export function PostComposer({
     setLibraryImages([]);
   };
 
+  // Robust Category Finder matching IDs, labels, and normalized keys
+  const findCategory = (idOrLabel) => {
+    if (!idOrLabel) return CATEGORIES[0];
+    const raw = String(idOrLabel).trim();
+    const key = raw.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    const exact = CATEGORIES.find(
+      (c) => c.id === raw || c.label.toLowerCase() === raw.toLowerCase()
+    );
+    if (exact) return exact;
+
+    if (key === "summer" || key === "summersale") return CATEGORIES.find((c) => c.id === "summer_sale") || CATEGORIES[0];
+    if (key === "collection" || key === "newcollection") return CATEGORIES.find((c) => c.id === "new_collection") || CATEGORIES[0];
+    if (key === "spotlight" || key === "customerspotlight") return CATEGORIES.find((c) => c.id === "customer_spotlight") || CATEGORIES[0];
+    if (key === "festival" || key === "festivaloffer") return CATEGORIES.find((c) => c.id === "festival_offer") || CATEGORIES[0];
+    if (key === "showcase" || key === "productshowcase") return CATEGORIES.find((c) => c.id === "product_showcase") || CATEGORIES[0];
+    if (key === "bts" || key === "behindthescenes") return CATEGORIES.find((c) => c.id === "behind_the_scenes") || CATEGORIES[0];
+    if (key === "promo" || key === "promotion" || key === "promotions") return CATEGORIES.find((c) => c.id === "promotion") || CATEGORIES[0];
+    if (key === "info" || key === "knowledgeinfo") return CATEGORIES.find((c) => c.id === "knowledge_info") || CATEGORIES[0];
+
+    const partial = CATEGORIES.find((c) => {
+      const cId = c.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const cLabel = c.label.toLowerCase().replace(/[^a-z0-9]/g, "");
+      return cId.includes(key) || key.includes(cId) || cLabel.includes(key) || key.includes(cLabel);
+    });
+
+    return partial || CATEGORIES[0];
+  };
+
   // Category change handler
   const handleSelectCategory = (catId, triggerNotice = true) => {
-    const selected = CATEGORIES.find((c) => c.id === catId);
+    const selected = findCategory(catId);
     if (!selected) return;
 
     if (triggerNotice) {
@@ -1236,109 +1265,7 @@ export function PostComposer({
             </div>
           </div>
 
-          {/* When: Post now vs Schedule + Date & Time Picker */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "6px",
-              paddingLeft: "20px",
-              borderLeft: "1px solid var(--hair, #2a3628)"
-            }}
-          >
-            <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "var(--muted, #a1ae9e)" }}>When</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", flexWrap: "wrap" }}>
-              <div
-                role="radiogroup"
-                style={{
-                  display: "inline-flex",
-                  flexWrap: "wrap",
-                  padding: "4px",
-                  borderRadius: "12px",
-                  background: "var(--sunken, #191f18)"
-                }}
-              >
-                {[
-                  { id: "now", label: "Post now", icon: ICONS.postNow },
-                  { id: "schedule", label: "Schedule", icon: ICONS.schedule }
-                ].map((w) => {
-                  const isChecked = when === w.id;
-                  return (
-                    <button
-                      key={w.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={isChecked}
-                      onClick={() => setWhen(w.id)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        minHeight: "40px",
-                        padding: "0 12px",
-                        borderRadius: "9px",
-                        border: "none",
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        background: isChecked ? "#2F6B2F" : "transparent",
-                        color: isChecked ? "#ffffff" : "var(--muted, #566054)",
-                        border: isChecked ? "1.5px solid #2F6B2F" : "1.5px solid transparent",
-                        boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.2), 0 1px 2px rgba(23, 31, 22, 0.08)" : "none",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      <span style={{ color: isChecked ? "#ffffff" : "var(--muted, #566054)" }}>{w.icon}</span>
-                      {w.label}
-                    </button>
-                  );
-                })}
-              </div>
 
-              {/* Date & Time inputs if Schedule */}
-              {when === "schedule" && (
-                <>
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      minHeight: "44px",
-                      padding: "0 12px",
-                      border: "1px solid var(--border, #747d73)",
-                      borderRadius: "12px",
-                      background: "var(--surface, #172016)",
-                      fontSize: "15px",
-                      boxSizing: "border-box",
-                      minWidth: "130px",
-                      color: "var(--ink, #e6eee4)"
-                    }}
-                  />
-                  <input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      minHeight: "44px",
-                      padding: "0 12px",
-                      border: "1px solid var(--border, #747d73)",
-                      borderRadius: "12px",
-                      background: "var(--surface, #172016)",
-                      fontSize: "15px",
-                      boxSizing: "border-box",
-                      minWidth: "96px",
-                      color: "var(--ink, #e6eee4)"
-                    }}
-                  />
-                  <span style={{ fontSize: "13px", color: "var(--muted, #a1ae9e)" }}>IST</span>
-                </>
-              )}
-            </div>
-          </div>
 
           {/* Post to: Facebook & Instagram toggle switches */}
           <div
@@ -2245,71 +2172,212 @@ export function PostComposer({
               </div>
             </div>
 
-            {/* Post Card Footer */}
+            {/* Dedicated Bottom Section: When to Post & Action Buttons */}
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                gap: "16px",
-                flexWrap: "wrap",
-                paddingTop: "16px",
-                borderTop: "1px solid var(--hair, #2a3628)"
+                flexDirection: "column",
+                gap: "14px",
+                paddingTop: "18px",
+                borderTop: "1.5px solid var(--border, #979a96)"
               }}
             >
-              <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "var(--muted, #a1ae9e)" }}>
-                {caption.length} / 2,200 characters
-              </p>
-              <span style={{ flex: 1 }} />
-              <button
-                type="button"
-                onClick={() => setIsPreviewModalOpen(true)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  minHeight: "44px",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: "var(--primary, #7cc47c)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer"
-                }}
-              >
-                {ICONS.eye} See it on Facebook or Instagram
-              </button>
-              <button
-                type="button"
-                disabled={isPublishing}
-                onClick={handlePublish}
+              {/* When & Date/Time Controls Card */}
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  minHeight: "52px",
-                  padding: "0 20px",
-                  borderRadius: "12px",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  boxSizing: "border-box",
-                  cursor: isPublishing ? "not-allowed" : "pointer",
-                  background: "#2F6B2F",
-                  color: "#ffffff",
-                  border: "1.5px solid #2F6B2F",
-                  boxShadow: "0 4px 14px rgba(47, 107, 47, 0.35)",
-                  transition: "all 0.2s ease",
-                  opacity: isPublishing ? 0.7 : 1
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                  background: "var(--sunken, #f4f6f3)",
+                  padding: "12px 16px",
+                  borderRadius: "14px",
+                  border: "1.5px solid var(--border, #979a96)"
                 }}
               >
-                {when === "schedule" ? ICONS.schedule : ICONS.postNow}
-                {isPublishing
-                  ? "Processing..."
-                  : when === "schedule"
-                  ? "Schedule post"
-                  : "Post now"}
-              </button>
+                {/* Post now vs Schedule toggle */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>🕒</span> When:
+                  </span>
+                  <div
+                    role="radiogroup"
+                    aria-label="Posting schedule"
+                    style={{
+                      display: "inline-flex",
+                      padding: "3px",
+                      borderRadius: "10px",
+                      background: "var(--surface, #ffffff)",
+                      border: "1.5px solid var(--border, #979a96)"
+                    }}
+                  >
+                    {[
+                      { id: "now", label: "Post now", icon: ICONS.postNow },
+                      { id: "schedule", label: "Schedule", icon: ICONS.schedule }
+                    ].map((w) => {
+                      const isChecked = when === w.id;
+                      return (
+                        <button
+                          key={w.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={isChecked}
+                          onClick={() => setWhen(w.id)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            minHeight: "36px",
+                            padding: "0 14px",
+                            borderRadius: "8px",
+                            border: isChecked ? "1.5px solid #2F6B2F" : "1.5px solid transparent",
+                            fontSize: "13.5px",
+                            fontWeight: isChecked ? 700 : 500,
+                            cursor: "pointer",
+                            background: isChecked ? "#2F6B2F" : "transparent",
+                            color: isChecked ? "#ffffff" : "var(--muted, #566054)",
+                            boxShadow: isChecked ? "0 2px 6px rgba(47, 107, 47, 0.25)" : "none",
+                            transition: "all 0.15s ease"
+                          }}
+                        >
+                          <span style={{ color: isChecked ? "#ffffff" : "var(--muted, #566054)" }}>{w.icon}</span>
+                          {w.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Date & Time selection right here at the bottom */}
+                {when === "schedule" ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <label htmlFor="post-schedule-date" style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #566054)" }}>
+                        Date:
+                      </label>
+                      <input
+                        id="post-schedule-date"
+                        type="date"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        style={{
+                          minHeight: "38px",
+                          padding: "0 10px",
+                          border: "1.5px solid var(--border, #979a96)",
+                          borderRadius: "8px",
+                          background: "var(--surface, #ffffff)",
+                          fontSize: "13.5px",
+                          fontWeight: 600,
+                          color: "var(--ink, #171f16)",
+                          outline: "none",
+                          cursor: "pointer"
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <label htmlFor="post-schedule-time" style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #566054)" }}>
+                        Time:
+                      </label>
+                      <input
+                        id="post-schedule-time"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        style={{
+                          minHeight: "38px",
+                          padding: "0 10px",
+                          border: "1.5px solid var(--border, #979a96)",
+                          borderRadius: "8px",
+                          background: "var(--surface, #ffffff)",
+                          fontSize: "13.5px",
+                          fontWeight: 600,
+                          color: "var(--ink, #171f16)",
+                          outline: "none",
+                          cursor: "pointer"
+                        }}
+                      />
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #566054)" }}>IST</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: "13px", color: "var(--muted, #566054)", fontStyle: "italic" }}>
+                    Will be published immediately across selected channels.
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons & Character Count */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  flexWrap: "wrap"
+                }}
+              >
+                <p style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: "var(--muted, #566054)" }}>
+                  {caption.length} / 2,200 characters
+                </p>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsPreviewModalOpen(true)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      minHeight: "48px",
+                      padding: "0 16px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#2F6B2F",
+                      background: "var(--tint, #e6ede6)",
+                      border: "1.5px solid rgba(47, 107, 47, 0.3)",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {ICONS.eye} Preview Post
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isPublishing}
+                    onClick={handlePublish}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      minHeight: "48px",
+                      padding: "0 22px",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      boxSizing: "border-box",
+                      cursor: isPublishing ? "not-allowed" : "pointer",
+                      background: "#2F6B2F",
+                      color: "#ffffff",
+                      border: "1.5px solid #2F6B2F",
+                      boxShadow: "0 4px 14px rgba(47, 107, 47, 0.35)",
+                      transition: "all 0.2s ease",
+                      opacity: isPublishing ? 0.7 : 1
+                    }}
+                  >
+                    {when === "schedule" ? ICONS.schedule : ICONS.postNow}
+                    {isPublishing
+                      ? "Processing..."
+                      : when === "schedule"
+                      ? `Schedule post (${formatDateTimeDisplay(scheduledDate, scheduledTime)})`
+                      : "Post now"}
+                  </button>
+                </div>
+              </div>
             </div>
           </article>
         </main>

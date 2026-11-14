@@ -8859,7 +8859,7 @@ export function HomeView({
 
   const TOPIC_CHIPS = [
     {
-      id: 'summer',
+      id: 'summer_sale',
       name: 'Summer Sale',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8869,7 +8869,7 @@ export function HomeView({
       )
     },
     {
-      id: 'collection',
+      id: 'new_collection',
       name: 'New Collection',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8879,7 +8879,7 @@ export function HomeView({
       )
     },
     {
-      id: 'spotlight',
+      id: 'customer_spotlight',
       name: 'Customer Spotlight',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8888,7 +8888,7 @@ export function HomeView({
       )
     },
     {
-      id: 'festival',
+      id: 'festival_offer',
       name: 'Festival Offer',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8898,7 +8898,7 @@ export function HomeView({
       )
     },
     {
-      id: 'showcase',
+      id: 'product_showcase',
       name: 'Product Showcase',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8908,7 +8908,7 @@ export function HomeView({
       )
     },
     {
-      id: 'bts',
+      id: 'behind_the_scenes',
       name: 'Behind the Scenes',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8918,7 +8918,7 @@ export function HomeView({
       )
     },
     {
-      id: 'promo',
+      id: 'promotion',
       name: 'Promotions',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8928,7 +8928,7 @@ export function HomeView({
       )
     },
     {
-      id: 'info',
+      id: 'knowledge_info',
       name: 'Knowledge Info',
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -8986,7 +8986,7 @@ export function HomeView({
         {/* Topic Chips matching DigiM design tokens */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {TOPIC_CHIPS.map((chip) => {
-            const isHighlighted = chip.id === 'collection' || chip.name === 'New Collection';
+            const isHighlighted = chip.id === 'new_collection' || chip.id === 'collection' || chip.name === 'New Collection';
             return (
               <button
                 key={chip.name}
