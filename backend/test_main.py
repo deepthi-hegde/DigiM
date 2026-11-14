@@ -551,3 +551,88 @@ def test_task_webhook_publish_scheduled_endpoint(monkeypatch):
     assert res_second.json()["status"] == "skipped"
 
     app.dependency_overrides.clear()
+
+
+def test_superadmin_auth_and_management_api(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount, Campaign
+    from db.database import get_db
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Seed 2 tenants with campaigns and integrations
+    t1 = Tenant(id=1, name="Client Alpha", email="alpha@client.com", brand_url="https://alpha.com")
+    m1 = MetaAccount(tenant_id=1, page_id="fb_alpha", page_name="Alpha Page", access_token="tok_alpha", ig_user_id="ig_alpha")
+    c1 = Campaign(tenant_id=1, prompt="Promo Alpha", category="Direct", status="published")
+
+    t2 = Tenant(id=2, name="Client Beta", email="beta@client.com", whatsapp_phone_number_id="wa_9876", whatsapp_access_token="tok_wa")
+    c2 = Campaign(tenant_id=2, prompt="Promo Beta", category="Festive", status="scheduled")
+
+    db.add_all([t1, m1, c1, t2, c2])
+    db.commit()
+
+    # 1. Login with wrong password -> 401
+    bad_login = client.post("/api/superadmin/login", json={"password": "wrong-password"})
+    assert bad_login.status_code == 401
+
+    # 2. Login with correct password -> 200 & get token
+    good_login = client.post("/api/superadmin/login", json={"password": "digim-superadmin-2026!"})
+    assert good_login.status_code == 200
+    token = good_login.json()["token"]
+    assert token is not None
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 3. Verify session
+    verify_res = client.get("/api/superadmin/verify", headers=headers)
+    assert verify_res.status_code == 200
+
+    # 4. Overview
+    overview_res = client.get("/api/superadmin/overview", headers=headers)
+    assert overview_res.status_code == 200
+    ov = overview_res.json()
+    assert ov["tenants"]["total"] == 2
+    assert ov["campaigns"]["total"] == 2
+    assert ov["integrations"]["connected_meta_pages"] == 1
+    assert ov["integrations"]["connected_whatsapp"] == 1
+
+    # 5. List all tenants
+    tenants_res = client.get("/api/superadmin/tenants", headers=headers)
+    assert tenants_res.status_code == 200
+    tenants_list = tenants_res.json()
+    assert len(tenants_list) == 2
+    
+    alpha = [t for t in tenants_list if t["id"] == 1][0]
+    assert alpha["name"] == "Client Alpha"
+    assert alpha["meta"]["connected"] is True
+    assert alpha["meta"]["page_name"] == "Alpha Page"
+    assert alpha["campaigns"]["published"] == 1
+
+    beta = [t for t in tenants_list if t["id"] == 2][0]
+    assert beta["name"] == "Client Beta"
+    assert beta["whatsapp"]["connected"] is True
+    assert beta["whatsapp"]["phone_number_id"] == "wa_9876"
+    assert beta["campaigns"]["scheduled"] == 1
+
+    # 6. Tenant details drilldown
+    detail_res = client.get("/api/superadmin/tenants/1", headers=headers)
+    assert detail_res.status_code == 200
+    detail = detail_res.json()
+    assert detail["tenant_id"] == 1
+    assert len(detail["campaigns"]) == 1
+
+    app.dependency_overrides.clear()

@@ -23,6 +23,7 @@ fi
 META_APP_ID=${META_APP_ID:-"3531281670380966"}
 NEXT_PUBLIC_META_CONFIG_ID=${NEXT_PUBLIC_META_CONFIG_ID:-""}
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-"980545668366-1bbf1cipl6eps71rog3riakp60jvrium.apps.googleusercontent.com"}
+SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:-"digim-superadmin-2026!"}
 
 
 # Git commit message from argument or default
@@ -46,7 +47,7 @@ gcloud run deploy backend \
   --image "$BACKEND_IMAGE" \
   --region "$REGION" \
   --project "$PROJECT_ID" \
-  --set-env-vars GCS_BUCKET_NAME="marketflow-assets-digim-496018",META_APP_ID="$META_APP_ID",META_APP_SECRET="$META_APP_SECRET",GEMINI_API_KEY="$GEMINI_API_KEY" \
+  --set-env-vars GCS_BUCKET_NAME="marketflow-assets-digim-496018",META_APP_ID="$META_APP_ID",META_APP_SECRET="$META_APP_SECRET",GEMINI_API_KEY="$GEMINI_API_KEY",SUPERADMIN_PASSWORD="$SUPERADMIN_PASSWORD" \
   --max-instances 1 \
   --allow-unauthenticated
 

@@ -11,6 +11,7 @@ from api.meta import router as meta_router
 from api.auth import router as auth_router
 from api.whatsapp import router as whatsapp_router
 from api.calendar import router as calendar_router
+from api.superadmin import router as superadmin_router
 import uuid
 import shutil
 
@@ -29,6 +30,7 @@ app.include_router(meta_router, prefix="/api/meta", tags=["Meta API"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(whatsapp_router, prefix="/api/whatsapp", tags=["WhatsApp"])
 app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])
+app.include_router(superadmin_router, prefix="/api/superadmin", tags=["Super Admin"])
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
