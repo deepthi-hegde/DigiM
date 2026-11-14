@@ -473,3 +473,81 @@ def test_meta_instagram_scheduling_and_publishing_pipeline(monkeypatch):
     assert res_live.json()["ig_response"]["id"] == "ig_ok_20"
 
     app.dependency_overrides.clear()
+
+
+def test_task_webhook_publish_scheduled_endpoint(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount, Campaign
+    from db.database import get_db
+    import datetime
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # 1. Setup tenant & Meta account
+    t = Tenant(id=30, name="Task Test Tenant", email="task@test.com")
+    m = MetaAccount(tenant_id=30, page_id="page_tasks_30", page_name="Task Page", access_token="tok_30", ig_user_id="ig_30")
+    db.add(t)
+    db.add(m)
+    db.commit()
+
+    # 2. Create a scheduled campaign
+    post = Campaign(
+        tenant_id=30,
+        prompt="Test Prompt",
+        category="Direct",
+        min_age=18,
+        max_age=65,
+        gender="All",
+        generated_text="Scheduled post for webhook trigger",
+        visual_suggestion="https://example.com/photo.jpg",
+        scheduled_time=datetime.datetime.utcnow(),
+        status="scheduled",
+        publish_to_facebook=True,
+        publish_to_instagram=True
+    )
+    db.add(post)
+    db.commit()
+    db.refresh(post)
+
+    # 3. Mock publish handlers
+    monkeypatch.setattr("main.publish_to_facebook", lambda req: {"id": "fb_task_done"})
+    monkeypatch.setattr("api.meta.publish_to_instagram", lambda req: {"id": "ig_task_done"})
+
+    # 4. Trigger Webhook endpoint /api/tasks/publish-scheduled
+    webhook_payload = {
+        "campaign_id": post.id,
+        "tenant_id": 30
+    }
+    response = client.post("/api/tasks/publish-scheduled", json=webhook_payload)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["campaign_id"] == post.id
+    assert data["fb_response"]["id"] == "fb_task_done"
+    assert data["ig_response"]["id"] == "ig_task_done"
+
+    # Verify campaign status is now published
+    db.expire_all()
+    post_in_db = db.query(Campaign).filter_by(id=post.id).first()
+    assert post_in_db.status == "published"
+
+    # 5. Verify Idempotency - triggering again should skip cleanly
+    res_second = client.post("/api/tasks/publish-scheduled", json=webhook_payload)
+    assert res_second.status_code == 200
+    assert res_second.json()["status"] == "skipped"
+
+    app.dependency_overrides.clear()

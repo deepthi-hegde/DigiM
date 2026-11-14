@@ -6701,10 +6701,22 @@ function CalendarTab({
     );
   }
 
-  // Get days of the current month
+  // Calendar month navigation state
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
   const firstDayIndex = new Date(year, month, 1).getDay();
   const totalDays = new Date(year, month + 1, 0).getDate();
 
@@ -6742,6 +6754,65 @@ function CalendarTab({
               Every post in one place: upcoming schedules, drafts in progress, and past published campaigns.
             </p>
           </div>
+        </div>
+
+        {/* Month Navigation Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', background: 'var(--sunken, rgba(0,0,0,0.04))', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              style={{
+                background: 'var(--surface, #ffffff)',
+                border: '1px solid var(--border, #979a96)',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                color: 'var(--ink, #171f16)'
+              }}
+            >
+              ‹ Prev
+            </button>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--ink, #171f16)', minWidth: '160px', textAlign: 'center' }}>
+              {monthNames[month]} {year}
+            </h3>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              style={{
+                background: 'var(--surface, #ffffff)',
+                border: '1px solid var(--border, #979a96)',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                color: 'var(--ink, #171f16)'
+              }}
+            >
+              Next ›
+            </button>
+          </div>
+          {(year !== today.getFullYear() || month !== today.getMonth()) && (
+            <button
+              type="button"
+              onClick={handleToday}
+              style={{
+                background: '#2F6B2F',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Jump to Current Month
+            </button>
+          )}
         </div>
 
         {/* Sub-Navigation Tabs */}
@@ -6845,8 +6916,9 @@ function CalendarTab({
             return <div key={`empty-${idx}`} style={{ minHeight: '120px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid transparent' }} />;
           }
 
-          // Check if there are posts scheduled for this day
-          const dayPosts = scheduledCampaigns.filter(c => {
+          // Check if there are posts for this day (both upcoming and past)
+          const dayPosts = campaigns.filter(c => {
+            if (!c || !c.scheduled_time) return false;
             const date = new Date(c.scheduled_time);
             return date.getDate() === day && date.getMonth() === month && date.getFullYear() === year;
           });
@@ -7193,17 +7265,95 @@ function CalendarTab({
       )}
 
       {/* 3. PAST POSTS VIEW */}
-      {subTab === 'past' && (
-        <div>
-          <div style={{ marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)' }}>Past Posts & Archive</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '2px' }}>
-              All your published and archived campaigns in one place. Posts older than 90 days are archived here and can be restored anytime.
-            </p>
+      {subTab === 'past' && (() => {
+        const pastCampaigns = campaigns.filter(c => {
+          if (!c) return false;
+          if (c.status === 'published' || c.status === 'archived') return true;
+          if (c.scheduled_time && new Date(c.scheduled_time).getTime() < Date.now()) return true;
+          return false;
+        });
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)', margin: 0 }}>
+                Past & Scheduled Posts History ({pastCampaigns.length})
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '4px' }}>
+                All past published, scheduled, and recorded campaigns associated with your business account.
+              </p>
+            </div>
+
+            {pastCampaigns.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px dashed var(--glass-border)' }}>
+                <p style={{ color: 'var(--text-light)', fontSize: '14px', margin: 0 }}>No past posts recorded yet.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                {pastCampaigns.map((post) => {
+                  const postDate = post.scheduled_time ? new Date(post.scheduled_time).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Direct';
+                  const postTime = post.scheduled_time_local || (post.scheduled_time ? new Date(post.scheduled_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '');
+                  const isDone = post.status === 'published';
+                  const isFailed = post.status === 'failed';
+
+                  return (
+                    <div
+                      key={post.id}
+                      onClick={() => onSelectCampaign?.(post)}
+                      style={{
+                        background: 'var(--surface, #ffffff)',
+                        border: '1px solid var(--border, #979a96)',
+                        borderRadius: '14px',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        transition: 'transform 0.15s ease, border-color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2F6B2F'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border, #979a96)'; e.currentTarget.style.transform = 'none'; }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: isDone ? '#2F6B2F' : isFailed ? '#b42318' : '#1877f2', background: isDone ? '#e6ede6' : isFailed ? '#f8e9e8' : '#e8f0fe', padding: '3px 8px', borderRadius: '6px' }}>
+                          {isDone ? '✓ Published' : isFailed ? '× Failed' : '📅 Scheduled'}
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--muted, #566054)' }}>
+                          {postDate} {postTime && `· ${postTime}`}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        {(post.image_url || post.visual_suggestion) && (
+                          <img
+                            src={post.image_url || post.visual_suggestion}
+                            alt="post preview"
+                            style={{ width: '64px', height: '64px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                          />
+                        )}
+                        <p style={{ margin: 0, fontSize: '13px', lineHeight: '18px', color: 'var(--ink, #171f16)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {post.generated_text || post.prompt}
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--hair, #d7ddd3)', fontSize: '12px', color: 'var(--muted, #566054)' }}>
+                        <span>Category: {post.category || 'General'}</span>
+                        <span>{post.publish_to_instagram ? 'FB & IG' : 'Facebook'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ marginTop: '20px', borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
+              <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '10px' }}>Archived Campaigns (90+ Days)</h4>
+              <ArchivedPostsTab />
+            </div>
           </div>
-          <ArchivedPostsTab />
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

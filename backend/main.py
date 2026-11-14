@@ -36,6 +36,7 @@ from db.database import get_db, engine
 from db.schema import Base, MetaAccount, Campaign, User, AuditLog, Tenant, MediaAsset
 from api.meta import publish_to_facebook, PublishRequest
 from utils.storage import upload_to_gcs
+from core.tasks import dispatch_scheduled_campaign_task
 import datetime
 
 from sqlalchemy import text
@@ -422,9 +423,13 @@ class CampaignRequest(BaseModel):
 
 
 class CampaignPublishRequest(BaseModel):
-    message: str
+    message: Optional[str] = None
+    caption: Optional[str] = None
     image_url: Optional[str] = None
     publish_to_instagram: bool = False
+    publish_instagram: Optional[bool] = None
+    publish_facebook: Optional[bool] = True
+    publish_to_facebook: Optional[bool] = True
     tenant_id: int = 1
     scheduled_time: Optional[str] = None  # ISO format string or None
     campaign_id: Optional[int] = None
@@ -482,11 +487,16 @@ def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
 
 @app.post("/api/campaign/publish")
 def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_db)):
+    post_message = payload.message or payload.caption or ""
+    if not post_message:
+        raise HTTPException(status_code=400, detail="Post message cannot be empty")
+
+    pub_ig = payload.publish_to_instagram or bool(payload.publish_instagram)
+    pub_fb = payload.publish_to_facebook if payload.publish_to_facebook is not None else (payload.publish_facebook if payload.publish_facebook is not None else True)
+
     # Get the latest connected account that has a real page ID
     account = db.query(MetaAccount).filter_by(tenant_id=payload.tenant_id)\
         .order_by(MetaAccount.id.desc()).first()
-    if not account:
-        raise HTTPException(status_code=400, detail="No Meta account connected")
 
     # Handle Scheduling
     if payload.scheduled_time:
@@ -523,9 +533,9 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         if campaign:
             campaign.scheduled_time = parsed_time
             campaign.status = "scheduled"
-            campaign.generated_text = payload.message
-            campaign.publish_to_facebook = True
-            campaign.publish_to_instagram = payload.publish_to_instagram
+            campaign.generated_text = post_message
+            campaign.publish_to_facebook = pub_fb
+            campaign.publish_to_instagram = pub_ig
             if payload.image_url:
                 # Always promote temp/base64 images to permanent GCS storage before saving
                 campaign.visual_suggestion = save_permanent_asset_if_needed(payload.image_url)
@@ -537,13 +547,13 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
                 min_age=18,
                 max_age=65,
                 gender="All",
-                generated_text=payload.message,
+                generated_text=post_message,
                 # Always promote temp/base64 images to permanent GCS storage before saving
                 visual_suggestion=save_permanent_asset_if_needed(payload.image_url),
                 scheduled_time=parsed_time,
                 status="scheduled",
-                publish_to_facebook=True,
-                publish_to_instagram=payload.publish_to_instagram
+                publish_to_facebook=pub_fb,
+                publish_to_instagram=pub_ig
             )
             db.add(campaign)
         
@@ -560,7 +570,17 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         db.add(log)
         db.commit()
 
+        # Dispatch Cloud Task / Webhook push trigger for the exact scheduled time
+        dispatch_scheduled_campaign_task(
+            campaign_id=campaign.id,
+            tenant_id=campaign.tenant_id,
+            run_at=parsed_time
+        )
+
         return {"status": "scheduled", "campaign_id": campaign.id, "message": f"Successfully scheduled post for {payload.scheduled_time}"}
+
+    if not account:
+        raise HTTPException(status_code=400, detail="No Meta account connected")
 
     # If the user hasn't selected a real page yet, mock the success to avoid graph API errors during testing
     if account.page_id == "pending_page_selection":
@@ -586,16 +606,17 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             image_url = f"{public_backend_url.rstrip('/')}{image_url}"
 
     # 1. Post to Facebook
-    pub_req = PublishRequest(
-        page_id=account.page_id,
-        message=payload.message,
-        access_token=account.access_token,
-        image_url=image_url
-    )
-    fb_res = publish_to_facebook(pub_req)
+    if pub_fb:
+        pub_req = PublishRequest(
+            page_id=account.page_id,
+            message=post_message,
+            access_token=account.access_token,
+            image_url=image_url
+        )
+        fb_res = publish_to_facebook(pub_req)
     
     # 2. Post to Instagram (if requested and account is linked)
-    if payload.publish_to_instagram:
+    if pub_ig:
         if not account.ig_user_id:
             raise HTTPException(status_code=400, detail="No Instagram account linked to this Facebook Page")
         if not image_url:
@@ -608,7 +629,7 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         ig_pub_req = InstagramPublishRequest(
             ig_user_id=account.ig_user_id,
             image_url=image_url,
-            caption=payload.message,
+            caption=post_message,
             access_token=account.access_token
         )
         ig_res = publish_to_instagram(ig_pub_req)
@@ -1299,98 +1320,138 @@ def health_check():
 import threading
 import time
 
+class TaskWebhookPayload(BaseModel):
+    campaign_id: int
+    tenant_id: Optional[int] = None
+    secret: Optional[str] = None
+
+def execute_scheduled_campaign(campaign_id: int, db: Session):
+    """
+    Executes publication of a single scheduled campaign.
+    Shared by Cloud Tasks webhook trigger and fallback scheduler.
+    """
+    post = db.query(Campaign).filter_by(id=campaign_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail=f"Campaign {campaign_id} not found")
+
+    if post.status != "scheduled":
+        return {"status": "skipped", "message": f"Campaign is not scheduled (current status: {post.status})"}
+
+    print(f"Publishing scheduled campaign ID: {post.id} (tenant {post.tenant_id})...")
+    account = db.query(MetaAccount).filter_by(tenant_id=post.tenant_id)\
+        .order_by(MetaAccount.id.desc()).first()
+    if not account:
+        post.status = "failed"
+        post.failure_reason = "No Meta account connected for tenant."
+        db.commit()
+        raise HTTPException(status_code=400, detail="No Meta account connected for tenant")
+
+    if account.page_id == "pending_page_selection":
+        post.status = "published"
+        db.commit()
+        return {"status": "success", "message": "Mock published for pending page selection"}
+
+    try:
+        image_url = save_permanent_asset_if_needed(post.visual_suggestion)
+        if image_url and not image_url.startswith("http"):
+            public_backend_url = os.environ.get("BACKEND_URL", "https://backend-uaicdvk4ka-uc.a.run.app")
+            if image_url.startswith("/"):
+                image_url = f"{public_backend_url.rstrip('/')}{image_url}"
+            else:
+                image_url = "https://picsum.photos/id/237/600/600.jpg"
+
+        fb_res = None
+        ig_res = None
+
+        # 1. Publish to Facebook
+        if getattr(post, "publish_to_facebook", True):
+            pub_req = PublishRequest(
+                page_id=account.page_id,
+                message=post.generated_text,
+                access_token=account.access_token,
+                image_url=image_url
+            )
+            fb_res = publish_to_facebook(pub_req)
+
+        # 2. Publish to Instagram
+        if getattr(post, "publish_to_instagram", False):
+            if account.ig_user_id and image_url:
+                from api.meta import publish_to_instagram, InstagramPublishRequest
+                ig_pub_req = InstagramPublishRequest(
+                    ig_user_id=account.ig_user_id,
+                    image_url=image_url,
+                    caption=post.generated_text,
+                    access_token=account.access_token
+                )
+                ig_res = publish_to_instagram(ig_pub_req)
+            else:
+                print(f"Skipping Instagram auto-publish for campaign {post.id} (no IG account or no image)")
+
+        post.status = "published"
+        post.failure_reason = None
+
+        # Log the auto-publish action
+        log = AuditLog(
+            tenant_id=post.tenant_id,
+            user_email="system@digim.com",
+            action="Auto-Publish Scheduled Post",
+            details=f"Campaign ID: {post.id} successfully published to FB/IG via push webhook."
+        )
+        db.add(log)
+    except Exception as pub_err:
+        print(f"Error publishing scheduled post {post.id}: {pub_err}")
+        post.status = "failed"
+        err_str = str(pub_err)
+        if "session has expired" in err_str.lower() or "error validating access token" in err_str.lower() or "invalid oauth" in err_str.lower():
+            post.failure_reason = "Facebook session expired. Please reconnect Facebook in Settings → Integrations."
+        else:
+            post.failure_reason = err_str[:300]
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Failed to publish post: {err_str}")
+
+    db.commit()
+
+    # Backup updated database to GCS
+    try:
+        from db.database import sync_db_to_gcs
+        sync_db_to_gcs()
+    except Exception as gcs_err:
+        print(f"Failed to backup database to GCS: {gcs_err}")
+
+    return {"status": "success", "campaign_id": post.id, "fb_response": fb_res, "ig_response": ig_res}
+
+
+@app.post("/api/tasks/publish-scheduled")
+def publish_scheduled_task_webhook(payload: TaskWebhookPayload, db: Session = Depends(get_db)):
+    """
+    Push Webhook endpoint triggered by Google Cloud Tasks (or local push scheduler).
+    """
+    expected_secret = os.environ.get("TASK_WEBHOOK_SECRET")
+    if expected_secret and payload.secret != expected_secret:
+        raise HTTPException(status_code=403, detail="Unauthorized task webhook call")
+    return execute_scheduled_campaign(campaign_id=payload.campaign_id, db=db)
+
+
 def process_scheduled_campaigns():
+    """
+    Fallback polling loop. Only runs if ENABLE_POLL_SCHEDULER=true.
+    """
     while True:
-        # Check every 30 seconds
         time.sleep(30)
         from db.database import SessionLocal
         db = SessionLocal()
         try:
             now = datetime.datetime.utcnow()
-            # Query all scheduled posts whose execution time has passed
             sched_posts = db.query(Campaign).filter(
                 Campaign.status == "scheduled",
                 Campaign.scheduled_time <= now
             ).all()
-            
+
             for post in sched_posts:
-                print(f"Auto-publishing scheduled campaign ID: {post.id}...")
-                account = db.query(MetaAccount).filter_by(tenant_id=post.tenant_id)\
-                    .order_by(MetaAccount.id.desc()).first()
-                if not account:
-                    post.status = "failed"
-                    db.commit()
-                    continue
-                
-                if account.page_id == "pending_page_selection":
-                    # Mock successful publication
-                    post.status = "published"
-                    db.commit()
-                    continue
-                
                 try:
-                    image_url = save_permanent_asset_if_needed(post.visual_suggestion)
-                    if image_url and not image_url.startswith("http"):
-                        public_backend_url = os.environ.get("BACKEND_URL", "https://backend-uaicdvk4ka-uc.a.run.app")
-                        if image_url.startswith("/"):
-                            image_url = f"{public_backend_url.rstrip('/')}{image_url}"
-                        else:
-                            image_url = "https://picsum.photos/id/237/600/600.jpg"
-                    
-                    fb_res = None
-                    ig_res = None
-
-                    # 1. Publish to Facebook
-                    if getattr(post, "publish_to_facebook", True):
-                        pub_req = PublishRequest(
-                            page_id=account.page_id,
-                            message=post.generated_text,
-                            access_token=account.access_token,
-                            image_url=image_url
-                        )
-                        fb_res = publish_to_facebook(pub_req)
-                    
-                    # 2. Publish to Instagram
-                    if getattr(post, "publish_to_instagram", False):
-                        if account.ig_user_id and image_url:
-                            from api.meta import publish_to_instagram, InstagramPublishRequest
-                            ig_pub_req = InstagramPublishRequest(
-                                ig_user_id=account.ig_user_id,
-                                image_url=image_url,
-                                caption=post.generated_text,
-                                access_token=account.access_token
-                            )
-                            ig_res = publish_to_instagram(ig_pub_req)
-                        else:
-                            print(f"Skipping Instagram auto-publish for campaign {post.id} (no IG account or no image)")
-
-                    post.status = "published"
-                    
-                    # Log the auto-publish action
-                    log = AuditLog(
-                        tenant_id=post.tenant_id,
-                        user_email="system@digim.com",
-                        action="Auto-Publish Scheduled Post",
-                        details=f"Campaign ID: {post.id} successfully published to FB/IG."
-                    )
-                    db.add(log)
-                except Exception as pub_err:
-                    print(f"Error publishing scheduled post {post.id}: {pub_err}")
-                    post.status = "failed"
-                    err_str = str(pub_err)
-                    if "session has expired" in err_str.lower() or "error validating access token" in err_str.lower() or "invalid oauth" in err_str.lower():
-                        post.failure_reason = "Facebook session expired. Please reconnect Facebook in Settings → Integrations."
-                    else:
-                        post.failure_reason = err_str[:300]  # cap length
-                
-                db.commit()
-                
-                # Backup updated database to GCS
-                try:
-                    from db.database import sync_db_to_gcs
-                    sync_db_to_gcs()
-                except Exception as gcs_err:
-                    print(f"Failed to backup database to GCS in scheduler loop: {gcs_err}")
+                    execute_scheduled_campaign(post.id, db)
+                except Exception as e:
+                    print(f"Scheduler processing failed for campaign {post.id}: {e}")
         except Exception as err:
             print(f"Error in scheduler processor loop: {err}")
         finally:
@@ -1509,7 +1570,9 @@ def keep_campaign_active(campaign_id: int, tenant_id: int = 1, db: Session = Dep
 
 @app.on_event("startup")
 def start_scheduler():
-    print("Starting scheduled post background worker thread...")
-    threading.Thread(target=process_scheduled_campaigns, daemon=True).start()
-    # NOTE: Archival/pruning worker removed — not needed at current scale.
+    if os.environ.get("ENABLE_POLL_SCHEDULER", "false").lower() == "true":
+        print("Starting legacy 30-second polling scheduler worker...")
+        threading.Thread(target=process_scheduled_campaigns, daemon=True).start()
+    else:
+        print("Push/Webhook scheduler active (Google Cloud Tasks). 30-second polling thread is disabled.")
 

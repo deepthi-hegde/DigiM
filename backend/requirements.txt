@@ -7,3 +7,4 @@ python-multipart
 google-genai
 google-cloud-storage
 fal-client
+google-cloud-tasks

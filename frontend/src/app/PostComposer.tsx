@@ -288,6 +288,7 @@ export function PostComposer({
 
   // Modals
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewPlatform, setPreviewPlatform] = useState("both");
   const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
   const [aiGenPrompt, setAiGenPrompt] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -324,8 +325,18 @@ export function PostComposer({
 
   // Show Toast
   const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    let text = "";
+    if (typeof msg === "string") {
+      text = msg;
+    } else if (Array.isArray(msg)) {
+      text = msg.map((m) => (typeof m === "string" ? m : m?.msg || JSON.stringify(m))).join(", ");
+    } else if (msg && typeof msg === "object") {
+      text = msg.detail ? (typeof msg.detail === "string" ? msg.detail : JSON.stringify(msg.detail)) : (msg.message || JSON.stringify(msg));
+    } else {
+      text = String(msg || "");
+    }
+    setToastMessage(text);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // Load drafts from localStorage
@@ -385,22 +396,37 @@ export function PostComposer({
   const fetchLibraryImages = async () => {
     try {
       const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
-      const res = await fetch(`/api/assets/list?tenant_id=${savedTenantId}`);
+      const res = await fetch(`/api/assets?tenant_id=${savedTenantId}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.assets) && data.assets.length > 0) {
-          setLibraryImages(data.assets.map((a) => a.url));
+        const list = Array.isArray(data) ? data : (data.assets || []);
+        const urls = list.map((a) => a.url).filter((u) => u && typeof u === "string");
+        if (urls.length > 0) {
+          setLibraryImages(urls);
           return;
         }
       }
     } catch (e) {
-      // fallback
+      console.warn("Could not load library assets:", e);
     }
-    setLibraryImages([
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"
-    ]);
+
+    try {
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      const cRes = await fetch(`/api/campaigns?tenant_id=${savedTenantId}`);
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        const campaigns = Array.isArray(cData) ? cData : (cData.campaigns || []);
+        const campaignImgs = campaigns
+          .map((c) => c.visual_suggestion || c.image_url)
+          .filter((u) => u && typeof u === "string" && (u.startsWith("http") || u.startsWith("/api/")));
+        if (campaignImgs.length > 0) {
+          setLibraryImages(Array.from(new Set(campaignImgs)));
+          return;
+        }
+      }
+    } catch (e) {}
+
+    setLibraryImages([]);
   };
 
   // Category change handler
@@ -583,15 +609,19 @@ export function PostComposer({
     setIsPublishing(true);
     const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
 
+    const fullMessage = caption + (hashtags.length > 0 ? "\n\n" + hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ") : "");
     const payload = {
-      tenant_id: savedTenantId,
-      caption: caption + (hashtags.length > 0 ? "\n\n" + hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ") : ""),
+      tenant_id: parseInt(savedTenantId, 10) || 1,
+      message: fullMessage,
+      caption: fullMessage,
       image_url: image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
       format,
       when,
       scheduled_time: when === "schedule" ? `${scheduledDate}T${scheduledTime || "18:00"}:00` : null,
-      publish_facebook: channels.facebook,
-      publish_instagram: channels.instagram,
+      publish_facebook: Boolean(channels.facebook),
+      publish_to_facebook: Boolean(channels.facebook),
+      publish_instagram: Boolean(channels.instagram),
+      publish_to_instagram: Boolean(channels.instagram),
       category: postType
     };
 
@@ -625,29 +655,41 @@ export function PostComposer({
     }
   };
 
-  // AI Image generation
+  // AI Image generation - takes prompt directly from the post text / caption
   const handleGenerateAiImage = async () => {
     setIsAiGenerating(true);
+    showToast("Generating AI image from post text... ✨");
     try {
       const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
-      const promptText = aiGenPrompt || `High fashion South Indian silk saree boutique ethnic wear photography, natural soft studio lighting`;
-      const res = await fetch(`/api/ai/generate-image?tenant_id=${savedTenantId}`, {
+      const basePrompt = caption && caption.trim().length > 0
+        ? caption.slice(0, 300)
+        : `${currentCategory.label} showcase for ${shopData.name}, ${shopData.sells || "ethnic wear, silk sarees"}`;
+      const promptText = `${basePrompt}, commercial studio product photography, clean natural studio lighting, sharp focus, 8k resolution`;
+
+      const res = await fetch("/api/campaign/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptText })
+        body: JSON.stringify({
+          prompt: promptText,
+          num_images: 1,
+          format_type: format === "reel" || format === "story" ? "story" : "post"
+        })
       });
+
       if (res.ok) {
         const data = await res.json();
-        if (data.image_url) {
-          setImage(data.image_url);
+        const genUrl = data.url || (Array.isArray(data.urls) && data.urls[0]) || data.image_url;
+        if (genUrl) {
+          setImage(genUrl);
           setIsAiGenModalOpen(false);
-          setAiGenPrompt("");
-          showToast("AI Image generated!");
+          showToast("AI Image generated successfully! ✨");
           setIsAiGenerating(false);
           return;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("AI image gen error:", e);
+    }
 
     // Mock high-quality silk saree images fallback
     const presets = [
@@ -657,8 +699,7 @@ export function PostComposer({
     ];
     setImage(presets[Math.floor(Math.random() * presets.length)]);
     setIsAiGenModalOpen(false);
-    setAiGenPrompt("");
-    showToast("AI Image generated!");
+    showToast("AI Image generated! ✨");
     setIsAiGenerating(false);
   };
 
@@ -1325,7 +1366,8 @@ export function PostComposer({
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                       <button
                         type="button"
-                        onClick={() => setIsAiGenModalOpen(true)}
+                        disabled={isAiGenerating}
+                        onClick={handleGenerateAiImage}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1337,14 +1379,16 @@ export function PostComposer({
                           fontSize: "16px",
                           fontWeight: 600,
                           boxSizing: "border-box",
-                          cursor: "pointer",
+                          cursor: isAiGenerating ? "wait" : "pointer",
                           width: "100%",
-                          background: "var(--surface, #172016)",
-                          color: "var(--ink, #e6eee4)",
-                          border: "1px solid var(--border, #747d73)"
+                          background: "var(--surface, #ffffff)",
+                          color: "var(--primary, #2f6b2f)",
+                          border: "1.5px solid var(--primary, #2f6b2f)",
+                          boxShadow: "0 2px 6px rgba(47, 107, 47, 0.12)",
+                          transition: "all 0.2s ease"
                         }}
                       >
-                        {ICONS.spark} Generate with AI
+                        {ICONS.spark} {isAiGenerating ? "Generating image..." : "Generate AI Image"}
                       </button>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                         <label
@@ -1361,9 +1405,9 @@ export function PostComposer({
                             boxSizing: "border-box",
                             cursor: "pointer",
                             width: "100%",
-                            background: "var(--surface, #172016)",
-                            color: "var(--ink, #e6eee4)",
-                            border: "1px solid var(--border, #747d73)"
+                            background: "var(--surface, #ffffff)",
+                            color: "var(--ink, #171f16)",
+                            border: "1px solid var(--border, #979a96)"
                           }}
                         >
                           <input
@@ -1376,7 +1420,10 @@ export function PostComposer({
                         </label>
                         <button
                           type="button"
-                          onClick={() => setIsLibraryOpen(true)}
+                          onClick={() => {
+                            fetchLibraryImages();
+                            setIsLibraryOpen(true);
+                          }}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -1390,9 +1437,9 @@ export function PostComposer({
                             boxSizing: "border-box",
                             cursor: "pointer",
                             width: "100%",
-                            background: "var(--surface, #172016)",
-                            color: "var(--ink, #e6eee4)",
-                            border: "1px solid var(--border, #747d73)"
+                            background: "var(--surface, #ffffff)",
+                            color: "var(--ink, #171f16)",
+                            border: "1px solid var(--border, #979a96)"
                           }}
                         >
                           {ICONS.grid} Library
@@ -1481,7 +1528,7 @@ export function PostComposer({
               <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
                 {/* Post type dropdown trigger */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #a1ae9e)" }}>Post type</span>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #566054)" }}>Post type</span>
                   <button
                     type="button"
                     onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
@@ -1493,19 +1540,19 @@ export function PostComposer({
                       minHeight: "48px",
                       padding: "0 12px",
                       borderRadius: "12px",
-                      border: "1px solid var(--border, #747d73)",
-                      background: "var(--surface, #172016)",
+                      border: "1.5px solid var(--border, #979a96)",
+                      background: "var(--surface, #ffffff)",
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "var(--ink, #e6eee4)",
+                      color: "var(--ink, #171f16)",
                       textAlign: "left",
                       boxSizing: "border-box",
                       cursor: "pointer"
                     }}
                   >
                     <span style={{ color: "var(--primary, #2f6b2f)", display: "flex" }}>{currentCategory.icon}</span>
-                    <span style={{ flex: 1 }}>{currentCategory.label}</span>
-                    <span style={{ color: "var(--muted, #a1ae9e)", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                    <span style={{ flex: 1, color: "var(--ink, #171f16)" }}>{currentCategory.label}</span>
+                    <span style={{ color: "var(--muted, #566054)", display: "flex", transform: isTypeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
                       {ICONS.chevronDown}
                     </span>
                   </button>
@@ -1518,10 +1565,10 @@ export function PostComposer({
                         top: "76px",
                         left: 0,
                         right: 0,
-                        background: "var(--surface, #172016)",
-                        border: "1px solid var(--hair, #2a3628)",
+                        background: "var(--surface, #ffffff)",
+                        border: "1px solid var(--hair, #d7ddd3)",
                         borderRadius: "12px",
-                        boxShadow: "0 10px 28px rgba(22, 33, 31, 0.15)",
+                        boxShadow: "0 12px 30px rgba(23, 31, 22, 0.12)",
                         zIndex: 50,
                         padding: "8px",
                         display: "grid",
@@ -1529,30 +1576,34 @@ export function PostComposer({
                         gap: "6px"
                       }}
                     >
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => handleSelectCategory(cat.id)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "10px 12px",
-                            borderRadius: "8px",
-                            border: "none",
-                            background: postType === cat.id ? "#123230" : "transparent",
-                            color: postType === cat.id ? "#45b5a6" : "#e6eeec",
-                            fontWeight: postType === cat.id ? 700 : 500,
-                            fontSize: "14px",
-                            cursor: "pointer",
-                            textAlign: "left"
-                          }}
-                        >
-                          <span style={{ color: postType === cat.id ? "#45b5a6" : "#9dafaa" }}>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </button>
-                      ))}
+                      {CATEGORIES.map((cat) => {
+                        const isSel = postType === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => handleSelectCategory(cat.id)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              padding: "10px 12px",
+                              borderRadius: "8px",
+                              border: isSel ? "1.5px solid var(--primary, #2f6b2f)" : "1.5px solid transparent",
+                              background: isSel ? "var(--tint, #e6ede6)" : "transparent",
+                              color: isSel ? "var(--primary, #2f6b2f)" : "var(--ink, #171f16)",
+                              fontWeight: isSel ? 700 : 500,
+                              fontSize: "14px",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            <span style={{ color: isSel ? "var(--primary, #2f6b2f)" : "var(--muted, #566054)" }}>{cat.icon}</span>
+                            <span style={{ color: isSel ? "var(--primary, #2f6b2f)" : "var(--ink, #171f16)" }}>{cat.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -2058,89 +2109,299 @@ export function PostComposer({
         </div>
       )}
 
-      {/* Preview Modal ("See it on Facebook or Instagram") */}
+      {/* Preview Modal: 2 Previews (Facebook and Instagram side-by-side) */}
       {isPreviewModalOpen && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.75)",
+            background: "rgba(10, 16, 12, 0.75)",
+            backdropFilter: "blur(6px)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "20px"
+            padding: "20px",
+            overflowY: "auto"
           }}
           onClick={() => setIsPreviewModalOpen(false)}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: "460px",
-              background: "var(--surface, #172016)",
-              borderRadius: "16px",
+              maxWidth: previewPlatform === "both" ? "820px" : "440px",
+              background: "var(--surface, #ffffff)",
+              border: "1px solid var(--hair, #d7ddd3)",
+              borderRadius: "20px",
               padding: "24px",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
               display: "flex",
               flexDirection: "column",
-              gap: "16px"
+              gap: "20px",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              transition: "max-width 0.25s ease"
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
-                Preview on Facebook & Instagram
-              </h3>
+            {/* Header with Title and Platform Toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", borderBottom: "1px solid var(--hair, #d7ddd3)", paddingBottom: "14px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif", color: "var(--ink, #171f16)" }}>
+                  Post Previews
+                </h3>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--muted, #566054)" }}>
+                  How your post will look on Facebook and Instagram
+                </p>
+              </div>
+
+              {/* Toggle Pills: Both vs Facebook vs Instagram */}
+              <div style={{ display: "inline-flex", padding: "4px", background: "var(--sunken, #e9ebe7)", borderRadius: "10px", gap: "4px" }}>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPlatform("both")}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    border: "none",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    background: previewPlatform === "both" ? "#2F6B2F" : "transparent",
+                    color: previewPlatform === "both" ? "#ffffff" : "var(--muted, #566054)",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  Both Previews
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPlatform("facebook")}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    border: "none",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    background: previewPlatform === "facebook" ? "#1877f2" : "transparent",
+                    color: previewPlatform === "facebook" ? "#ffffff" : "var(--muted, #566054)",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  Facebook
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPlatform("instagram")}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    border: "none",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    background: previewPlatform === "instagram" ? "linear-gradient(135deg, #f9a03f, #d92e7f)" : "transparent",
+                    color: previewPlatform === "instagram" ? "#ffffff" : "var(--muted, #566054)",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  Instagram
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setIsPreviewModalOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted, #a1ae9e)" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted, #566054)", padding: "4px" }}
               >
                 {ICONS.x}
               </button>
             </div>
 
-            {/* Social Post Mockup Card */}
-            <div style={{ border: "1px solid var(--hair, #2a3628)", borderRadius: "12px", overflow: "hidden", background: "var(--canvas, #0e140d)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px" }}>
-                <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--primary, #7cc47c)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                  {(shopData.name || "S").charAt(0).toUpperCase()}
-                </span>
-                <div>
-                  <b style={{ fontSize: "14px", display: "block" }}>{shopData.name}</b>
-                  <span style={{ fontSize: "11px", color: "var(--muted, #a1ae9e)" }}>Sponsored · Just now</span>
-                </div>
-              </div>
-              <p style={{ padding: "0 12px 10px", margin: 0, fontSize: "14px", lineHeight: "20px", color: "var(--ink, #e6eee4)" }}>
-                {caption}
-                {hashtags.length > 0 && (
-                  <span style={{ display: "block", color: "var(--primary, #7cc47c)", fontWeight: 600, marginTop: "6px" }}>
-                    {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+            {/* Previews Container: Side-by-Side Phone Mockups */}
+            <div style={{ display: "flex", gap: "24px", justifyContent: "center", alignItems: "flex-start", flexWrap: "wrap", padding: "8px 0" }}>
+              {/* 1. FACEBOOK PREVIEW PHONE */}
+              {(previewPlatform === "both" || previewPlatform === "facebook") && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1877f2", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "18px", height: "18px", borderRadius: "9px", background: "#1877f2", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800 }}>f</span>
+                    Facebook Feed Preview
                   </span>
-                )}
-              </p>
-              {image && (
-                <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#000" }}>
-                  <img src={image} alt="Post preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div
+                    style={{
+                      width: "330px",
+                      maxWidth: "100%",
+                      borderRadius: "44px",
+                      background: "#111814",
+                      padding: "10px",
+                      boxShadow: "0 14px 34px rgba(23, 31, 22, 0.28)",
+                      border: "3px solid #2a3628",
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <div style={{ borderRadius: "34px", overflow: "hidden", background: "#ffffff", color: "#050505", minHeight: "520px", display: "flex", flexDirection: "column" }}>
+                      {/* Top Phone Speaker / Island Notch */}
+                      <div style={{ width: "80px", height: "12px", background: "#000000", borderRadius: "8px", margin: "6px auto 8px" }} />
+                      {/* FB App Bar */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 14px 8px", borderBottom: "1px solid #e4e6eb" }}>
+                        <span style={{ fontSize: "17px", fontWeight: 800, color: "#1877f2", fontFamily: "sans-serif", letterSpacing: "-0.5px" }}>Feed</span>
+                        <div style={{ display: "flex", gap: "8px", color: "#65676b", fontSize: "14px" }}>
+                          <span>🔍</span>
+                          <span>💬</span>
+                        </div>
+                      </div>
+
+                      {/* FB Post Header */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px 6px" }}>
+                        <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#2F6B2F", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "16px", flexShrink: 0 }}>
+                          {(shopData.name || "S").charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+                          <b style={{ fontSize: "14px", color: "#050505", display: "block", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                            {shopData.name}
+                          </b>
+                          <span style={{ fontSize: "12px", color: "#65676b" }}>
+                            {formatDateTimeDisplay(scheduledDate, scheduledTime)} · 🌐
+                          </span>
+                        </div>
+                        <span style={{ color: "#65676b", fontSize: "16px", cursor: "pointer", padding: "0 4px" }}>•••</span>
+                      </div>
+
+                      {/* FB Caption */}
+                      <p style={{ margin: "0", padding: "6px 12px 10px", fontSize: "14px", lineHeight: "19px", color: "#050505", whiteSpace: "pre-line" }}>
+                        {caption || "Our new collection has arrived! Fresh designs in silk and cotton."}
+                        {hashtags.length > 0 && (
+                          <span style={{ display: "block", color: "#1877f2", marginTop: "6px", fontWeight: 500 }}>
+                            {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                          </span>
+                        )}
+                      </p>
+
+                      {/* FB Post Image */}
+                      <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f0f2f5", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {image ? (
+                          <img src={image} alt="Facebook post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ color: "#65676b", fontSize: "13px", padding: "20px", textAlign: "center" }}>
+                            📷 Image preview will appear here
+                          </div>
+                        )}
+                      </div>
+
+                      {/* FB Post Footer Actions */}
+                      <div style={{ display: "flex", justifyContent: "space-around", borderTop: "1px solid #ced0d4", padding: "8px 4px", marginTop: "auto", color: "#65676b", fontSize: "13px", fontWeight: 600 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>👍 Like</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>💬 Comment</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>↗️ Share</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. INSTAGRAM PREVIEW PHONE */}
+              {(previewPlatform === "both" || previewPlatform === "instagram") && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#d92e7f", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "18px", height: "18px", borderRadius: "9px", background: "linear-gradient(135deg, #f9a03f, #d92e7f)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800 }}>📸</span>
+                    Instagram Feed Preview
+                  </span>
+                  <div
+                    style={{
+                      width: "330px",
+                      maxWidth: "100%",
+                      borderRadius: "44px",
+                      background: "#111814",
+                      padding: "10px",
+                      boxShadow: "0 14px 34px rgba(23, 31, 22, 0.28)",
+                      border: "3px solid #2a3628",
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <div style={{ borderRadius: "34px", overflow: "hidden", background: "#ffffff", color: "#000000", minHeight: "520px", display: "flex", flexDirection: "column" }}>
+                      {/* Top Phone Speaker / Island Notch */}
+                      <div style={{ width: "80px", height: "12px", background: "#000000", borderRadius: "8px", margin: "6px auto 8px" }} />
+                      {/* IG App Bar */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 14px 8px", borderBottom: "1px solid #efefef" }}>
+                        <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "'Baloo 2', cursive, sans-serif", letterSpacing: "0.2px" }}>Home</span>
+                        <div style={{ display: "flex", gap: "10px", fontSize: "15px" }}>
+                          <span>♡</span>
+                          <span>✈️</span>
+                        </div>
+                      </div>
+
+                      {/* IG Post Header */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px" }}>
+                        <div style={{ padding: "2px", borderRadius: "50%", background: "linear-gradient(45deg, #f9a03f, #d92e7f, #7b3fe4)" }}>
+                          <div style={{ padding: "1.5px", background: "#ffffff", borderRadius: "50%" }}>
+                            <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#2F6B2F", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "13px" }}>
+                              {(shopData.name || "S").charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ flex: 1, fontSize: "13.5px", fontWeight: 700, color: "#262626" }}>
+                          {shopData.handle || (shopData.name || "shop").toLowerCase().replace(/\s+/g, "")}
+                        </span>
+                        <span style={{ color: "#262626", fontSize: "14px", cursor: "pointer" }}>•••</span>
+                      </div>
+
+                      {/* IG Post Image */}
+                      <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f8f9fa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {image ? (
+                          <img src={image} alt="Instagram post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ color: "#8e8e8e", fontSize: "13px", padding: "20px", textAlign: "center" }}>
+                            📷 Image preview will appear here
+                          </div>
+                        )}
+                      </div>
+
+                      {/* IG Action Bar: Like, Comment, Share, Bookmark */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px 6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "18px" }}>
+                          <span style={{ cursor: "pointer" }}>♡</span>
+                          <span style={{ cursor: "pointer" }}>💬</span>
+                          <span style={{ cursor: "pointer" }}>↗️</span>
+                        </div>
+                        <span style={{ fontSize: "18px", cursor: "pointer" }}>🔖</span>
+                      </div>
+
+                      {/* IG Caption */}
+                      <div style={{ padding: "0 12px 14px", fontSize: "13.5px", lineHeight: "18px", color: "#262626" }}>
+                        <span style={{ fontWeight: 700, marginRight: "6px" }}>
+                          {shopData.handle || (shopData.name || "shop").toLowerCase().replace(/\s+/g, "")}
+                        </span>
+                        <span>{caption || "Our new collection has arrived! Fresh designs in silk and cotton."}</span>
+                        {hashtags.length > 0 && (
+                          <div style={{ color: "#00376b", marginTop: "4px" }}>
+                            {hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            {/* Footer with Done button */}
+            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--hair, #d7ddd3)", paddingTop: "14px" }}>
               <button
                 type="button"
                 onClick={() => setIsPreviewModalOpen(false)}
                 style={{
-                  padding: "10px 20px",
+                  padding: "10px 24px",
                   borderRadius: "10px",
-                  background: "var(--primary, #7cc47c)",
-                  color: "var(--onprimary, #101614)",
+                  background: "#2F6B2F",
+                  color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
+                  fontSize: "15px",
                   cursor: "pointer"
                 }}
               >
-                Done
+                Close preview
               </button>
             </div>
           </div>
