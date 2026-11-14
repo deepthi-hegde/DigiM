@@ -6680,6 +6680,9 @@ function CalendarTab({
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'upcoming' | 'drafts' | 'past'>(activeSubTab);
   const [currentDate, setCurrentDate] = useState(() => new Date());
+  // View mode: 'list' (default per design specification) vs 'calendar' (monthly grid)
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
 
   useEffect(() => {
     if (activeSubTab) setSubTab(activeSubTab);
@@ -6701,8 +6704,8 @@ function CalendarTab({
         .catch(() => [])
     ])
       .then(([campaignData, calendarData]) => {
-        setCampaigns(campaignData);
-        setCalendarEvents(calendarData);
+        setCampaigns(Array.isArray(campaignData) ? campaignData : []);
+        setCalendarEvents(Array.isArray(calendarData) ? calendarData : []);
         setLoading(false);
       })
       .catch(err => {
@@ -6711,16 +6714,20 @@ function CalendarTab({
       });
   }, []);
 
+  // Safe time formatting helper
+  const formatSafeTime = (timeStr?: string) => {
+    if (!timeStr) return '6:00 PM';
+    try {
+      const d = new Date(timeStr);
+      if (isNaN(d.getTime())) return '6:00 PM';
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return '6:00 PM';
+    }
+  };
+
   // Calendar month navigation state
   const today = new Date();
-
-  if (loading) {
-    return (
-      <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', borderRadius: '16px' }}>
-        <p style={{ fontWeight: 600, color: 'var(--primary-color)' }}>Loading calendar & posts...</p>
-      </div>
-    );
-  }
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -6750,9 +6757,14 @@ function CalendarTab({
     daysGrid.push(d);
   }
 
-  // View mode: 'list' (default per design specification) vs 'calendar' (monthly grid)
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
+  // Guard loading ONLY after all hooks are declared
+  if (loading) {
+    return (
+      <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', borderRadius: '16px', width: '100%' }}>
+        <p style={{ fontWeight: 600, color: 'var(--primary-color)' }}>Loading calendar & posts...</p>
+      </div>
+    );
+  }
 
   const fetchCampaigns = () => {
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
@@ -7177,7 +7189,7 @@ function CalendarTab({
 
                       {d.posts.length > 0 ? (
                         d.posts.map(post => {
-                          const postTime = post.scheduled_time ? new Date(post.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+                          const postTime = formatSafeTime(post.scheduled_time);
                           const isTall = post.format === 'reel' || post.format === 'story';
                           const isFailed = post.status === 'failed';
                           const isInstaBlocked = Boolean((post.publish_to_instagram || post.publish_instagram) && isInstaDisconnected);
@@ -7533,7 +7545,7 @@ function CalendarTab({
                       </h3>
                       {laterPosts.map(post => {
                         const postDateStr = post.scheduled_time ? new Date(post.scheduled_time).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Later';
-                        const postTime = post.scheduled_time ? new Date(post.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+                        const postTime = formatSafeTime(post.scheduled_time);
                         const isTall = post.format === 'reel' || post.format === 'story';
                         const isFailed = post.status === 'failed';
                         const isInstaBlocked = Boolean((post.publish_to_instagram || post.publish_instagram) && isInstaDisconnected);
@@ -7662,7 +7674,9 @@ function CalendarTab({
 
           // Check for calendar events matching this day
           const dayEvents = calendarEvents.filter(e => {
+            if (!e || !e.date || typeof e.date !== 'string') return false;
             const parts = e.date.split('-');
+            if (parts.length < 3) return false;
             const eYear = parseInt(parts[0], 10);
             const eMonth = parseInt(parts[1], 10) - 1;
             const eDay = parseInt(parts[2], 10);
