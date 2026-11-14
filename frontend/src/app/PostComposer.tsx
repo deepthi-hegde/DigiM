@@ -280,6 +280,7 @@ export function PostComposer({
   // Media
   const [image, setImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavedToLib, setIsSavedToLib] = useState(false);
 
   // Drafts & IDs
   const [currentDraftId, setCurrentDraftId] = useState(null);
@@ -655,6 +656,31 @@ export function PostComposer({
     }
   };
 
+  // Save image to library database
+  const handleSaveImageToLibrary = async () => {
+    if (!image) return;
+    try {
+      const savedTenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") || "1" : "1";
+      const res = await fetch("/api/assets/save-to-library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: parseInt(savedTenantId, 10) || 1,
+          image_url: image
+        })
+      });
+      if (res.ok) {
+        setIsSavedToLib(true);
+        showToast("Image saved to your Media Library! 🎉");
+        fetchLibraryImages();
+      } else {
+        showToast("Failed to save image to library.");
+      }
+    } catch (e) {
+      showToast("Error saving image to library.");
+    }
+  };
+
   // AI Image generation - takes prompt directly from the post text / caption
   const handleGenerateAiImage = async () => {
     setIsAiGenerating(true);
@@ -682,7 +708,24 @@ export function PostComposer({
         if (genUrl) {
           setImage(genUrl);
           setIsAiGenModalOpen(false);
-          showToast("AI Image generated successfully! ✨");
+          // Auto-save generated image to library database
+          try {
+            fetch("/api/assets/save-to-library", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tenant_id: parseInt(savedTenantId, 10) || 1,
+                image_url: genUrl
+              })
+            }).then(r => {
+              if (r.ok) {
+                setIsSavedToLib(true);
+                fetchLibraryImages();
+              }
+            }).catch(() => null);
+          } catch (e) {}
+
+          showToast("AI Image generated & saved to library! ✨");
           setIsAiGenerating(false);
           return;
         }
@@ -1501,7 +1544,31 @@ export function PostComposer({
                       </label>
                       <button
                         type="button"
-                        onClick={() => setImage(null)}
+                        onClick={handleSaveImageToLibrary}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          background: isSavedToLib ? "rgba(47, 107, 47, 0.9)" : "rgba(22, 33, 31, 0.8)",
+                          color: "#ffffff",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          border: "none",
+                          cursor: "pointer",
+                          backdropFilter: "blur(6px)"
+                        }}
+                      >
+                        {isSavedToLib ? "✓ Saved" : "💾 Save to Library"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImage(null);
+                          setIsSavedToLib(false);
+                        }}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",

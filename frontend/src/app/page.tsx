@@ -4036,10 +4036,25 @@ export function CampaignDashboard({
           video: false
         };
         setAiModalImage(data.url);
+        // Automatically save AI generated image to library database
+        try {
+          const sTenant = typeof window !== 'undefined' ? (localStorage.getItem('tenant_id') || '1') : '1';
+          fetch('/api/assets/save-to-library', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tenant_id: parseInt(sTenant, 10),
+              image_url: data.url
+            })
+          }).then(r => {
+            if (r.ok) setIsSavedToLibrary(true);
+          }).catch(() => null);
+        } catch (e) {}
+
         if (!showAiModal) {
           setMediaItems(prev => formatType === 'story' ? [...prev, newMedia].slice(0, 10) : [newMedia]);
           setSelectedAssetUrl(data.url);
-          notifySuccess("AI Image generated successfully! ✨");
+          notifySuccess("AI Image generated & saved to library! ✨");
         }
       } else {
         notifyError("Image generation failed");
@@ -4954,16 +4969,14 @@ export function CampaignDashboard({
                         Download
                       </ComposerBtn>
 
-                      {(selectedAssetUrl.startsWith('data:') || selectedAssetUrl.includes('temp')) && !isSavedToLibrary && (
-                        <ComposerBtn
-                          kind="secondary"
-                          size="sm"
-                          onClick={handleSaveToLibrary}
-                          disabled={isSavingToLibrary}
-                        >
-                          {isSavingToLibrary ? 'Saving...' : 'Save to Library'}
-                        </ComposerBtn>
-                      )}
+                      <ComposerBtn
+                        kind="secondary"
+                        size="sm"
+                        onClick={handleSaveToLibrary}
+                        disabled={isSavingToLibrary || isSavedToLibrary}
+                      >
+                        {isSavingToLibrary ? 'Saving...' : isSavedToLibrary ? '✓ Saved to Library' : '💾 Save to Library'}
+                      </ComposerBtn>
                     </>
                   )}
                 </div>
