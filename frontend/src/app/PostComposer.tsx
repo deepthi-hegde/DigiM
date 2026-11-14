@@ -4,9 +4,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 
 export const DEFAULT_SHOP = {
-  name: "SriKrish",
-  handle: "srikrish",
+  name: "Lakshmi Textiles",
+  handle: "lakshmitextiles",
   area: "MG Road, Bengaluru",
+  phone: "98450 12345",
   sells: "sarees and ethnic wear"
 };
 export let SHOP = { ...DEFAULT_SHOP };
@@ -245,6 +246,7 @@ export function PostComposer({
       name: businessInfo?.name || DEFAULT_SHOP.name,
       handle: (businessInfo?.name || DEFAULT_SHOP.name).toLowerCase().replace(/\s+/g, ""),
       area: businessInfo?.location || DEFAULT_SHOP.area,
+      phone: businessInfo?.phone || DEFAULT_SHOP.phone,
       sells: businessInfo?.sells || DEFAULT_SHOP.sells
     };
   }, [businessInfo]);
@@ -292,6 +294,213 @@ export function PostComposer({
   const [brandOverlayEnabled, setBrandOverlayEnabled] = useState(true);
   const [overlayPosition, setOverlayPosition] = useState("bottom-right");
   const [overlayType, setOverlayType] = useState("logo");
+  const [offerText, setOfferText] = useState("20% off");
+
+  // Reusable Brand Overlay Renderer matching design specifications
+  const renderBrandOverlay = (mode = "preview") => {
+    if (!brandOverlayEnabled || overlayPosition === "off") return null;
+
+    if (overlayType === "logo") {
+      const isComposer = mode === "composer";
+      const isPlaceholder = mode === "placeholder";
+      const posStyle = {
+        position: "absolute",
+        zIndex: 5,
+        width: isPlaceholder ? "32px" : "36px",
+        height: isPlaceholder ? "32px" : "36px",
+        borderRadius: "50%",
+        background: "#ffffff",
+        color: "#164e43",
+        border: "1.5px solid rgba(0,0,0,0.08)",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.25)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: isPlaceholder ? "11.5px" : "13px",
+        fontWeight: 800,
+        letterSpacing: "0.5px"
+      };
+
+      if (overlayPosition === "top-left") {
+        posStyle.top = "12px";
+        posStyle.left = "12px";
+      } else if (overlayPosition === "top-right") {
+        posStyle.top = "12px";
+        posStyle.right = "12px";
+      } else if (overlayPosition === "bottom-left") {
+        posStyle.bottom = isComposer ? "56px" : isPlaceholder ? "10px" : "12px";
+        posStyle.left = "12px";
+      } else {
+        // bottom-right (default)
+        posStyle.bottom = isComposer ? "56px" : isPlaceholder ? "10px" : "12px";
+        posStyle.right = "12px";
+      }
+
+      return (
+        <div style={posStyle} title="Store Logo">
+          {shopInitial}
+        </div>
+      );
+    }
+
+    if (overlayType === "name-strip") {
+      const isComposer = mode === "composer";
+      const isPlaceholder = mode === "placeholder";
+      return (
+        <div
+          style={{
+            position: "absolute",
+            bottom: isComposer ? "52px" : "0",
+            left: 0,
+            right: 0,
+            background: "#164e43",
+            color: "#ffffff",
+            padding: "8px 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            zIndex: 5,
+            boxShadow: "0 -2px 10px rgba(0,0,0,0.2)"
+          }}
+        >
+          {/* Avatar LT */}
+          <div
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "50",
+              background: "#ffffff",
+              color: "#164e43",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              fontSize: "11px",
+              flexShrink: 0
+            }}
+          >
+            {shopInitial}
+          </div>
+
+          {/* Store Name & Location */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "1px",
+              flex: 1,
+              minWidth: 0,
+              textAlign: "left"
+            }}
+          >
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#ffffff",
+                lineHeight: "1.2",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}
+            >
+              {shopData.name}
+            </div>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: 500,
+                color: "#a3d9c9",
+                lineHeight: "1.2",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}
+            >
+              {shopData.area}
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              color: "#ffffff",
+              fontSize: "11px",
+              fontWeight: 600,
+              flexShrink: 0,
+              letterSpacing: "0.2px"
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+            <span>{shopData.phone || "98450 12345"}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (overlayType === "offer-tag") {
+      const isComposer = mode === "composer";
+      const isPlaceholder = mode === "placeholder";
+      return (
+        <>
+          {/* Top-left Golden Pill Badge: 20% off */}
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              background: "#e2a21a",
+              color: "#101614",
+              padding: "4px 12px",
+              borderRadius: "9999px",
+              fontSize: "12px",
+              fontWeight: 800,
+              letterSpacing: "0.3px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+              zIndex: 5,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}
+          >
+            {offerText || "20% off"}
+          </div>
+
+          {/* Bottom-right Logo Badge */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: isComposer ? "56px" : isPlaceholder ? "10px" : "12px",
+              right: "12px",
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              background: "#ffffff",
+              color: "#164e43",
+              border: "1.5px solid rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "12px",
+              fontWeight: 800,
+              zIndex: 5
+            }}
+          >
+            {shopInitial}
+          </div>
+        </>
+      );
+    }
+
+    return null;
+  };
 
   // Drafts & IDs
   const [currentDraftId, setCurrentDraftId] = useState(null);
@@ -1502,30 +1711,8 @@ export function PostComposer({
                       </div>
                     </div>
 
-                    {/* Brand Badge in Corner when overlay enabled */}
-                    {brandOverlayEnabled && overlayType === "logo" && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          bottom: "10px",
-                          right: "10px",
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                          background: "#ffffff",
-                          color: "#2F6B2F",
-                          border: "1px solid var(--hair, #d7ddd3)",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontWeight: 700
-                        }}
-                      >
-                        {shopInitial}
-                      </span>
-                    )}
+                    {/* Brand Overlay in Corner/Bottom when overlay enabled */}
+                    {renderBrandOverlay("placeholder")}
                   </div>
                 ) : (
                   <div
@@ -1545,78 +1732,7 @@ export function PostComposer({
                     />
 
                     {/* Rendered Brand Overlay on Active Image */}
-                    {brandOverlayEnabled && (
-                      <>
-                        {overlayType === "logo" && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              ...(overlayPosition === "bottom-right" ? { bottom: "56px", right: "12px" } :
-                                  overlayPosition === "bottom-left" ? { bottom: "56px", left: "12px" } :
-                                  overlayPosition === "top-right" ? { top: "12px", right: "12px" } :
-                                  { top: "12px", left: "12px" }),
-                              width: "36px",
-                              height: "36px",
-                              borderRadius: "50%",
-                              background: "#ffffff",
-                              color: "#2F6B2F",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "13px",
-                              fontWeight: 800,
-                              zIndex: 5
-                            }}
-                          >
-                            {shopInitial}
-                          </div>
-                        )}
-                        {overlayType === "name-strip" && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: "54px",
-                              left: 0,
-                              right: 0,
-                              background: "rgba(23, 31, 22, 0.85)",
-                              backdropFilter: "blur(4px)",
-                              color: "#ffffff",
-                              padding: "6px 12px",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              textAlign: "center",
-                              letterSpacing: "0.5px",
-                              zIndex: 5
-                            }}
-                          >
-                            {shopData.name}
-                          </div>
-                        )}
-                        {overlayType === "offer-tag" && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              ...(overlayPosition === "bottom-right" ? { bottom: "56px", right: "12px" } :
-                                  overlayPosition === "bottom-left" ? { bottom: "56px", left: "12px" } :
-                                  overlayPosition === "top-right" ? { top: "12px", right: "12px" } :
-                                  { top: "12px", left: "12px" }),
-                              background: "#e2a21a",
-                              color: "#101614",
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                              fontSize: "11px",
-                              fontWeight: 800,
-                              letterSpacing: "0.5px",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                              zIndex: 5
-                            }}
-                          >
-                            SPECIAL WEAVE
-                          </div>
-                        )}
-                      </>
-                    )}
+                    {renderBrandOverlay("composer")}
                     <div
                       style={{
                         position: "absolute",
@@ -1701,12 +1817,12 @@ export function PostComposer({
                   </div>
                 )}
 
-                {/* Brand Overlay Control Card matching user specification */}
+                {/* Brand Overlay Control Card with Dropdown Selection & Dark Shade Highlight */}
                 <div
                   style={{
                     marginTop: "12px",
                     borderRadius: "16px",
-                    border: "1px solid var(--border, #979a96)",
+                    border: "1.5px solid var(--border, #979a96)",
                     background: "var(--surface, #ffffff)",
                     padding: "14px 16px",
                     display: "flex",
@@ -1719,72 +1835,71 @@ export function PostComposer({
                     <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
                       Brand overlay
                     </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+
+                    {/* Dropdown Selection with explicit Arrow Down (replacing toggle button) */}
+                    <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
                       <select
                         aria-label="Brand overlay position"
-                        value={overlayPosition}
-                        onChange={(e) => setOverlayPosition(e.target.value)}
-                        disabled={!brandOverlayEnabled}
+                        value={brandOverlayEnabled ? overlayPosition : "off"}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "off") {
+                            setBrandOverlayEnabled(false);
+                          } else {
+                            setBrandOverlayEnabled(true);
+                            setOverlayPosition(val);
+                          }
+                        }}
                         style={{
+                          appearance: "none",
+                          WebkitAppearance: "none",
+                          MozAppearance: "none",
+                          padding: "6px 28px 6px 12px",
+                          borderRadius: "8px",
+                          border: "1.5px solid var(--border, #979a96)",
+                          background: "var(--surface, #ffffff)",
                           fontSize: "13px",
-                          color: brandOverlayEnabled ? "var(--muted, #566054)" : "#979a96",
-                          border: "none",
-                          background: "transparent",
-                          cursor: brandOverlayEnabled ? "pointer" : "default",
-                          outline: "none",
-                          fontWeight: 500,
-                          textAlign: "right"
+                          fontWeight: 600,
+                          color: brandOverlayEnabled ? "var(--ink, #171f16)" : "var(--muted, #566054)",
+                          cursor: "pointer",
+                          outline: "none"
                         }}
                       >
                         <option value="bottom-right">Bottom right</option>
                         <option value="bottom-left">Bottom left</option>
                         <option value="top-right">Top right</option>
                         <option value="top-left">Top left</option>
+                        <option value="off">Off (None)</option>
                       </select>
 
-                      {/* Green toggle switch */}
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={brandOverlayEnabled}
-                        aria-label="Toggle brand overlay"
-                        onClick={() => setBrandOverlayEnabled(!brandOverlayEnabled)}
+                      {/* Arrow Down Chevron Icon */}
+                      <span
                         style={{
-                          width: "48px",
-                          height: "26px",
-                          borderRadius: "13px",
-                          background: brandOverlayEnabled ? "#2F6B2F" : "#979a96",
-                          border: "none",
-                          padding: "2px",
-                          cursor: "pointer",
+                          position: "absolute",
+                          right: "8px",
+                          pointerEvents: "none",
+                          color: "var(--muted, #566054)",
                           display: "flex",
-                          alignItems: "center",
-                          transition: "background 0.2s ease"
+                          alignItems: "center"
                         }}
                       >
-                        <div
-                          style={{
-                            width: "22px",
-                            height: "22px",
-                            borderRadius: "50%",
-                            background: "#ffffff",
-                            transform: brandOverlayEnabled ? "translateX(22px)" : "translateX(0)",
-                            transition: "transform 0.2s ease",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
-                          }}
-                        />
-                      </button>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </span>
                     </div>
                   </div>
 
-                  {/* 3 Segments: Logo | Name strip | Offer tag */}
+                  {/* 3 Segments: Logo | Name strip | Offer tag with DARK SHADE #2F6B2F highlight */}
                   <div
                     style={{
                       display: "flex",
                       background: "var(--sunken, #e9ebe7)",
                       borderRadius: "10px",
                       padding: "3px",
-                      gap: "2px"
+                      gap: "2px",
+                      opacity: brandOverlayEnabled ? 1 : 0.6,
+                      transition: "opacity 0.2s ease"
                     }}
                   >
                     {[
@@ -1792,26 +1907,29 @@ export function PostComposer({
                       { id: "name-strip", label: "Name strip" },
                       { id: "offer-tag", label: "Offer tag" }
                     ].map((tab) => {
-                      const isSelected = overlayType === tab.id;
+                      const isSelected = brandOverlayEnabled && overlayType === tab.id;
                       return (
                         <button
                           key={tab.id}
                           type="button"
                           onClick={() => {
                             setOverlayType(tab.id);
-                            if (!brandOverlayEnabled) setBrandOverlayEnabled(true);
+                            if (!brandOverlayEnabled) {
+                              setBrandOverlayEnabled(true);
+                              if (overlayPosition === "off") setOverlayPosition("bottom-right");
+                            }
                           }}
                           style={{
                             flex: 1,
                             padding: "8px 10px",
                             borderRadius: "8px",
-                            border: "none",
-                            background: isSelected ? "#ffffff" : "transparent",
-                            color: isSelected ? "var(--ink, #171f16)" : "var(--muted, #566054)",
+                            border: isSelected ? "1.5px solid #2F6B2F" : "1.5px solid transparent",
+                            background: isSelected ? "#2F6B2F" : "transparent",
+                            color: isSelected ? "#ffffff" : "var(--muted, #566054)",
                             fontWeight: isSelected ? 700 : 500,
                             fontSize: "13px",
                             cursor: "pointer",
-                            boxShadow: isSelected ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                            boxShadow: isSelected ? "0 2px 6px rgba(47, 107, 47, 0.28)" : "none",
                             transition: "all 0.15s ease",
                             textAlign: "center"
                           }}
@@ -1821,6 +1939,35 @@ export function PostComposer({
                       );
                     })}
                   </div>
+
+                  {/* Optional Offer text field when Offer tag selected */}
+                  {brandOverlayEnabled && overlayType === "offer-tag" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)", fontWeight: 600, flexShrink: 0 }}>
+                        Offer tag:
+                      </span>
+                      <input
+                        type="text"
+                        value={offerText}
+                        onChange={(e) => setOfferText(e.target.value)}
+                        placeholder="e.g. 20% off"
+                        style={{
+                          flex: 1,
+                          padding: "5px 10px",
+                          borderRadius: "8px",
+                          border: "1.5px solid var(--border, #979a96)",
+                          background: "var(--surface, #ffffff)",
+                          fontSize: "13px",
+                          color: "var(--ink, #171f16)",
+                          outline: "none"
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <p style={{ fontSize: "11px", color: "var(--muted, #566054)", margin: "0", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ fontSize: "12px" }}>ⓘ</span> Uses store branding. Turn off or choose style for this post.
+                  </p>
                 </div>
               </div>
 
@@ -2578,10 +2725,13 @@ export function PostComposer({
                         )}
                       </p>
 
-                      {/* FB Post Image */}
-                      <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f0f2f5", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {/* FB Post Image with Live Brand Overlay */}
+                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f0f2f5", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {image ? (
-                          <img src={image} alt="Facebook post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <>
+                            <img src={image} alt="Facebook post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            {renderBrandOverlay("preview")}
+                          </>
                         ) : (
                           <div style={{ color: "#65676b", fontSize: "13px", padding: "20px", textAlign: "center" }}>
                             📷 Image preview will appear here
@@ -2646,10 +2796,13 @@ export function PostComposer({
                         <span style={{ color: "#262626", fontSize: "14px", cursor: "pointer" }}>•••</span>
                       </div>
 
-                      {/* IG Post Image */}
-                      <div style={{ width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f8f9fa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {/* IG Post Image with Live Brand Overlay */}
+                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f8f9fa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {image ? (
-                          <img src={image} alt="Instagram post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <>
+                            <img src={image} alt="Instagram post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            {renderBrandOverlay("preview")}
+                          </>
                         ) : (
                           <div style={{ color: "#8e8e8e", fontSize: "13px", padding: "20px", textAlign: "center" }}>
                             📷 Image preview will appear here
