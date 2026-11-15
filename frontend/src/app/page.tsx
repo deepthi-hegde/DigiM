@@ -6664,7 +6664,7 @@ function CalendarTab({
   onSelectDate,
   onSelectHoliday,
   metaStatus,
-  activeSubTab = 'upcoming',
+  activeSubTab = 'calendar',
   onSubTabChange
 }: {
   onSelectCampaign?: (campaign: any) => void;
@@ -6672,23 +6672,21 @@ function CalendarTab({
   onSelectDate?: (dateStr: string) => void;
   onSelectHoliday?: (event: any, dateStr: string) => void;
   metaStatus?: any;
-  activeSubTab?: 'upcoming' | 'drafts' | 'past';
-  onSubTabChange?: (sub: 'upcoming' | 'drafts' | 'past') => void;
+  activeSubTab?: 'calendar' | 'upcoming' | 'drafts' | 'past';
+  onSubTabChange?: (sub: 'calendar' | 'upcoming' | 'drafts' | 'past') => void;
 }) {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subTab, setSubTab] = useState<'upcoming' | 'drafts' | 'past'>(activeSubTab);
+  const [subTab, setSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>(activeSubTab);
   const [currentDate, setCurrentDate] = useState(() => new Date());
-  // View mode: 'list' (default per design specification) vs 'calendar' (monthly grid)
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
 
   useEffect(() => {
     if (activeSubTab) setSubTab(activeSubTab);
   }, [activeSubTab]);
 
-  const handleSubChange = (newSub: 'upcoming' | 'drafts' | 'past') => {
+  const handleSubChange = (newSub: 'calendar' | 'upcoming' | 'drafts' | 'past') => {
     setSubTab(newSub);
     onSubTabChange?.(newSub);
   };
@@ -6891,7 +6889,118 @@ function CalendarTab({
           </div>
         </div>
 
-        {/* Month Navigation Bar */}
+        {/* Sub-Navigation Tabs */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1.5px solid var(--border, #979a96)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSubChange('calendar')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '10px',
+                border: 'none',
+                background: subTab === 'calendar' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                color: subTab === 'calendar' ? '#050806' : 'var(--text-color)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>📅 Calendar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubChange('upcoming')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '10px',
+                border: 'none',
+                background: subTab === 'upcoming' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                color: subTab === 'upcoming' ? '#050806' : 'var(--text-color)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>🕒 Upcoming</span>
+              {scheduledCampaigns.length > 0 && (
+                <span style={{
+                  background: subTab === 'upcoming' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
+                  color: subTab === 'upcoming' ? '#050806' : 'var(--primary-color)',
+                  padding: '1px 6px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 800
+                }}>
+                  {scheduledCampaigns.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubChange('drafts')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '10px',
+                border: 'none',
+                background: subTab === 'drafts' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                color: subTab === 'drafts' ? '#050806' : 'var(--text-color)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>💾 Drafts</span>
+              {unscheduledDrafts.length > 0 && (
+                <span style={{
+                  background: subTab === 'drafts' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
+                  color: subTab === 'drafts' ? '#050806' : 'var(--primary-color)',
+                  padding: '1px 6px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 800
+                }}>
+                  {unscheduledDrafts.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubChange('past')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '10px',
+                border: 'none',
+                background: subTab === 'past' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                color: subTab === 'past' ? '#050806' : 'var(--text-color)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              📜 Past posts
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. CALENDAR GRID VIEW */}
+      {subTab === 'calendar' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+{/* Month Navigation Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', background: 'var(--sunken, rgba(0,0,0,0.04))', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
@@ -6949,154 +7058,283 @@ function CalendarTab({
             </button>
           )}
         </div>
-
-        {/* Sub-Navigation Tabs & View Switcher */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1.5px solid var(--border, #979a96)', paddingBottom: '14px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => handleSubChange('upcoming')}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              background: subTab === 'upcoming' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-              color: subTab === 'upcoming' ? '#050806' : 'var(--text-color)',
-              fontWeight: 700,
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s'
-            }}
-          >
-            <span>📅 Upcoming</span>
-            {scheduledCampaigns.length > 0 && (
-              <span style={{
-                background: subTab === 'upcoming' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
-                color: subTab === 'upcoming' ? '#050806' : 'var(--primary-color)',
-                padding: '1px 6px',
-                borderRadius: '8px',
-                fontSize: '11px',
-                fontWeight: 800
-              }}>
-                {scheduledCampaigns.length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSubChange('drafts')}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              background: subTab === 'drafts' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-              color: subTab === 'drafts' ? '#050806' : 'var(--text-color)',
-              fontWeight: 700,
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s'
-            }}
-          >
-            <span>💾 Drafts</span>
-            {unscheduledDrafts.length > 0 && (
-              <span style={{
-                background: subTab === 'drafts' ? 'rgba(0,0,0,0.25)' : 'rgba(82, 183, 136, 0.2)',
-                color: subTab === 'drafts' ? '#050806' : 'var(--primary-color)',
-                padding: '1px 6px',
-                borderRadius: '8px',
-                fontSize: '11px',
-                fontWeight: 800
-              }}>
-                {unscheduledDrafts.length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSubChange('past')}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              background: subTab === 'past' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-              color: subTab === 'past' ? '#050806' : 'var(--text-color)',
-              fontWeight: 700,
-              fontSize: '13px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            📜 Past posts
-          </button>
-          </div>
-
-          {/* List vs Month View Toggles */}
-          {subTab === 'upcoming' && (
-            <div style={{ display: 'inline-flex', padding: '3px', background: 'var(--sunken, #f4f6f3)', borderRadius: '10px', border: '1.5px solid var(--border, #979a96)', gap: '2px' }}>
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  border: viewMode === 'list' ? '1.5px solid #2F6B2F' : '1.5px solid transparent',
-                  background: viewMode === 'list' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'list' ? 'var(--ink, #171f16)' : 'var(--muted, #566054)',
-                  fontWeight: viewMode === 'list' ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-                List
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('calendar')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  border: viewMode === 'calendar' ? '1.5px solid #2F6B2F' : '1.5px solid transparent',
-                  background: viewMode === 'calendar' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'calendar' ? 'var(--ink, #171f16)' : 'var(--muted, #566054)',
-                  fontWeight: viewMode === 'calendar' ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  boxShadow: viewMode === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                Week / Month
-              </button>
-            </div>
-          )}
-        </div>
+<div>
+              {/* Weekday headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 600, fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}
       </div>
 
-      {/* 1. UPCOMING VIEW */}
+      {/* Calendar Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+        {daysGrid.map((day, idx) => {
+          if (day === null) {
+            return <div key={`empty-${idx}`} style={{ minHeight: '120px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid transparent' }} />;
+          }
+
+          // Check if there are posts for this day (both upcoming and past)
+          const dayPosts = campaigns.filter(c => {
+            if (!c || !c.scheduled_time) return false;
+            const date = new Date(c.scheduled_time);
+            return date.getDate() === day && date.getMonth() === month && date.getFullYear() === year;
+          });
+
+          // Check for calendar events matching this day
+          const dayEvents = calendarEvents.filter(e => {
+            if (!e || !e.date || typeof e.date !== 'string') return false;
+            const parts = e.date.split('-');
+            if (parts.length < 3) return false;
+            const eYear = parseInt(parts[0], 10);
+            const eMonth = parseInt(parts[1], 10) - 1;
+            const eDay = parseInt(parts[2], 10);
+            return eYear === year && eMonth === month && eDay === day;
+          });
+
+          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+
+          const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          return (
+            <div
+              key={`day-${day}`}
+              onClick={() => onSelectDate?.(dayDateStr)}
+              title={dayPosts.length === 0 ? `Click to schedule post for ${dayDateStr}` : undefined}
+              style={{
+                minHeight: '120px',
+                background: isToday ? 'rgba(82, 183, 136, 0.08)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: isToday ? '1.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
+                padding: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary-color)' : 'var(--text-light)' }}>
+                  {day} {isToday && '•'}
+                </span>
+                {dayPosts.length > 0 && (
+                  <span
+                    title={`${dayPosts.length} post(s) scheduled on this day`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: '#3b82f6',
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(59, 130, 246, 0.4)'
+                    }}
+                  >
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 6px #3b82f6' }} />
+                    {dayPosts.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Calendar Events (Festivals / Holidays) - Clickable to draft post */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {dayEvents.map(event => {
+                  let emoji = "🎉";
+                  if (event.type === "public_holiday") emoji = "🏢";
+                  if (event.type === "restricted_holiday") emoji = "🏛️";
+                  if (event.type === "season") emoji = "🌤️";
+
+                  return (
+                    <div
+                      key={event.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectHoliday) {
+                          onSelectHoliday(event, dayDateStr);
+                        } else if (onSelectDate) {
+                          onSelectDate(dayDateStr);
+                        }
+                      }}
+                      title={`Click to draft a post for ${event.name} (${dayDateStr}): ${event.description || ''}`}
+                      style={{
+                        background: event.type === 'season' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(251, 191, 36, 0.16)',
+                        border: event.type === 'season' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(251, 191, 36, 0.5)',
+                        borderRadius: '6px',
+                        padding: '3px 6px',
+                        fontSize: '10px',
+                        color: 'var(--text-color)',
+                        fontWeight: 700,
+                        lineHeight: '1.2',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.borderColor = 'var(--primary, #2f6b2f)';
+                        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.borderColor = event.type === 'season' ? 'rgba(56, 189, 248, 0.5)' : 'rgba(251, 191, 36, 0.5)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <span style={{ flexShrink: 0 }}>{emoji}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Scheduled Posts */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
+                {dayPosts.map((post) => {
+                  const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: getBizTimezone() });
+                  const isPublished = post.status === 'published';
+                  const isFailed = post.status === 'failed';
+                  const isScheduled = post.status === 'scheduled';
+                  const isPast = new Date(post.scheduled_time) < new Date();
+                  const promptText = (post.prompt || post.generated_text || "Campaign").trim();
+                  const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
+
+                  return (
+                    <div
+                      key={post.id}
+                      onClick={(e) => { e.stopPropagation(); onSelectCampaign?.(post); }}
+                      style={{
+                        background: isFailed ? 'rgba(239, 68, 68, 0.12)' : isPublished ? 'rgba(82, 183, 136, 0.15)' : isPast ? 'rgba(245, 158, 11, 0.12)' : 'rgba(56, 189, 248, 0.15)',
+                        border: isFailed ? '1.5px solid rgba(239, 68, 68, 0.6)' : isPublished ? '1.5px solid var(--primary-color)' : isPast ? '1px dashed #f59e0b' : '1px solid #38bdf8',
+                        borderRadius: '6px',
+                        padding: '4px 6px',
+                        fontSize: '10px',
+                        color: isFailed ? '#fca5a5' : isPublished ? 'var(--text-color)' : isPast ? '#fde68a' : '#7dd3fc',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      title={isFailed ? (post.failure_reason || 'Failed to publish') : `[${postTime}] ${post.prompt || post.generated_text}`}
+                    >
+                      <div style={{
+                        fontWeight: 700,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        textDecoration: isPublished ? 'none' : 'none'
+                      }}>
+                        {firstTwoWords}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9, fontSize: '9px', marginTop: '2px' }}>
+                        <span>⏰ {postTime}</span>
+                        <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, color: isFailed ? '#f87171' : isPublished ? '#a3e635' : isPast ? '#f59e0b' : '#38bdf8' }}>
+                          {isFailed ? '× failed' : isPublished ? '✓ done' : isPast ? '⏳ processing' : '📅 set'}
+                        </span>
+                      </div>
+                      {isFailed && post.failure_reason && (
+                        <div style={{ marginTop: '4px', fontSize: '8.5px', color: '#fca5a5', lineHeight: '1.3' }}>
+                          {(post.failure_reason.toLowerCase().includes('session expired') || post.failure_reason.toLowerCase().includes('reconnect')) ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToTab?.('settings'); }}
+                              style={{ background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: '4px', color: '#ffffff', fontSize: '8px', padding: '2px 5px', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              🔗 Reconnect Facebook
+                            </button>
+                          ) : (
+                            <span>{post.failure_reason.slice(0, 60)}{post.failure_reason.length > 60 ? '…' : ''}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Campaign Generations History List */}
+      <div style={{ marginTop: '40px', borderTop: '1px solid rgba(82, 183, 136, 0.15)', paddingTop: '24px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Campaign Generations History ({campaigns.length})</h3>
+        {campaigns.length === 0 ? (
+          <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>No campaigns generated yet. Head over to the Campaigns tab to create one!</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {campaigns.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => onSelectCampaign?.(c)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(82, 183, 136, 0.15)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '16px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-color)';
+                  e.currentTarget.style.background = 'rgba(82, 183, 136, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.15)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                }}
+                title="Click to load/edit in Campaigns tab"
+              >
+                <div style={{ flexGrow: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', background: 'rgba(82, 183, 136, 0.2)', color: 'var(--primary-color)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      {c.category}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      Tone: {c.tone}
+                    </span>
+                    {c.status === 'scheduled' && (
+                      <span style={{ fontSize: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                        Scheduled: {c.scheduled_time_local ? `${new Date(c.scheduled_time).toLocaleDateString('en-IN', { timeZone: getBizTimezone() })} at ${c.scheduled_time_local}` : new Date(c.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })}
+                      </span>
+                    )}
+                    {c.status === 'published' && (
+                      <span style={{ fontSize: '12px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                        Published
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    Topic: {c.prompt}
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    "{c.generated_text}"
+                  </div>
+                </div>
+                {c.is_liked && (
+                  <div style={{ fontSize: '20px', color: '#e63946' }} title="Liked Style (Personalizing your AI)">
+                    ❤️
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. UPCOMING VIEW */}
       {subTab === 'upcoming' && (
         <div>
-          {viewMode === 'list' ? (
-            (() => {
+          {(() => {
               const now = new Date();
               now.setHours(0, 0, 0, 0);
 
@@ -7650,279 +7888,7 @@ function CalendarTab({
                   )}
                 </div>
               );
-            })()
-          ) : (
-            <div>
-              {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 600, fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px' }}>
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}
-      </div>
-
-      {/* Calendar Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-        {daysGrid.map((day, idx) => {
-          if (day === null) {
-            return <div key={`empty-${idx}`} style={{ minHeight: '120px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid transparent' }} />;
-          }
-
-          // Check if there are posts for this day (both upcoming and past)
-          const dayPosts = campaigns.filter(c => {
-            if (!c || !c.scheduled_time) return false;
-            const date = new Date(c.scheduled_time);
-            return date.getDate() === day && date.getMonth() === month && date.getFullYear() === year;
-          });
-
-          // Check for calendar events matching this day
-          const dayEvents = calendarEvents.filter(e => {
-            if (!e || !e.date || typeof e.date !== 'string') return false;
-            const parts = e.date.split('-');
-            if (parts.length < 3) return false;
-            const eYear = parseInt(parts[0], 10);
-            const eMonth = parseInt(parts[1], 10) - 1;
-            const eDay = parseInt(parts[2], 10);
-            return eYear === year && eMonth === month && eDay === day;
-          });
-
-          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-
-          const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          return (
-            <div
-              key={`day-${day}`}
-              onClick={() => onSelectDate?.(dayDateStr)}
-              title={dayPosts.length === 0 ? `Click to schedule post for ${dayDateStr}` : undefined}
-              style={{
-                minHeight: '120px',
-                background: isToday ? 'rgba(82, 183, 136, 0.08)' : 'rgba(255,255,255,0.03)',
-                borderRadius: '12px',
-                border: isToday ? '1.5px solid var(--primary-color)' : '1px solid rgba(82, 183, 136, 0.15)',
-                padding: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                transition: 'all 0.2s',
-                cursor: 'pointer'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary-color)' : 'var(--text-light)' }}>
-                  {day} {isToday && '•'}
-                </span>
-                {dayPosts.length > 0 && (
-                  <span
-                    title={`${dayPosts.length} post(s) scheduled on this day`}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      color: '#3b82f6',
-                      background: 'rgba(59, 130, 246, 0.15)',
-                      padding: '1px 6px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(59, 130, 246, 0.4)'
-                    }}
-                  >
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 6px #3b82f6' }} />
-                    {dayPosts.length}
-                  </span>
-                )}
-              </div>
-
-              {/* Calendar Events (Festivals / Holidays) - Clickable to draft post */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                {dayEvents.map(event => {
-                  let emoji = "🎉";
-                  if (event.type === "public_holiday") emoji = "🏢";
-                  if (event.type === "restricted_holiday") emoji = "🏛️";
-                  if (event.type === "season") emoji = "🌤️";
-
-                  return (
-                    <div
-                      key={event.name}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onSelectHoliday) {
-                          onSelectHoliday(event, dayDateStr);
-                        } else if (onSelectDate) {
-                          onSelectDate(dayDateStr);
-                        }
-                      }}
-                      title={`Click to draft a post for ${event.name} (${dayDateStr}): ${event.description || ''}`}
-                      style={{
-                        background: event.type === 'season' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(251, 191, 36, 0.16)',
-                        border: event.type === 'season' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(251, 191, 36, 0.5)',
-                        borderRadius: '6px',
-                        padding: '3px 6px',
-                        fontSize: '10px',
-                        color: 'var(--text-color)',
-                        fontWeight: 700,
-                        lineHeight: '1.2',
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                        e.currentTarget.style.borderColor = 'var(--primary, #2f6b2f)';
-                        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.borderColor = event.type === 'season' ? 'rgba(56, 189, 248, 0.5)' : 'rgba(251, 191, 36, 0.5)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    >
-                      <span style={{ flexShrink: 0 }}>{emoji}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Scheduled Posts */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flexGrow: 1 }}>
-                {dayPosts.map((post) => {
-                  const postTime = post.scheduled_time_local || new Date(post.scheduled_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: getBizTimezone() });
-                  const isPublished = post.status === 'published';
-                  const isFailed = post.status === 'failed';
-                  const isScheduled = post.status === 'scheduled';
-                  const isPast = new Date(post.scheduled_time) < new Date();
-                  const promptText = (post.prompt || post.generated_text || "Campaign").trim();
-                  const firstTwoWords = promptText.split(/\s+/).slice(0, 2).join(' ');
-
-                  return (
-                    <div
-                      key={post.id}
-                      onClick={(e) => { e.stopPropagation(); onSelectCampaign?.(post); }}
-                      style={{
-                        background: isFailed ? 'rgba(239, 68, 68, 0.12)' : isPublished ? 'rgba(82, 183, 136, 0.15)' : isPast ? 'rgba(245, 158, 11, 0.12)' : 'rgba(56, 189, 248, 0.15)',
-                        border: isFailed ? '1.5px solid rgba(239, 68, 68, 0.6)' : isPublished ? '1.5px solid var(--primary-color)' : isPast ? '1px dashed #f59e0b' : '1px solid #38bdf8',
-                        borderRadius: '6px',
-                        padding: '4px 6px',
-                        fontSize: '10px',
-                        color: isFailed ? '#fca5a5' : isPublished ? 'var(--text-color)' : isPast ? '#fde68a' : '#7dd3fc',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                      title={isFailed ? (post.failure_reason || 'Failed to publish') : `[${postTime}] ${post.prompt || post.generated_text}`}
-                    >
-                      <div style={{
-                        fontWeight: 700,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        textDecoration: isPublished ? 'none' : 'none'
-                      }}>
-                        {firstTwoWords}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9, fontSize: '9px', marginTop: '2px' }}>
-                        <span>⏰ {postTime}</span>
-                        <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, color: isFailed ? '#f87171' : isPublished ? '#a3e635' : isPast ? '#f59e0b' : '#38bdf8' }}>
-                          {isFailed ? '× failed' : isPublished ? '✓ done' : isPast ? '⏳ processing' : '📅 set'}
-                        </span>
-                      </div>
-                      {isFailed && post.failure_reason && (
-                        <div style={{ marginTop: '4px', fontSize: '8.5px', color: '#fca5a5', lineHeight: '1.3' }}>
-                          {(post.failure_reason.toLowerCase().includes('session expired') || post.failure_reason.toLowerCase().includes('reconnect')) ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onNavigateToTab?.('settings'); }}
-                              style={{ background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: '4px', color: '#ffffff', fontSize: '8px', padding: '2px 5px', cursor: 'pointer', fontWeight: 700 }}
-                            >
-                              🔗 Reconnect Facebook
-                            </button>
-                          ) : (
-                            <span>{post.failure_reason.slice(0, 60)}{post.failure_reason.length > 60 ? '…' : ''}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Campaign Generations History List */}
-      <div style={{ marginTop: '40px', borderTop: '1px solid rgba(82, 183, 136, 0.15)', paddingTop: '24px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Campaign Generations History ({campaigns.length})</h3>
-        {campaigns.length === 0 ? (
-          <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>No campaigns generated yet. Head over to the Campaigns tab to create one!</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {campaigns.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => onSelectCampaign?.(c)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(82, 183, 136, 0.15)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '16px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary-color)';
-                  e.currentTarget.style.background = 'rgba(82, 183, 136, 0.05)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(82, 183, 136, 0.15)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                }}
-                title="Click to load/edit in Campaigns tab"
-              >
-                <div style={{ flexGrow: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', background: 'rgba(82, 183, 136, 0.2)', color: 'var(--primary-color)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                      {c.category}
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                      Tone: {c.tone}
-                    </span>
-                    {c.status === 'scheduled' && (
-                      <span style={{ fontSize: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        Scheduled: {c.scheduled_time_local ? `${new Date(c.scheduled_time).toLocaleDateString('en-IN', { timeZone: getBizTimezone() })} at ${c.scheduled_time_local}` : new Date(c.scheduled_time).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: getBizTimezone() })}
-                      </span>
-                    )}
-                    {c.status === 'published' && (
-                      <span style={{ fontSize: '12px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        Published
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    Topic: {c.prompt}
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-light)', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    "{c.generated_text}"
-                  </div>
-                </div>
-                {c.is_liked && (
-                  <div style={{ fontSize: '20px', color: '#e63946' }} title="Liked Style (Personalizing your AI)">
-                    ❤️
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-            </div>
-          )}
+            })()}
         </div>
       )}
 
@@ -10665,7 +10631,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
     return 'home';
   });
 
-  const [calendarSubTab, setCalendarSubTab] = useState<'upcoming' | 'drafts' | 'past'>('upcoming');
+  const [calendarSubTab, setCalendarSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>('calendar');
   const [showMobileAvatarMenu, setShowMobileAvatarMenu] = useState(false);
 
   const [businessInfo, setBusinessInfo] = useState<{ name: string; location: string; initial: string }>({
@@ -10685,7 +10651,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [upcomingCount, setUpcomingCount] = useState<number>(0);
   const [campaigns, setCampaigns] = useState<any[]>([]);
 
-  const handleTabChange = (tab: string, sub?: 'upcoming' | 'drafts' | 'past') => {
+  const handleTabChange = (tab: string, sub?: 'calendar' | 'upcoming' | 'drafts' | 'past') => {
     let resolvedTab = tab;
     if (tab === 'campaigns') resolvedTab = 'create';
     if (tab === 'assets') resolvedTab = 'library';
@@ -10693,6 +10659,9 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
     if (tab === 'archived') {
       resolvedTab = 'calendar';
       setCalendarSubTab('past');
+    } else if (tab === 'calendar' && !sub) {
+      resolvedTab = 'calendar';
+      setCalendarSubTab('calendar');
     } else if (sub) {
       setCalendarSubTab(sub);
     }
@@ -11034,16 +11003,16 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           {/* Calendar */}
           <button
             type="button"
-            onClick={() => handleTabChange('calendar', 'upcoming')}
+            onClick={() => handleTabChange('calendar', 'calendar')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
               padding: '10px 14px',
               borderRadius: '12px',
-              background: isCalendarActive && calendarSubTab === 'upcoming' ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
-              color: isCalendarActive ? 'var(--primary-color)' : 'var(--text-color)',
-              fontWeight: isCalendarActive ? 700 : 500,
+              background: isCalendarActive && calendarSubTab === 'calendar' ? 'rgba(82, 183, 136, 0.15)' : 'transparent',
+              color: isCalendarActive && calendarSubTab === 'calendar' ? 'var(--primary-color)' : (isCalendarActive ? 'var(--primary-color)' : 'var(--text-color)'),
+              fontWeight: isCalendarActive && calendarSubTab === 'calendar' ? 700 : 500,
               fontSize: '14px',
               border: 'none',
               cursor: 'pointer',
@@ -11551,7 +11520,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
 
       <button
         type="button"
-        onClick={() => handleTabChange('calendar', 'upcoming')}
+        onClick={() => handleTabChange('calendar', 'calendar')}
         style={{
           display: 'flex',
           flexDirection: 'column',
