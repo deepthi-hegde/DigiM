@@ -586,13 +586,59 @@ export function PostComposer({
       const draft = initParams.draft;
       const state = draft.state || draft;
       setCurrentDraftId(draft.id || state.id);
-      if (state.caption) setCaption(state.caption);
-      if (state.hashtags) setHashtags(state.hashtags);
+      
+      const cap = state.caption || state.generated_text || state.prompt;
+      if (cap) setCaption(cap);
+      
+      const img = state.image_url || state.visual_suggestion || state.image;
+      if (img) setImage(img);
+
       if (state.format) setFormat(state.format);
-      if (state.image_url) setImage(state.image_url);
-      if (state.scheduled_date) setScheduledDate(state.scheduled_date);
-      if (state.scheduled_time) setScheduledTime(state.scheduled_time);
       if (state.category) setPostType(state.category);
+      
+      if (state.hashtags) {
+        if (Array.isArray(state.hashtags)) setHashtags(state.hashtags);
+        else if (typeof state.hashtags === 'string') {
+          try {
+            const parsed = JSON.parse(state.hashtags);
+            if (Array.isArray(parsed)) setHashtags(parsed);
+            else setHashtags(state.hashtags.split(',').map((t) => t.trim()).filter(Boolean));
+          } catch {
+            setHashtags(state.hashtags.split(',').map((t) => t.trim()).filter(Boolean));
+          }
+        }
+      }
+
+      if (state.scheduled_date) {
+        setScheduledDate(state.scheduled_date);
+        setWhen("schedule");
+      }
+      if (state.scheduled_time) {
+        if (typeof state.scheduled_time === 'string' && (state.scheduled_time.includes('T') || state.scheduled_time.includes(' '))) {
+          try {
+            const dt = new Date(state.scheduled_time);
+            if (!isNaN(dt.getTime())) {
+              const y = dt.getFullYear();
+              const m = String(dt.getMonth() + 1).padStart(2, '0');
+              const d = String(dt.getDate()).padStart(2, '0');
+              setScheduledDate();
+              const hh = String(dt.getHours()).padStart(2, '0');
+              const mm = String(dt.getMinutes()).padStart(2, '0');
+              setScheduledTime();
+              setWhen("schedule");
+            }
+          } catch (e) {}
+        } else {
+          setScheduledTime(state.scheduled_time);
+        }
+      }
+
+      if (state.publish_to_facebook !== undefined || state.publish_to_instagram !== undefined || state.publish_instagram !== undefined) {
+        setChannels({
+          facebook: state.publish_to_facebook ?? true,
+          instagram: (state.publish_to_instagram ?? state.publish_instagram) ?? true
+        });
+      }
     } else if (initParams?.mode === "holiday" && initParams.holiday) {
       const holiday = initParams.holiday;
       const hDate = initParams.date || holiday.date;

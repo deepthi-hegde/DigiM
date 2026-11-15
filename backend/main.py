@@ -581,11 +581,23 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
 
         return {"status": "scheduled", "campaign_id": campaign.id, "message": f"Successfully scheduled post for {payload.scheduled_time}"}
 
+    campaign = None
+    if payload.campaign_id:
+        campaign = db.query(Campaign).filter_by(id=payload.campaign_id).first()
+
     if not account:
-        raise HTTPException(status_code=400, detail="No Meta account connected")
+        if campaign:
+            campaign.status = "failed"
+            campaign.failure_reason = "No Meta account connected. Please connect Facebook in Settings."
+            db.commit()
+        raise HTTPException(status_code=400, detail="No Meta account connected. Please connect Facebook in Settings.")
 
     # If the user hasn't selected a real page yet, mock the success to avoid graph API errors during testing
     if account.page_id == "pending_page_selection":
+        if campaign:
+            campaign.status = "published"
+            db.commit()
+            db.refresh(campaign)
         # Log mock publish
         log = AuditLog(
             tenant_id=payload.tenant_id,
@@ -595,7 +607,7 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         )
         db.add(log)
         db.commit()
-        return {"status": "success", "message": "Mock published because page_id is pending_page_selection"}
+        return {"status": "success", "message": "Mock published because page_id is pending_page_selection", "campaign_id": campaign.id if campaign else None}
 
     # Actual publish call to Meta
     fb_res = None
@@ -607,50 +619,65 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         if image_url.startswith("/"):
             image_url = f"{public_backend_url.rstrip('/')}{image_url}"
 
-    # 1. Post to Facebook
-    if pub_fb:
-        pub_req = PublishRequest(
-            page_id=account.page_id,
-            message=post_message,
-            access_token=account.access_token,
-            image_url=image_url
-        )
-        fb_res = publish_to_facebook(pub_req)
-    
-    # 2. Post to Instagram (if requested and account is linked)
-    if pub_ig:
-        if not account.ig_user_id:
-            raise HTTPException(status_code=400, detail="No Instagram account linked to this Facebook Page")
-        if not image_url:
-            raise HTTPException(status_code=400, detail="Instagram publishing requires an image")
-            
-        from api.meta import publish_to_instagram, InstagramPublishRequest
-        print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
-        print(f"DEBUG IG PUBLISH - image_url: {image_url}")
-        print(f"DEBUG IG PUBLISH - access_token prefix: {account.access_token[:30]}")
-        ig_pub_req = InstagramPublishRequest(
-            ig_user_id=account.ig_user_id,
-            image_url=image_url,
-            caption=post_message,
-            access_token=account.access_token
-        )
-        ig_res = publish_to_instagram(ig_pub_req)
+    try:
+        # 1. Post to Facebook
+        if pub_fb:
+            pub_req = PublishRequest(
+                page_id=account.page_id,
+                message=post_message,
+                access_token=account.access_token,
+                image_url=image_url
+            )
+            fb_res = publish_to_facebook(pub_req)
         
-    # Log live publish
-    log = AuditLog(
-        tenant_id=payload.tenant_id,
-        user_email="admin@digim.com",
-        action="Publish Campaign",
-        details=f"Published to Facebook (and Instagram if linked)"
-    )
-    db.add(log)
-    db.commit()
+        # 2. Post to Instagram (if requested and account is linked)
+        if pub_ig:
+            if not account.ig_user_id:
+                raise HTTPException(status_code=400, detail="No Instagram account linked to this Facebook Page")
+            if not image_url:
+                raise HTTPException(status_code=400, detail="Instagram publishing requires an image")
+                
+            from api.meta import publish_to_instagram, InstagramPublishRequest
+            print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
+            print(f"DEBUG IG PUBLISH - image_url: {image_url}")
+            print(f"DEBUG IG PUBLISH - access_token prefix: {account.access_token[:30]}")
+            ig_pub_req = InstagramPublishRequest(
+                ig_user_id=account.ig_user_id,
+                image_url=image_url,
+                caption=post_message,
+                access_token=account.access_token
+            )
+            ig_res = publish_to_instagram(ig_pub_req)
+            
+        if campaign:
+            campaign.status = "published"
+            campaign.failure_reason = None
+            db.commit()
+            db.refresh(campaign)
 
-    return {
-        "status": "success", 
-        "fb_response": fb_res,
-        "ig_response": ig_res
-    }
+        # Log live publish
+        log = AuditLog(
+            tenant_id=payload.tenant_id,
+            user_email="admin@digim.com",
+            action="Publish Campaign",
+            details=f"Published to Facebook (and Instagram if linked)"
+        )
+        db.add(log)
+        db.commit()
+
+        return {
+            "status": "success", 
+            "fb_response": fb_res,
+            "ig_response": ig_res,
+            "campaign_id": campaign.id if campaign else None
+        }
+    except Exception as e:
+        if campaign:
+            campaign.status = "failed"
+            err_msg = getattr(e, 'detail', str(e))
+            campaign.failure_reason = str(err_msg)
+            db.commit()
+        raise e
 
 
 import os

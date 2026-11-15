@@ -6660,6 +6660,7 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
 
 function CalendarTab({
   onSelectCampaign,
+  onEditCampaign,
   onNavigateToTab,
   onSelectDate,
   onSelectHoliday,
@@ -6668,6 +6669,7 @@ function CalendarTab({
   onSubTabChange
 }: {
   onSelectCampaign?: (campaign: any) => void;
+  onEditCampaign?: (campaign: any) => void;
   onNavigateToTab?: (tab: string) => void;
   onSelectDate?: (dateStr: string) => void;
   onSelectHoliday?: (event: any, dateStr: string) => void;
@@ -6681,6 +6683,7 @@ function CalendarTab({
   const [subTab, setSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>(activeSubTab);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
+  const [postingId, setPostingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (activeSubTab) setSubTab(activeSubTab);
@@ -6764,15 +6767,22 @@ function CalendarTab({
     );
   }
 
-  const fetchCampaigns = () => {
+  const fetchCampaigns = async () => {
     const savedTenantId = localStorage.getItem('tenant_id') || '1';
-    fetch('/api/campaigns?tenant_id=' + savedTenantId)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setCampaigns(data))
-      .catch(() => {});
+    try {
+      const res = await fetch('/api/campaigns?tenant_id=' + savedTenantId);
+      if (res.ok) {
+        const data = await res.json();
+        setCampaigns(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error('Failed to refresh campaigns:', e);
+    }
   };
 
   const handlePostNow = async (post: any) => {
+    setPostingId(post.id);
+    setActiveMenuPostId(null);
     try {
       const savedTenantId = localStorage.getItem('tenant_id') || '1';
       const res = await fetch(`/api/campaign/publish?tenant_id=${savedTenantId}`, {
@@ -6783,7 +6793,7 @@ function CalendarTab({
           campaign_id: post.id,
           message: post.generated_text || post.prompt,
           caption: post.generated_text || post.prompt,
-          image_url: post.visual_suggestion || post.image_url,
+          image_url: post.image_url || post.visual_suggestion,
           format: post.format || 'post',
           publish_to_facebook: post.publish_to_facebook ?? true,
           publish_to_instagram: post.publish_to_instagram ?? true,
@@ -6791,13 +6801,32 @@ function CalendarTab({
           when: 'now'
         })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        fetchCampaigns();
+        if (typeof window !== 'undefined' && (window as any).showNotification) {
+          (window as any).showNotification('Post published successfully to Meta!', 'success');
+        } else {
+          alert('Post published successfully to Meta!');
+        }
+        await fetchCampaigns();
+      } else {
+        const errMsg = data.detail || data.message || 'Failed to publish post. Please verify your Meta connection in Settings.';
+        if (typeof window !== 'undefined' && (window as any).showNotification) {
+          (window as any).showNotification(errMsg, 'error');
+        } else {
+          alert(errMsg);
+        }
+        await fetchCampaigns();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error('Error posting now:', e);
+      if (typeof window !== 'undefined' && (window as any).showNotification) {
+        (window as any).showNotification('Network error publishing post: ' + (e?.message || 'unknown error'), 'error');
+      } else {
+        alert('Network error publishing post.');
+      }
     } finally {
-      setActiveMenuPostId(null);
+      setPostingId(null);
     }
   };
 
@@ -7616,22 +7645,29 @@ function CalendarTab({
                                       borderRadius: '999px',
                                       fontSize: '12px',
                                       fontWeight: 700,
-                                      background: 'rgba(47, 107, 47, 0.1)',
+                                      background: postingId === post.id ? 'rgba(47, 107, 47, 0.2)' : 'rgba(47, 107, 47, 0.1)',
                                       color: '#2F6B2F',
-                                      border: '1px solid rgba(47, 107, 47, 0.25)',
+                                      border: postingId === post.id ? '1.5px solid #2F6B2F' : '1px solid rgba(47, 107, 47, 0.25)',
                                       display: 'inline-flex',
                                       alignItems: 'center',
                                       gap: '4px'
                                     }}
                                   >
-                                    🕒 Scheduled
+                                    {postingId === post.id ? '⏳ Publishing...' : '🕒 Scheduled'}
                                   </span>
                                 )}
 
                                 {/* Action: Edit */}
                                 <button
                                   type="button"
-                                  onClick={() => onSelectCampaign?.(post)}
+                                  disabled={postingId === post.id}
+                                  onClick={() => {
+                                    if (onEditCampaign) {
+                                      onEditCampaign(post);
+                                    } else {
+                                      onSelectCampaign?.(post);
+                                    }
+                                  }}
                                   style={{
                                     padding: '6px 14px',
                                     borderRadius: '8px',
@@ -7640,10 +7676,11 @@ function CalendarTab({
                                     color: 'var(--ink, #171f16)',
                                     fontSize: '13px',
                                     fontWeight: 600,
-                                    cursor: 'pointer',
+                                    cursor: postingId === post.id ? 'not-allowed' : 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '5px'
+                                    gap: '5px',
+                                    opacity: postingId === post.id ? 0.6 : 1
                                   }}
                                 >
                                   ✏️ Edit
@@ -8081,7 +8118,35 @@ function CalendarTab({
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--hair, #d7ddd3)', fontSize: '12px', color: 'var(--muted, #566054)' }}>
                         <span>Category: {post.category || 'General'}</span>
-                        <span>{post.publish_to_instagram ? 'FB & IG' : 'Facebook'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{post.publish_to_instagram ? 'FB & IG' : 'Facebook'}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditCampaign) {
+                                onEditCampaign(post);
+                              } else {
+                                onSelectCampaign?.(post);
+                              }
+                            }}
+                            style={{
+                              background: '#ffffff',
+                              border: '1.5px solid var(--border, #979a96)',
+                              borderRadius: '6px',
+                              padding: '3px 9px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              color: '#2F6B2F',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                          >
+                            ✏️ Edit post
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -10631,7 +10696,14 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
     return 'home';
   });
 
-  const [calendarSubTab, setCalendarSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>('calendar');
+  const [calendarSubTab, setCalendarSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sub = urlParams.get('sub');
+      if (sub === 'calendar' || sub === 'upcoming' || sub === 'drafts' || sub === 'past') return sub;
+    }
+    return 'calendar';
+  });
   const [showMobileAvatarMenu, setShowMobileAvatarMenu] = useState(false);
 
   const [businessInfo, setBusinessInfo] = useState<{ name: string; location: string; initial: string }>({
@@ -10651,31 +10723,78 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
   const [upcomingCount, setUpcomingCount] = useState<number>(0);
   const [campaigns, setCampaigns] = useState<any[]>([]);
 
-  const handleTabChange = (tab: string, sub?: 'calendar' | 'upcoming' | 'drafts' | 'past') => {
+  const handleTabChange = (tab: string, sub?: 'calendar' | 'upcoming' | 'drafts' | 'past', pushHistory: boolean = true) => {
     let resolvedTab = tab;
     if (tab === 'campaigns') resolvedTab = 'create';
     if (tab === 'assets') resolvedTab = 'library';
     if (tab === 'analytics') resolvedTab = 'results';
+    let targetSub = sub;
     if (tab === 'archived') {
       resolvedTab = 'calendar';
+      targetSub = 'past';
       setCalendarSubTab('past');
     } else if (tab === 'calendar' && !sub) {
       resolvedTab = 'calendar';
+      targetSub = 'calendar';
       setCalendarSubTab('calendar');
     } else if (sub) {
+      targetSub = sub;
       setCalendarSubTab(sub);
     }
     setActiveTab(resolvedTab);
     if (typeof window !== 'undefined') {
       localStorage.setItem('activeTab', resolvedTab);
       const url = new URL(window.location.href);
-      if (resolvedTab === 'help') {
-        url.searchParams.set('tab', 'help');
+      if (resolvedTab !== 'home') {
+        url.searchParams.set('tab', resolvedTab);
       } else {
         url.searchParams.delete('tab');
       }
-      window.history.replaceState({}, '', url.toString());
+      if (resolvedTab === 'calendar' && targetSub && targetSub !== 'calendar') {
+        url.searchParams.set('sub', targetSub);
+      } else {
+        url.searchParams.delete('sub');
+      }
+      if (pushHistory) {
+        window.history.pushState({ tab: resolvedTab, sub: targetSub }, '', url.toString());
+      } else {
+        window.history.replaceState({ tab: resolvedTab, sub: targetSub }, '', url.toString());
+      }
     }
+  };
+
+  // Browser Back/Forward navigation support
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') || 'home';
+      const subParam = (params.get('sub') as any) || 'calendar';
+      handleTabChange(tabParam, subParam, false);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleEditCampaign = (c: any) => {
+    setInspectCampaign(null);
+    setComposerInitParams({
+      mode: 'draft',
+      draft: {
+        id: c.id,
+        caption: c.generated_text || c.caption || c.prompt,
+        image_url: c.image_url || c.visual_suggestion,
+        format: c.format || 'post',
+        category: c.category || 'new_collection',
+        scheduled_time: c.scheduled_time,
+        publish_to_facebook: c.publish_to_facebook,
+        publish_to_instagram: c.publish_to_instagram ?? c.publish_instagram,
+        hashtags: c.hashtags,
+        state: c
+      },
+      ts: Date.now()
+    });
+    handleTabChange('create');
   };
 
   const [showWelcome, setShowWelcome] = useState(true);
@@ -10855,8 +10974,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
           campaign={inspectCampaign}
           onClose={() => setInspectCampaign(null)}
           onEditInDashboard={(c) => {
-            setSelectedCampaignForEdit(c);
-            handleTabChange('home');
+            handleEditCampaign(c);
           }}
           onDelete={(deletedId) => {
             if (typeof window !== 'undefined') window.location.reload();
@@ -11438,6 +11556,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             activeSubTab={calendarSubTab}
             onSubTabChange={setCalendarSubTab}
             onNavigateToTab={(tab) => handleTabChange(tab)}
+            onEditCampaign={handleEditCampaign}
             onSelectDate={(dateStr) => {
               setComposerInitParams({ mode: 'calendar_date', date: dateStr, ts: Date.now() });
               handleTabChange('create');
@@ -11454,8 +11573,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             }}
             onSelectCampaign={(c) => {
               if (!c.scheduled_time && c.status === 'draft') {
-                setComposerInitParams({ mode: 'draft', draft: { id: c.id, state: c }, ts: Date.now() });
-                handleTabChange('create');
+                handleEditCampaign(c);
               } else {
                 setInspectCampaign(c);
               }
