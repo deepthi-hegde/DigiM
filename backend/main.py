@@ -78,6 +78,11 @@ with engine.connect() as conn:
         conn.commit()
     except Exception:
         pass
+    try:
+        conn.execute(text("ALTER TABLE campaigns ADD COLUMN format VARCHAR DEFAULT 'post'"))
+        conn.commit()
+    except Exception:
+        pass
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -435,6 +440,7 @@ class CampaignPublishRequest(BaseModel):
     tenant_id: int = 1
     scheduled_time: Optional[str] = None  # ISO format string or None
     campaign_id: Optional[int] = None
+    format: Optional[str] = "post"  # post, story, reel
 
 @app.get("/api/meta/status")
 def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
@@ -489,8 +495,10 @@ def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
 
 @app.post("/api/campaign/publish")
 def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_db)):
-    post_message = payload.message or payload.caption or ""
-    if not post_message:
+    post_format = (payload.format or "post").lower()
+    is_story = post_format in ["story", "stories"]
+    post_message = payload.message or payload.caption or ("Story" if is_story else "")
+    if not post_message and not is_story:
         raise HTTPException(status_code=400, detail="Post message cannot be empty")
 
     pub_ig = payload.publish_to_instagram or bool(payload.publish_instagram)
@@ -538,6 +546,7 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             campaign.generated_text = post_message
             campaign.publish_to_facebook = pub_fb
             campaign.publish_to_instagram = pub_ig
+            campaign.format = post_format
             if payload.image_url:
                 # Always promote temp/base64 images to permanent GCS storage before saving
                 campaign.visual_suggestion = save_permanent_asset_if_needed(payload.image_url)
@@ -644,8 +653,9 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             ig_pub_req = InstagramPublishRequest(
                 ig_user_id=account.ig_user_id,
                 image_url=image_url,
-                caption=post_message,
-                access_token=account.access_token
+                caption="" if is_story else post_message,
+                access_token=account.access_token,
+                media_type="STORIES" if is_story else "IMAGE"
             )
             ig_res = publish_to_instagram(ig_pub_req)
             
@@ -1406,11 +1416,13 @@ def execute_scheduled_campaign(campaign_id: int, db: Session):
         if getattr(post, "publish_to_instagram", False):
             if account.ig_user_id and image_url:
                 from api.meta import publish_to_instagram, InstagramPublishRequest
+                is_story_sched = (getattr(post, "format", "post") or "post").lower() in ["story", "stories"]
                 ig_pub_req = InstagramPublishRequest(
                     ig_user_id=account.ig_user_id,
                     image_url=image_url,
-                    caption=post.generated_text,
-                    access_token=account.access_token
+                    caption="" if is_story_sched else post.generated_text,
+                    access_token=account.access_token,
+                    media_type="STORIES" if is_story_sched else "IMAGE"
                 )
                 ig_res = publish_to_instagram(ig_pub_req)
             else:

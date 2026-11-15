@@ -113,6 +113,7 @@ class Campaign(Base):
     failure_reason = Column(String, nullable=True)  # Human-readable error when status=failed
     publish_to_facebook = Column(Boolean, default=True)
     publish_to_instagram = Column(Boolean, default=False)
+    format = Column(String, default="post")
     
     # Relationships
     tenant = relationship("Tenant", back_populates="campaigns")

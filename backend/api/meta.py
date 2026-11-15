@@ -20,8 +20,9 @@ class PublishRequest(BaseModel):
 class InstagramPublishRequest(BaseModel):
     ig_user_id: str
     image_url: str
-    caption: str
+    caption: Optional[str] = ""
     access_token: str
+    media_type: Optional[str] = "IMAGE"  # "IMAGE", "STORIES", "REELS" 
 
 class ConnectMetaRequest(BaseModel):
     tenant_id: int  # In a real app, infer this from a secure JWT backend token
@@ -263,11 +264,21 @@ def publish_to_instagram(payload: InstagramPublishRequest):
 
     # Step 1: Create the media container
     media_url = f"{META_GRAPH_URL}/{payload.ig_user_id}/media"
-    media_data = {
-        "image_url": payload.image_url,
-        "caption": payload.caption,
-        "access_token": payload.access_token
-    }
+    
+    req_media_type = (getattr(payload, "media_type", "IMAGE") or "IMAGE").upper()
+    if req_media_type in ["STORIES", "STORY"]:
+        # Instagram Stories API rejects captions; media_type must be STORIES
+        media_data = {
+            "image_url": payload.image_url,
+            "media_type": "STORIES",
+            "access_token": payload.access_token
+        }
+    else:
+        media_data = {
+            "image_url": payload.image_url,
+            "caption": payload.caption or "",
+            "access_token": payload.access_token
+        }
     
     media_response = requests.post(media_url, data=media_data)
     if media_response.status_code != 200:

@@ -92,7 +92,7 @@ def test_campaign_publish_no_account_connected():
     }
     response = client.post("/api/campaign/publish", json=payload)
     assert response.status_code == 400
-    assert response.json()["detail"] == "No Meta account connected"
+    assert "No Meta account connected" in response.json()["detail"]
 
 def test_campaign_publish_mock_success(monkeypatch):
     # We need to simulate a connected MetaAccount in the database.
@@ -634,5 +634,60 @@ def test_superadmin_auth_and_management_api(monkeypatch):
     detail = detail_res.json()
     assert detail["tenant_id"] == 1
     assert len(detail["campaigns"]) == 1
+
+    app.dependency_overrides.clear()
+
+
+def test_meta_instagram_story_publishing_pipeline(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount, Campaign
+    from db.database import get_db
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    t = Tenant(id=25, name="Saree Haven", email="saree@test.com")
+    m = MetaAccount(tenant_id=25, page_id="fb_page_25", page_name="Saree Page", access_token="tok_meta_25", ig_user_id="ig_saree_25")
+    db.add(t)
+    db.add(m)
+    db.commit()
+
+    captured_ig_req = []
+    def mock_publish_to_instagram(req):
+        captured_ig_req.append(req)
+        return {"id": "story_ig_container_123"}
+
+    monkeypatch.setattr("main.publish_to_facebook", lambda req: {"id": "story_fb_post_123"})
+    monkeypatch.setattr("api.meta.publish_to_instagram", mock_publish_to_instagram)
+
+    story_payload = {
+        "message": "Diwali Special Story",
+        "image_url": "https://example.com/saree_story.jpg",
+        "format": "story",
+        "publish_to_instagram": True,
+        "publish_to_facebook": True,
+        "tenant_id": 25
+    }
+
+    res = client.post("/api/campaign/publish", json=story_payload)
+    assert res.status_code == 200
+    assert res.json()["status"] == "success"
+    assert len(captured_ig_req) == 1
+    # Verify stories media_type and empty caption passed to Meta
+    assert captured_ig_req[0].media_type == "STORIES"
+    assert captured_ig_req[0].caption == ""
 
     app.dependency_overrides.clear()

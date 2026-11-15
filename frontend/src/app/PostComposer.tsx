@@ -296,6 +296,16 @@ export function PostComposer({
   const [overlayType, setOverlayType] = useState("logo");
   const [offerText, setOfferText] = useState("20% off");
 
+  // Story Specific Controls (matching Phase 1 Story Composer design)
+  const [storySlides, setStorySlides] = useState([
+    { id: 1, text: "Diwali offer at Lakshmi Textiles", bg: "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)", image: "" },
+    { id: 2, text: "Handcrafted Pure Silk Sarees", bg: "repeating-linear-gradient(135deg, #b8860b, #b8860b 10px, #996e00 10px, #996e00 20px)", image: "" },
+    { id: 3, text: "Special Festive Discount on All Sarees", bg: "repeating-linear-gradient(135deg, #0d5c4d, #0d5c4d 10px, #084035 10px, #084035 20px)", image: "" }
+  ]);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [textPosition, setTextPosition] = useState<"top" | "middle" | "bottom">("middle");
+  const [isOfferTagActive, setIsOfferTagActive] = useState(true);
+
   // Reusable Brand Overlay Renderer matching design specifications
   const renderBrandOverlay = (mode = "preview") => {
     if (!brandOverlayEnabled || overlayPosition === "off") return null;
@@ -1198,7 +1208,7 @@ export function PostComposer({
             color: "var(--ink, #171f16)"
           }}
         >
-          New post
+          {format === "story" ? "New Story" : format === "reel" ? "New Reel" : "New post"}
         </h1>
 
         <span style={{ flex: 1 }} />
@@ -1643,7 +1653,798 @@ export function PostComposer({
             </div>
 
             {/* 2-Column Split: Image Left, Content Right */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
+            {format === "story" ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "28px", alignItems: "flex-start" }}>
+                {/* Left Column: Story Preview & Slide Navigation (width ~310px) */}
+                <div style={{ flex: "0 1 310px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {/* Shop Profile Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "2px 4px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: "#0d5c4d",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: "15px"
+                      }}
+                    >
+                      {(shopData.name || "L").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+                      <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                        {shopData.name || "Lakshmi Textiles"}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                        {when === "schedule" ? formatDateTimeDisplay(scheduledDate, scheduledTime) : "Sat 14 Nov, 6:00 PM"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Story Phone Mockup (9:16 Aspect Ratio) */}
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      aspectRatio: "9 / 16",
+                      borderRadius: "28px",
+                      overflow: "hidden",
+                      border: "2.5px solid var(--border, #2a3628)",
+                      boxShadow: "0 12px 32px rgba(23, 31, 22, 0.22)",
+                      background: image
+                        ? `url(${image}) center / cover no-repeat`
+                        : storySlides[activeSlideIndex]?.bg || "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)",
+                      display: "flex",
+                      flexDirection: "column"
+                    }}
+                  >
+                    {/* Top Progress / Slide Indicator Bars */}
+                    <div style={{ display: "flex", gap: "5px", padding: "12px 14px 0", zIndex: 10 }}>
+                      {storySlides.map((s, idx) => (
+                        <div
+                          key={s.id}
+                          style={{
+                            flex: 1,
+                            height: "2.5px",
+                            borderRadius: "2px",
+                            background: idx <= activeSlideIndex ? "#ffffff" : "rgba(255, 255, 255, 0.35)",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
+                            transition: "background 0.2s ease"
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Dark gradient overlay for legibility if photo is used */}
+                    {image && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)",
+                          zIndex: 1
+                        }}
+                      />
+                    )}
+
+                    {/* Story Content Overlay Container */}
+                    <div
+                      style={{
+                        position: "relative",
+                        zIndex: 2,
+                        flex: 1,
+                        padding: "24px 20px 20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent:
+                          textPosition === "top"
+                            ? "flex-start"
+                            : textPosition === "bottom"
+                            ? "flex-end"
+                            : "center",
+                        gap: "10px"
+                      }}
+                    >
+                      {/* Offer Tag Badge */}
+                      {isOfferTagActive && offerText && (
+                        <div
+                          style={{
+                            alignSelf: "flex-start",
+                            background: "#f7c948",
+                            color: "#171f16",
+                            fontWeight: 800,
+                            fontSize: "13px",
+                            padding: "5px 12px",
+                            borderRadius: "16px",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.25)"
+                          }}
+                        >
+                          {offerText}
+                        </div>
+                      )}
+
+                      {/* Headline Text on Slide */}
+                      <div
+                        style={{
+                          color: "#ffffff",
+                          fontSize: "21px",
+                          fontWeight: 800,
+                          lineHeight: "1.28",
+                          textAlign: "left",
+                          textShadow: "0 2px 10px rgba(0,0,0,0.7)",
+                          wordBreak: "break-word",
+                          fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif"
+                        }}
+                      >
+                        {caption || storySlides[activeSlideIndex]?.text || "Diwali offer at Lakshmi Textiles"}
+                      </div>
+
+                      {/* Brand Overlay Logo Circle (Bottom Right) */}
+                      {brandOverlayEnabled && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "16px",
+                            right: "16px",
+                            width: "34px",
+                            height: "34px",
+                            borderRadius: "50%",
+                            background: "#ffffff",
+                            color: "#164e43",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 800,
+                            fontSize: "12.5px",
+                            boxShadow: "0 3px 10px rgba(0,0,0,0.35)",
+                            border: "1.5px solid rgba(0,0,0,0.08)"
+                          }}
+                        >
+                          {shopInitial}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick photo tools for the story background */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "8px",
+                        left: "8px",
+                        zIndex: 10,
+                        display: "flex",
+                        gap: "4px"
+                      }}
+                    >
+                      <label
+                        title="Upload background image for story"
+                        style={{
+                          background: "rgba(0,0,0,0.6)",
+                          color: "#ffffff",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          backdropFilter: "blur(4px)"
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          style={{ display: "none" }}
+                        />
+                        📷 {image ? "Change" : "Add Image"}
+                      </label>
+                      {image && (
+                        <button
+                          type="button"
+                          onClick={() => setImage(null)}
+                          title="Remove image and use pattern"
+                          style={{
+                            background: "rgba(180,35,24,0.7)",
+                            color: "#ffffff",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            border: "none",
+                            cursor: "pointer",
+                            backdropFilter: "blur(4px)"
+                          }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Slides Row below Preview */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                        Slides
+                      </span>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                        {storySlides.length} of 10 · drag to reorder
+                      </span>
+                    </div>
+
+                    {/* Slides Thumbnails */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {storySlides.map((slide, idx) => {
+                        const isSelected = idx === activeSlideIndex;
+                        return (
+                          <div
+                            key={slide.id}
+                            onClick={() => {
+                              setActiveSlideIndex(idx);
+                              setCaption(slide.text);
+                              if (slide.image) setImage(slide.image);
+                            }}
+                            style={{
+                              position: "relative",
+                              width: "56px",
+                              height: "88px",
+                              borderRadius: "10px",
+                              background: slide.image ? `url(${slide.image}) center / cover` : slide.bg,
+                              border: isSelected ? "2.5px solid #2F6B2F" : "1.5px solid var(--border, #979a96)",
+                              boxShadow: isSelected ? "0 0 0 2px rgba(47, 107, 47, 0.3)" : "none",
+                              cursor: "pointer",
+                              overflow: "hidden",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            {/* Slide number badge in bottom left */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: "4px",
+                                left: "4px",
+                                width: "18px",
+                                height: "18px",
+                                borderRadius: "50%",
+                                background: "#000000",
+                                color: "#ffffff",
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              }}
+                            >
+                              {idx + 1}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Add slide button (+) */}
+                      {storySlides.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newId = storySlides.length + 1;
+                            const colors = [
+                              "repeating-linear-gradient(135deg, #1e3a8a, #1e3a8a 10px, #172554 10px, #172554 20px)",
+                              "repeating-linear-gradient(135deg, #701a75, #701a75 10px, #4a044e 10px, #4a044e 20px)",
+                              "repeating-linear-gradient(135deg, #831843, #831843 10px, #500724 10px, #500724 20px)"
+                            ];
+                            const nextBg = colors[newId % colors.length];
+                            const newSlide = {
+                              id: newId,
+                              text: `Slide ${newId} for ${shopData.name}`,
+                              bg: nextBg,
+                              image: ""
+                            };
+                            setStorySlides([...storySlides, newSlide]);
+                            setActiveSlideIndex(storySlides.length);
+                            setCaption(newSlide.text);
+                          }}
+                          style={{
+                            width: "56px",
+                            height: "88px",
+                            borderRadius: "10px",
+                            border: "1.5px dashed var(--border, #979a96)",
+                            background: "transparent",
+                            color: "var(--muted, #566054)",
+                            fontSize: "20px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease"
+                          }}
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Brand overlay toggle row */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "12px 14px",
+                        borderRadius: "12px",
+                        border: "1px solid var(--border, #979a96)",
+                        background: "var(--surface, #ffffff)",
+                        marginTop: "8px"
+                      }}
+                    >
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                        Brand overlay
+                      </span>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "13px", color: "var(--muted, #566054)", fontWeight: 500 }}>
+                          Bottom right
+                        </span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={brandOverlayEnabled}
+                          onClick={() => setBrandOverlayEnabled(!brandOverlayEnabled)}
+                          style={{
+                            width: "44px",
+                            height: "24px",
+                            borderRadius: "12px",
+                            border: "none",
+                            background: brandOverlayEnabled ? "#2F6B2F" : "var(--sunken, #dce4dc)",
+                            cursor: "pointer",
+                            position: "relative",
+                            transition: "background 0.2s ease",
+                            padding: 0
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              background: "#ffffff",
+                              position: "absolute",
+                              top: "3px",
+                              left: brandOverlayEnabled ? "23px" : "3px",
+                              transition: "left 0.2s ease",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
+                            }}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Story Post Controls */}
+                <div style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Post Type Selector */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #566054)" }}>Post type</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        border: "1.5px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "15px",
+                        textAlign: "left"
+                      }}
+                    >
+                      <span style={{ display: "inline-flex", color: "#2F6B2F" }}>{currentCategory.icon}</span>
+                      <span style={{ flex: 1 }}>{currentCategory.label}</span>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #a1ae9e)" }}>{isTypeDropdownOpen ? "▲" : "▼"}</span>
+                    </button>
+
+                    {isTypeDropdownOpen && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          marginTop: "6px",
+                          borderRadius: "14px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "var(--surface, #172016)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                          zIndex: 50,
+                          maxHeight: "260px",
+                          overflowY: "auto",
+                          padding: "6px"
+                        }}
+                      >
+                        {POST_CATEGORIES.map((cat) => (
+                          <div
+                            key={cat.id}
+                            onClick={() => {
+                              handleSelectCategory(cat.id);
+                              const storyHeadline = `${cat.label} at ${shopData.name}`;
+                              setCaption(storyHeadline);
+                              setStorySlides((prev) => {
+                                const next = [...prev];
+                                if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], text: storyHeadline };
+                                return next;
+                              });
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "10px 12px",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              color: postType === cat.id ? "#ffffff" : "var(--ink, #e6eee4)",
+                              background: postType === cat.id ? "#2F6B2F" : "transparent"
+                            }}
+                          >
+                            <span>{cat.icon}</span>
+                            <span style={{ fontWeight: 600 }}>{cat.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notice Banners */}
+                  {/* Banner 1: Soft Peach - Slide text updated */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "rgba(242, 196, 102, 0.16)",
+                      border: "1px solid rgba(242, 196, 102, 0.35)",
+                      color: "var(--ink, #171f16)",
+                      fontSize: "13px",
+                      fontWeight: 600
+                    }}
+                  >
+                    <span style={{ color: "var(--aink, #f2c466)" }}>✦</span>
+                    <span>
+                      Slide text updated for <b>{currentCategory.label}</b>
+                    </span>
+                  </div>
+
+                  {/* Banner 2: Soft Mint / Teal - Stories have no caption */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "rgba(69, 181, 166, 0.14)",
+                      border: "1px solid rgba(69, 181, 166, 0.32)",
+                      color: "var(--ink, #171f16)",
+                      fontSize: "13px",
+                      fontWeight: 600
+                    }}
+                  >
+                    <span style={{ color: "#0d6b61" }}>ⓘ</span>
+                    <span>Stories have no caption. Your text goes directly on the story image.</span>
+                  </div>
+
+                  {/* Text on slide input */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #566054)" }}>
+                      Text on slide {activeSlideIndex + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={caption}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCaption(val);
+                        setStorySlides((prev) => {
+                          const next = [...prev];
+                          if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], text: val };
+                          return next;
+                        });
+                      }}
+                      placeholder="Diwali offer at Lakshmi Textiles"
+                      style={{
+                        width: "100%",
+                        fontFamily: "'Mukta', system-ui, sans-serif",
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        padding: "12px 14px",
+                        borderRadius: "12px",
+                        border: "1.5px solid var(--border, #747d73)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        outline: "none",
+                        boxSizing: "border-box"
+                      }}
+                    />
+                  </div>
+
+                  {/* Tone AI Quick Actions */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "var(--muted, #a1ae9e)" }}>
+                      {ICONS.wand} Tone
+                    </span>
+                    {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={isRefiningTone}
+                        onClick={() => handleRefineTone(t)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border, #747d73)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #e6eee4)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: isRefiningTone ? "wait" : "pointer"
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Offer tag toggle row */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isOfferTagActive}
+                      onClick={() => setIsOfferTagActive(!isOfferTagActive)}
+                      style={{
+                        width: "44px",
+                        height: "24px",
+                        borderRadius: "12px",
+                        border: "none",
+                        background: isOfferTagActive ? "#2F6B2F" : "var(--sunken, #dce4dc)",
+                        cursor: "pointer",
+                        position: "relative",
+                        transition: "background 0.2s ease",
+                        padding: 0
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          background: "#ffffff",
+                          position: "absolute",
+                          top: "3px",
+                          left: isOfferTagActive ? "23px" : "3px",
+                          transition: "left 0.2s ease",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
+                        }}
+                      />
+                    </button>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                      Offer tag
+                    </span>
+                    <input
+                      type="text"
+                      disabled={!isOfferTagActive}
+                      value={offerText}
+                      onChange={(e) => setOfferText(e.target.value)}
+                      placeholder="20% off"
+                      style={{
+                        flex: 1,
+                        maxWidth: "140px",
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        border: "1.5px solid var(--border, #979a96)",
+                        background: "var(--surface, #ffffff)",
+                        color: "var(--ink, #171f16)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        outline: "none",
+                        opacity: isOfferTagActive ? 1 : 0.5
+                      }}
+                    />
+                  </div>
+
+                  {/* Text position segmented control */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)", minWidth: "100px" }}>
+                      Text position
+                    </span>
+                    <div style={{ display: "inline-flex", background: "var(--sunken, #dce4dc)", padding: "3px", borderRadius: "8px" }}>
+                      {[
+                        { id: "top", label: "Top" },
+                        { id: "middle", label: "Middle" },
+                        { id: "bottom", label: "Bottom" }
+                      ].map((pos) => {
+                        const isSelected = textPosition === pos.id;
+                        return (
+                          <button
+                            key={pos.id}
+                            type="button"
+                            onClick={() => setTextPosition(pos.id as any)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: "6px",
+                              border: "none",
+                              background: isSelected ? "#2F6B2F" : "transparent",
+                              color: isSelected ? "#ffffff" : "var(--ink, #171f16)",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            {pos.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Subtext info */}
+                  <span style={{ fontSize: "12px", color: "var(--muted, #566054)", marginTop: "4px" }}>
+                    Photo slides show for 5 seconds. Link sticker available when publishing to Instagram.
+                  </span>
+
+                  {/* Publishing Time Selector (Now vs Schedule) */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid var(--border, #979a96)", paddingTop: "14px", marginTop: "8px" }}>
+                    <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "var(--muted, #a1ae9e)" }}>
+                      When to publish
+                    </span>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        onClick={() => setWhen("now")}
+                        style={{
+                          flex: 1,
+                          minWidth: "120px",
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          border: when === "now" ? "1.5px solid #2F6B2F" : "1px solid var(--border, #747d73)",
+                          background: when === "now" ? "#2F6B2F" : "var(--surface, #172016)",
+                          color: when === "now" ? "#ffffff" : "var(--ink, #e6eee4)",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Publish now
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWhen("schedule")}
+                        style={{
+                          flex: 1,
+                          minWidth: "120px",
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          border: when === "schedule" ? "1.5px solid #2F6B2F" : "1px solid var(--border, #747d73)",
+                          background: when === "schedule" ? "#2F6B2F" : "var(--surface, #172016)",
+                          color: when === "schedule" ? "#ffffff" : "var(--ink, #e6eee4)",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Schedule for later
+                      </button>
+                    </div>
+
+                    {when === "schedule" && (
+                      <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                        <input
+                          type="date"
+                          value={scheduledDate}
+                          onChange={(e) => setScheduledDate(e.target.value)}
+                          style={{
+                            flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1.5px solid var(--border, #747d73)",
+                            background: "var(--surface, #172016)",
+                            color: "var(--ink, #e6eee4)",
+                            fontSize: "14px"
+                          }}
+                        />
+                        <input
+                          type="time"
+                          value={scheduledTime}
+                          onChange={(e) => setScheduledTime(e.target.value)}
+                          style={{
+                            width: "120px",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1.5px solid var(--border, #747d73)",
+                            background: "var(--surface, #172016)",
+                            color: "var(--ink, #e6eee4)",
+                            fontSize: "14px"
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions: Save Draft, Preview, Schedule/Publish */}
+                  <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", flexWrap: "wrap", marginTop: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border, #747d73)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                    >
+                      💾 Save draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewModalOpen(true)}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border, #747d73)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                    >
+                      👁 Preview
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPublishing}
+                      onClick={handlePublish}
+                      style={{
+                        padding: "10px 22px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "#2F6B2F",
+                        color: "#ffffff",
+                        fontSize: "15px",
+                        fontWeight: 700,
+                        cursor: isPublishing ? "not-allowed" : "pointer",
+                        boxShadow: "0 4px 14px rgba(47, 107, 47, 0.35)",
+                        opacity: isPublishing ? 0.7 : 1
+                      }}
+                    >
+                      {isPublishing
+                        ? "Processing..."
+                        : when === "schedule"
+                        ? "Schedule Story"
+                        : "Post Story now"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
               {/* Left Column: Image Box (300px) */}
               <div style={{ flex: "0 1 300px", minWidth: "240px" }}>
                 {!image ? (
@@ -2496,7 +3297,9 @@ export function PostComposer({
                 </div>
               </div>
             </div>
-          </article>
+          </>
+          )}
+        </article>
         </main>
       </div>
 
