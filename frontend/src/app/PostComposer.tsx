@@ -1150,9 +1150,9 @@ export function PostComposer({
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "8px",
+            gap: "7px",
             height: "40px",
-            padding: "0 16px",
+            padding: "0 14px",
             borderRadius: "12px",
             border: "1.5px solid var(--border, #979a96)",
             background: "var(--sunken, #dce4dc)",
@@ -1170,6 +1170,9 @@ export function PostComposer({
             e.currentTarget.style.background = "var(--sunken, #dce4dc)";
           }}
         >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
           {ICONS.home}
           <span>Home</span>
         </button>
