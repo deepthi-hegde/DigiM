@@ -15,8 +15,8 @@ export let SHOP = { ...DEFAULT_SHOP };
 // SVG icons dictionary matching prototype exactly
 const ICONS = {
   home: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
-      <path d="M19 12H5M11 6l-6 6 6 6" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5h-4v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
     </svg>
   ),
   drafts: (
@@ -1132,29 +1132,49 @@ export function PostComposer({
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "6px",
-            minHeight: "44px",
-            fontWeight: 600,
-            color: "var(--ink, #e6eee4)",
-            textDecoration: "none",
-            background: "transparent",
-            border: "none",
+            gap: "8px",
+            height: "40px",
+            padding: "0 16px",
+            borderRadius: "12px",
+            border: "1.5px solid var(--border, #979a96)",
+            background: "var(--sunken, #dce4dc)",
+            color: "var(--ink, #171f16)",
+            fontWeight: 700,
+            fontSize: "14px",
             cursor: "pointer",
-            fontSize: "16px",
-            padding: 0
+            transition: "all 0.15s ease",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--tint, #d3ded3)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--sunken, #dce4dc)";
           }}
         >
-          {ICONS.home} Home
+          {ICONS.home}
+          <span>Home</span>
         </button>
+
+        <span
+          style={{
+            display: "inline-block",
+            width: "1.5px",
+            height: "24px",
+            background: "var(--border, #979a96)",
+            opacity: 0.5,
+            margin: "0 6px"
+          }}
+        />
 
         <h1
           style={{
-            margin: "0 0 0 8px",
+            margin: 0,
             fontFamily: "'Baloo 2', 'Mukta', system-ui, sans-serif",
             fontSize: "24px",
             lineHeight: "30px",
             fontWeight: 700,
-            color: "var(--ink, #e6eee4)"
+            color: "var(--ink, #171f16)"
           }}
         >
           New post
