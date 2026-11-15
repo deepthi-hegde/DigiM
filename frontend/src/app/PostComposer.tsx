@@ -298,9 +298,24 @@ export function PostComposer({
 
   // Story Specific Controls (matching Phase 1 Story Composer design)
   const [storySlides, setStorySlides] = useState([
-    { id: 1, text: "Diwali offer at Lakshmi Textiles", bg: "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)", image: "" },
-    { id: 2, text: "Handcrafted Pure Silk Sarees", bg: "repeating-linear-gradient(135deg, #b8860b, #b8860b 10px, #996e00 10px, #996e00 20px)", image: "" },
-    { id: 3, text: "Special Festive Discount on All Sarees", bg: "repeating-linear-gradient(135deg, #0d5c4d, #0d5c4d 10px, #084035 10px, #084035 20px)", image: "" }
+    {
+      id: 1,
+      text: "Diwali offer at Lakshmi Textiles",
+      bg: "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)",
+      image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      id: 2,
+      text: "Handcrafted Pure Silk Sarees",
+      bg: "repeating-linear-gradient(135deg, #b8860b, #b8860b 10px, #996e00 10px, #996e00 20px)",
+      image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      id: 3,
+      text: "Special Festive Discount on All Sarees",
+      bg: "repeating-linear-gradient(135deg, #0d5c4d, #0d5c4d 10px, #084035 10px, #084035 20px)",
+      image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80"
+    }
   ]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [textPosition, setTextPosition] = useState<"top" | "middle" | "bottom">("middle");
@@ -826,7 +841,15 @@ export function PostComposer({
     setIsUploading(true);
     const reader = new FileReader();
     reader.onload = (event) => {
-      setImage(event.target.result);
+      const result = event.target.result;
+      setImage(result);
+      if (format === "story") {
+        setStorySlides((prev) => {
+          const next = [...prev];
+          if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: result };
+          return next;
+        });
+      }
       setIsUploading(false);
       showToast("Image added!");
     };
@@ -1060,6 +1083,13 @@ export function PostComposer({
         const genUrl = data.url || (Array.isArray(data.urls) && data.urls[0]) || data.image_url;
         if (genUrl) {
           setImage(genUrl);
+          if (format === "story") {
+            setStorySlides((prev) => {
+              const next = [...prev];
+              if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: genUrl };
+              return next;
+            });
+          }
           setIsAiGenModalOpen(false);
           // Auto-save generated image to library database
           try {
@@ -1093,7 +1123,15 @@ export function PostComposer({
       "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80"
     ];
-    setImage(presets[Math.floor(Math.random() * presets.length)]);
+    const chosenPreset = presets[activeSlideIndex % presets.length];
+    setImage(chosenPreset);
+    if (format === "story") {
+      setStorySlides((prev) => {
+        const next = [...prev];
+        if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: chosenPreset };
+        return next;
+      });
+    }
     setIsAiGenModalOpen(false);
     showToast("AI Image generated! ✨");
     setIsAiGenerating(false);
@@ -1686,6 +1724,10 @@ export function PostComposer({
                   </div>
 
                   {/* Story Phone Mockup (9:16 Aspect Ratio) */}
+                  {(() => {
+                    const activeSlide = storySlides[activeSlideIndex] || storySlides[0];
+                    const currentSlideImage = activeSlide?.image || "";
+                    return (
                   <div
                     style={{
                       position: "relative",
@@ -1695,9 +1737,9 @@ export function PostComposer({
                       overflow: "hidden",
                       border: "2.5px solid var(--border, #2a3628)",
                       boxShadow: "0 12px 32px rgba(23, 31, 22, 0.22)",
-                      background: image
-                        ? `url(${image}) center / cover no-repeat`
-                        : storySlides[activeSlideIndex]?.bg || "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)",
+                      background: currentSlideImage
+                        ? `url(${currentSlideImage}) center / cover no-repeat`
+                        : activeSlide?.bg || "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)",
                       display: "flex",
                       flexDirection: "column"
                     }}
@@ -1720,7 +1762,7 @@ export function PostComposer({
                     </div>
 
                     {/* Dark gradient overlay for legibility if photo is used */}
-                    {image && (
+                    {currentSlideImage && (
                       <div
                         style={{
                           position: "absolute",
@@ -1815,20 +1857,78 @@ export function PostComposer({
                         position: "absolute",
                         bottom: "8px",
                         left: "8px",
+                        right: "8px",
                         zIndex: 10,
                         display: "flex",
-                        gap: "4px"
+                        gap: "4px",
+                        justifyContent: "space-between"
                       }}
                     >
-                      <label
-                        title="Upload background image for story"
+                      <button
+                        type="button"
+                        disabled={isAiGenerating}
+                        onClick={handleGenerateAiImage}
+                        title="Generate AI image for this slide"
                         style={{
-                          background: "rgba(0,0,0,0.6)",
+                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "3px",
+                          background: "rgba(22, 33, 31, 0.82)",
                           color: "#ffffff",
                           fontSize: "11px",
                           fontWeight: 600,
-                          padding: "4px 8px",
+                          padding: "4px 6px",
                           borderRadius: "6px",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          cursor: isAiGenerating ? "wait" : "pointer",
+                          backdropFilter: "blur(4px)"
+                        }}
+                      >
+                        {ICONS.spark} AI Gen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchLibraryImages();
+                          setIsLibraryOpen(true);
+                        }}
+                        title="Choose saved image from database media library"
+                        style={{
+                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "3px",
+                          background: "rgba(22, 33, 31, 0.82)",
+                          color: "#ffffff",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "4px 6px",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          cursor: "pointer",
+                          backdropFilter: "blur(4px)"
+                        }}
+                      >
+                        {ICONS.grid} Library
+                      </button>
+                      <label
+                        title="Upload photo from device"
+                        style={{
+                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "3px",
+                          background: "rgba(22, 33, 31, 0.82)",
+                          color: "#ffffff",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "4px 6px",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(255,255,255,0.15)",
                           cursor: "pointer",
                           backdropFilter: "blur(4px)"
                         }}
@@ -1839,19 +1939,26 @@ export function PostComposer({
                           onChange={handleImageUpload}
                           style={{ display: "none" }}
                         />
-                        📷 {image ? "Change" : "Add Image"}
+                        {ICONS.upload} Upload
                       </label>
-                      {image && (
+                      {currentSlideImage && (
                         <button
                           type="button"
-                          onClick={() => setImage(null)}
+                          onClick={() => {
+                            setImage(null);
+                            setStorySlides((prev) => {
+                              const next = [...prev];
+                              if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: "" };
+                              return next;
+                            });
+                          }}
                           title="Remove image and use pattern"
                           style={{
-                            background: "rgba(180,35,24,0.7)",
+                            background: "rgba(180,35,24,0.75)",
                             color: "#ffffff",
                             fontSize: "11px",
                             fontWeight: 600,
-                            padding: "4px 8px",
+                            padding: "4px 6px",
                             borderRadius: "6px",
                             border: "none",
                             cursor: "pointer",
@@ -1863,6 +1970,8 @@ export function PostComposer({
                       )}
                     </div>
                   </div>
+                  );
+                  })()}
 
                   {/* Slides Row below Preview */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
@@ -2178,6 +2287,108 @@ export function PostComposer({
                     />
                   </div>
 
+                  {/* Slide Visual: AI Image Gen / Database Media Library / Upload */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--muted, #566054)" }}>
+                        Slide {activeSlideIndex + 1} Image
+                      </span>
+                      {storySlides[activeSlideIndex]?.image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImage(null);
+                            setStorySlides((prev) => {
+                              const next = [...prev];
+                              if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: "" };
+                              return next;
+                            });
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "rgba(220, 50, 50, 0.9)",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            padding: 0
+                          }}
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        disabled={isAiGenerating}
+                        onClick={handleGenerateAiImage}
+                        style={{
+                          flex: 1,
+                          minWidth: "125px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          border: "1.5px solid var(--primary, #2F6B2F)",
+                          background: "rgba(47, 107, 47, 0.12)",
+                          color: "var(--primary, #2F6B2F)",
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          cursor: isAiGenerating ? "wait" : "pointer"
+                        }}
+                      >
+                        {ICONS.spark} {isAiGenerating ? "Generating..." : "Generate with AI"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchLibraryImages();
+                          setIsLibraryOpen(true);
+                        }}
+                        style={{
+                          flex: 1,
+                          minWidth: "125px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border, #747d73)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #e6eee4)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {ICONS.grid} Media Library
+                      </button>
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border, #747d73)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #e6eee4)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                        {ICONS.upload} Upload
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Tone AI Quick Actions */}
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "var(--muted, #a1ae9e)" }}>
@@ -2304,48 +2515,23 @@ export function PostComposer({
                     Photo slides show for 5 seconds. Link sticker available when publishing to Instagram.
                   </span>
 
-                  {/* Publishing Time Selector (Now vs Schedule) */}
+                  {/* Scheduling Option (Subtle Toggle - No duplicate publish buttons!) */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid var(--border, #979a96)", paddingTop: "14px", marginTop: "8px" }}>
-                    <span style={{ fontSize: "13px", fontVariant: "all-small-caps", fontWeight: 600, color: "var(--muted, #a1ae9e)" }}>
-                      When to publish
-                    </span>
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => setWhen("now")}
-                        style={{
-                          flex: 1,
-                          minWidth: "120px",
-                          padding: "10px 14px",
-                          borderRadius: "10px",
-                          border: when === "now" ? "1.5px solid #2F6B2F" : "1px solid var(--border, #747d73)",
-                          background: when === "now" ? "#2F6B2F" : "var(--surface, #172016)",
-                          color: when === "now" ? "#ffffff" : "var(--ink, #e6eee4)",
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Publish now
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setWhen("schedule")}
-                        style={{
-                          flex: 1,
-                          minWidth: "120px",
-                          padding: "10px 14px",
-                          borderRadius: "10px",
-                          border: when === "schedule" ? "1.5px solid #2F6B2F" : "1px solid var(--border, #747d73)",
-                          background: when === "schedule" ? "#2F6B2F" : "var(--surface, #172016)",
-                          color: when === "schedule" ? "#ffffff" : "var(--ink, #e6eee4)",
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Schedule for later
-                      </button>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: "var(--ink, #171f16)" }}>
+                        <input
+                          type="checkbox"
+                          checked={when === "schedule"}
+                          onChange={(e) => setWhen(e.target.checked ? "schedule" : "now")}
+                          style={{ width: "16px", height: "16px", accentColor: "#2F6B2F", cursor: "pointer" }}
+                        />
+                        <span>Schedule for later</span>
+                      </label>
+                      {when === "schedule" && (
+                        <span style={{ fontSize: "12px", color: "var(--primary, #2F6B2F)", fontWeight: 600 }}>
+                          {formatDateTimeDisplay(scheduledDate, scheduledTime)}
+                        </span>
+                      )}
                     </div>
 
                     {when === "schedule" && (
@@ -3525,8 +3711,15 @@ export function PostComposer({
                   key={i}
                   onClick={() => {
                     setImage(imgUrl);
+                    if (format === "story") {
+                      setStorySlides((prev) => {
+                        const next = [...prev];
+                        if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: imgUrl };
+                        return next;
+                      });
+                    }
                     setIsLibraryOpen(false);
-                    showToast("Image selected from library!");
+                    showToast(format === "story" ? `Image applied to Slide ${activeSlideIndex + 1}! ✨` : "Image selected from library!");
                   }}
                   style={{
                     aspectRatio: "1 / 1",
