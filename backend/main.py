@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 # Reload trigger comment v4
 load_dotenv()
@@ -441,6 +441,7 @@ class CampaignPublishRequest(BaseModel):
     scheduled_time: Optional[str] = None  # ISO format string or None
     campaign_id: Optional[int] = None
     format: Optional[str] = "post"  # post, story, reel
+    slides: Optional[List[Dict[str, Any]]] = None
 
 @app.get("/api/meta/status")
 def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
@@ -650,14 +651,34 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
             print(f"DEBUG IG PUBLISH - image_url: {image_url}")
             print(f"DEBUG IG PUBLISH - access_token prefix: {account.access_token[:30]}")
-            ig_pub_req = InstagramPublishRequest(
-                ig_user_id=account.ig_user_id,
-                image_url=image_url,
-                caption="" if is_story else post_message,
-                access_token=account.access_token,
-                media_type="STORIES" if is_story else "IMAGE"
-            )
-            ig_res = publish_to_instagram(ig_pub_req)
+            if is_story and payload.slides and len(payload.slides) > 1:
+                # Multi-slide Story: Publish each slide sequentially to Instagram Stories
+                ig_slides_res = []
+                for s_idx, slide in enumerate(payload.slides):
+                    s_raw_img = slide.get("image_url") or slide.get("image") or image_url
+                    s_perm_img = save_permanent_asset_if_needed(s_raw_img)
+                    if s_perm_img and not s_perm_img.startswith("http"):
+                        s_perm_img = f"{public_backend_url.rstrip('/')}{s_perm_img}"
+                    print(f"DEBUG IG - Publishing Story Slide {s_idx + 1}/{len(payload.slides)}: {s_perm_img}")
+                    s_req = InstagramPublishRequest(
+                        ig_user_id=account.ig_user_id,
+                        image_url=s_perm_img,
+                        caption="",
+                        access_token=account.access_token,
+                        media_type="STORIES"
+                    )
+                    s_res = publish_to_instagram(s_req)
+                    ig_slides_res.append(s_res)
+                ig_res = {"status": "success", "slides": ig_slides_res}
+            else:
+                ig_pub_req = InstagramPublishRequest(
+                    ig_user_id=account.ig_user_id,
+                    image_url=image_url,
+                    caption="" if is_story else post_message,
+                    access_token=account.access_token,
+                    media_type="STORIES" if is_story else "IMAGE"
+                )
+                ig_res = publish_to_instagram(ig_pub_req)
             
         if campaign:
             campaign.status = "published"
