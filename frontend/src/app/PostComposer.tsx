@@ -587,14 +587,27 @@ export function PostComposer({
       const state = draft.state || draft;
       setCurrentDraftId(draft.id || state.id);
       
-      const cap = state.caption || state.generated_text || state.prompt;
-      if (cap) setCaption(cap);
+      const cap = state.caption || state.generated_text || state.prompt || "";
+      setCaption(cap);
       
-      const img = state.image_url || state.visual_suggestion || state.image;
-      if (img) setImage(img);
+      const rawImg = state.image_url || state.visual_suggestion || state.image;
+      if (typeof rawImg === 'string' && (rawImg.startsWith('http://') || rawImg.startsWith('https://') || rawImg.startsWith('/') || rawImg.startsWith('data:image/'))) {
+        setImage(rawImg);
+      } else {
+        setImage(null);
+      }
 
       if (state.format) setFormat(state.format);
-      if (state.category) setPostType(state.category);
+      
+      if (state.category) {
+        const rawCat = String(state.category).trim();
+        let norm = rawCat.toLowerCase().replace(/\s+/g, '_');
+        if (norm === 'promotions') norm = 'promotion';
+        const matched = CATEGORIES.find(c => c.id === norm || c.label.toLowerCase() === rawCat.toLowerCase() || c.id === rawCat);
+        if (matched) {
+          setPostType(matched.id);
+        }
+      }
       
       if (state.hashtags) {
         if (Array.isArray(state.hashtags)) setHashtags(state.hashtags);
@@ -606,6 +619,11 @@ export function PostComposer({
           } catch {
             setHashtags(state.hashtags.split(',').map((t) => t.trim()).filter(Boolean));
           }
+        }
+      } else if (cap) {
+        const extracted = cap.match(/#[a-zA-Z0-9_]+/g);
+        if (extracted && extracted.length > 0) {
+          setHashtags(extracted.map(t => t.replace(/^#/, '')));
         }
       }
 
@@ -621,10 +639,10 @@ export function PostComposer({
               const y = dt.getFullYear();
               const m = String(dt.getMonth() + 1).padStart(2, '0');
               const d = String(dt.getDate()).padStart(2, '0');
-              setScheduledDate();
+              setScheduledDate(`${y}-${m}-${d}`);
               const hh = String(dt.getHours()).padStart(2, '0');
               const mm = String(dt.getMinutes()).padStart(2, '0');
-              setScheduledTime();
+              setScheduledTime(`${hh}:${mm}`);
               setWhen("schedule");
             }
           } catch (e) {}

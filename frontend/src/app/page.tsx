@@ -6661,6 +6661,7 @@ function LandingPage({ onGetStarted, onLogin }: { onGetStarted: () => void, onLo
 function CalendarTab({
   onSelectCampaign,
   onEditCampaign,
+  onCampaignsChange,
   onNavigateToTab,
   onSelectDate,
   onSelectHoliday,
@@ -6670,6 +6671,7 @@ function CalendarTab({
 }: {
   onSelectCampaign?: (campaign: any) => void;
   onEditCampaign?: (campaign: any) => void;
+  onCampaignsChange?: () => void;
   onNavigateToTab?: (tab: string) => void;
   onSelectDate?: (dateStr: string) => void;
   onSelectHoliday?: (event: any, dateStr: string) => void;
@@ -6809,6 +6811,7 @@ function CalendarTab({
           alert('Post published successfully to Meta!');
         }
         await fetchCampaigns();
+        onCampaignsChange?.();
       } else {
         const errMsg = data.detail || data.message || 'Failed to publish post. Please verify your Meta connection in Settings.';
         if (typeof window !== 'undefined' && (window as any).showNotification) {
@@ -6817,6 +6820,7 @@ function CalendarTab({
           alert(errMsg);
         }
         await fetchCampaigns();
+        onCampaignsChange?.();
       }
     } catch (e: any) {
       console.error('Error posting now:', e);
@@ -6838,7 +6842,8 @@ function CalendarTab({
         method: 'DELETE'
       });
       if (res.ok) {
-        fetchCampaigns();
+        await fetchCampaigns();
+        onCampaignsChange?.();
       }
     } catch (e) {
       console.error(e);
@@ -7986,7 +7991,13 @@ function CalendarTab({
               {unscheduledDrafts.map((draft) => (
                 <div
                   key={draft.id}
-                  onClick={() => onSelectCampaign?.(draft)}
+                  onClick={() => {
+                    if (onEditCampaign) {
+                      onEditCampaign(draft);
+                    } else {
+                      onSelectCampaign?.(draft);
+                    }
+                  }}
                   style={{
                     background: 'rgba(0, 0, 0, 0.3)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -10742,6 +10753,9 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
       setCalendarSubTab(sub);
     }
     setActiveTab(resolvedTab);
+    if (resolvedTab === 'home') {
+      fetchDashboardData();
+    }
     if (typeof window !== 'undefined') {
       localStorage.setItem('activeTab', resolvedTab);
       const url = new URL(window.location.href);
@@ -11531,8 +11545,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
               handleTabChange('create');
             }}
             onEditDraft={(draft) => {
-              setComposerInitParams({ mode: 'draft', draft, ts: Date.now() });
-              handleTabChange('create');
+              handleEditCampaign(draft);
             }}
             onOpenCalendar={(subTab) => {
               handleTabChange('calendar', subTab);
@@ -11557,6 +11570,7 @@ function MainDashboard({ onGoHome, onLogout }: { onGoHome?: () => void, onLogout
             onSubTabChange={setCalendarSubTab}
             onNavigateToTab={(tab) => handleTabChange(tab)}
             onEditCampaign={handleEditCampaign}
+            onCampaignsChange={fetchDashboardData}
             onSelectDate={(dateStr) => {
               setComposerInitParams({ mode: 'calendar_date', date: dateStr, ts: Date.now() });
               handleTabChange('create');
