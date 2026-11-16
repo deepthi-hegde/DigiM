@@ -691,3 +691,70 @@ def test_meta_instagram_story_publishing_pipeline(monkeypatch):
     assert captured_ig_req[0].caption == ""
 
     app.dependency_overrides.clear()
+
+
+def test_meta_instagram_reel_publishing_pipeline(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount
+    from db.database import get_db
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    t = Tenant(id=30, name="Kanchipuram Silks", email="kanchi@test.com")
+    m = MetaAccount(tenant_id=30, page_id="fb_page_30", page_name="Kanchi Page", access_token="tok_meta_30", ig_user_id="ig_kanchi_30")
+    db.add(t)
+    db.add(m)
+    db.commit()
+
+    captured_ig_req = []
+    captured_fb_req = []
+    def mock_publish_to_instagram(req):
+        captured_ig_req.append(req)
+        return {"id": "reel_ig_container_999"}
+
+    def mock_publish_to_facebook(req):
+        captured_fb_req.append(req)
+        return {"id": "reel_fb_video_999"}
+
+    monkeypatch.setattr("main.publish_to_facebook", mock_publish_to_facebook)
+    monkeypatch.setattr("api.meta.publish_to_instagram", mock_publish_to_instagram)
+
+    reel_payload = {
+        "message": "Watch our artisans weave pure Kanchipuram silk ✨",
+        "video_url": "https://example.com/saree_craft_reel.mp4",
+        "cover_url": "https://example.com/saree_cover.jpg",
+        "format": "reel",
+        "publish_to_instagram": True,
+        "publish_to_facebook": True,
+        "tenant_id": 30
+    }
+
+    res = client.post("/api/campaign/publish", json=reel_payload)
+    assert res.status_code == 200
+    assert res.json()["status"] == "success"
+    assert len(captured_ig_req) == 1
+    # Verify reels media_type, caption and video_url passed to Meta
+    assert captured_ig_req[0].media_type == "REELS"
+    assert captured_ig_req[0].video_url == "https://example.com/saree_craft_reel.mp4"
+    assert captured_ig_req[0].cover_url == "https://example.com/saree_cover.jpg"
+    assert "pure Kanchipuram silk" in captured_ig_req[0].caption
+
+    # Verify Facebook received video_url
+    assert len(captured_fb_req) == 1
+    assert captured_fb_req[0].video_url == "https://example.com/saree_craft_reel.mp4"
+
+    app.dependency_overrides.clear()

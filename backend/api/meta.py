@@ -16,13 +16,16 @@ class PublishRequest(BaseModel):
     message: str
     access_token: str
     image_url: Optional[str] = None  # Optional image to post
+    video_url: Optional[str] = None  # Optional video for Reels or video posts
 
 class InstagramPublishRequest(BaseModel):
     ig_user_id: str
-    image_url: str
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
     caption: Optional[str] = ""
     access_token: str
-    media_type: Optional[str] = "IMAGE"  # "IMAGE", "STORIES", "REELS" 
+    media_type: Optional[str] = "IMAGE"  # "IMAGE", "STORIES", "REELS"
+    cover_url: Optional[str] = None
 
 class ConnectMetaRequest(BaseModel):
     tenant_id: int  # In a real app, infer this from a secure JWT backend token
@@ -227,10 +230,18 @@ def get_instagram_accounts(page_id: str, access_token: str):
 @router.post("/publish/facebook")
 def publish_to_facebook(payload: PublishRequest):
     """
-    Publish a post (text or photo) to a Facebook Page.
+    Publish a post (text, photo, or video/reel) to a Facebook Page.
     Requires 'pages_manage_posts' permission.
     """
-    if payload.image_url:
+    if payload.video_url:
+        # Post a video or Reel to Facebook Page
+        url = f"{META_GRAPH_URL}/{payload.page_id}/videos"
+        data = {
+            "file_url": payload.video_url,
+            "description": payload.message,
+            "access_token": payload.access_token
+        }
+    elif payload.image_url:
         # Post a photo with a caption
         url = f"{META_GRAPH_URL}/{payload.page_id}/photos"
         data = {
@@ -273,6 +284,16 @@ def publish_to_instagram(payload: InstagramPublishRequest):
             "media_type": "STORIES",
             "access_token": payload.access_token
         }
+    elif req_media_type in ["REELS", "REEL"]:
+        media_data = {
+            "media_type": "REELS",
+            "video_url": payload.video_url or payload.image_url,
+            "caption": payload.caption or "",
+            "access_token": payload.access_token,
+            "share_to_feed": True
+        }
+        if payload.cover_url:
+            media_data["cover_url"] = payload.cover_url
     else:
         media_data = {
             "image_url": payload.image_url,
@@ -287,9 +308,9 @@ def publish_to_instagram(payload: InstagramPublishRequest):
     creation_id = media_response.json().get("id")
     print(f"DEBUG IG - Media container created: {creation_id}")
 
-    # Step 1.5: Poll until the container status is FINISHED (up to 30 seconds)
+    # Step 1.5: Poll until the container status is FINISHED (up to 45 seconds for video transcoding)
     status_url = f"{META_GRAPH_URL}/{creation_id}"
-    max_attempts = 10
+    max_attempts = 15 if req_media_type in ["REELS", "REEL"] else 10
     for attempt in range(max_attempts):
         status_res = requests.get(status_url, params={
             "fields": "status_code",

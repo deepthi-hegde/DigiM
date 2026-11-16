@@ -433,6 +433,8 @@ class CampaignPublishRequest(BaseModel):
     message: Optional[str] = None
     caption: Optional[str] = None
     image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    cover_url: Optional[str] = None
     publish_to_instagram: bool = False
     publish_instagram: Optional[bool] = None
     publish_facebook: Optional[bool] = True
@@ -498,7 +500,8 @@ def get_meta_status(tenant_id: int = 1, db: Session = Depends(get_db)):
 def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_db)):
     post_format = (payload.format or "post").lower()
     is_story = post_format in ["story", "stories"]
-    post_message = payload.message or payload.caption or ("Story" if is_story else "")
+    is_reel = post_format in ["reel", "reels"]
+    post_message = payload.message or payload.caption or ("Story" if is_story else ("Reel" if is_reel else ""))
     if not post_message and not is_story:
         raise HTTPException(status_code=400, detail="Post message cannot be empty")
 
@@ -636,7 +639,8 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
                 page_id=account.page_id,
                 message=post_message,
                 access_token=account.access_token,
-                image_url=image_url
+                image_url=image_url,
+                video_url=payload.video_url
             )
             fb_res = publish_to_facebook(pub_req)
         
@@ -644,8 +648,8 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
         if pub_ig:
             if not account.ig_user_id:
                 raise HTTPException(status_code=400, detail="No Instagram account linked to this Facebook Page")
-            if not image_url:
-                raise HTTPException(status_code=400, detail="Instagram publishing requires an image")
+            if not image_url and not payload.video_url:
+                raise HTTPException(status_code=400, detail="Instagram publishing requires an image or video")
                 
             from api.meta import publish_to_instagram, InstagramPublishRequest
             print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
@@ -670,6 +674,17 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
                     s_res = publish_to_instagram(s_req)
                     ig_slides_res.append(s_res)
                 ig_res = {"status": "success", "slides": ig_slides_res}
+            elif is_reel:
+                ig_pub_req = InstagramPublishRequest(
+                    ig_user_id=account.ig_user_id,
+                    video_url=payload.video_url or image_url,
+                    image_url=image_url,
+                    cover_url=payload.cover_url,
+                    caption=post_message,
+                    access_token=account.access_token,
+                    media_type="REELS"
+                )
+                ig_res = publish_to_instagram(ig_pub_req)
             else:
                 ig_pub_req = InstagramPublishRequest(
                     ig_user_id=account.ig_user_id,
@@ -1438,12 +1453,14 @@ def execute_scheduled_campaign(campaign_id: int, db: Session):
             if account.ig_user_id and image_url:
                 from api.meta import publish_to_instagram, InstagramPublishRequest
                 is_story_sched = (getattr(post, "format", "post") or "post").lower() in ["story", "stories"]
+                is_reel_sched = (getattr(post, "format", "post") or "post").lower() in ["reel", "reels"]
                 ig_pub_req = InstagramPublishRequest(
                     ig_user_id=account.ig_user_id,
                     image_url=image_url,
+                    video_url=image_url if is_reel_sched else None,
                     caption="" if is_story_sched else post.generated_text,
                     access_token=account.access_token,
-                    media_type="STORIES" if is_story_sched else "IMAGE"
+                    media_type="REELS" if is_reel_sched else ("STORIES" if is_story_sched else "IMAGE")
                 )
                 ig_res = publish_to_instagram(ig_pub_req)
             else:

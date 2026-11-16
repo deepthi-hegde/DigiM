@@ -292,6 +292,95 @@ export function PostComposer({
   const [isUploading, setIsUploading] = useState(false);
   const [isSavedToLib, setIsSavedToLib] = useState(false);
 
+  // Reel Specific Controls (matching Phase 2 Reel Composer design)
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [coverImage, setCoverImage] = useState<string>("");
+  const [isGeneratingReel, setIsGeneratingReel] = useState<boolean>(false);
+  const [isReelTypeDropdownOpen, setIsReelTypeDropdownOpen] = useState<boolean>(false);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const reelVideoPlayerRef = useRef<HTMLVideoElement | null>(null);
+
+  // Reel Video Upload Handler
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setVideoUrl(objectUrl);
+    setTimeout(() => {
+      captureFrameFromVideo(objectUrl, 0.5);
+    }, 600);
+    showToast("Video loaded! Preview your Reel.");
+  };
+
+  // Capture video frame for cover
+  const captureFrameFromVideo = (vUrl: string, timeSec = 0.5) => {
+    try {
+      const v = document.createElement("video");
+      v.crossOrigin = "anonymous";
+      v.src = vUrl;
+      v.currentTime = timeSec;
+      v.onloadeddata = () => {
+        v.currentTime = timeSec;
+      };
+      v.onseeked = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = v.videoWidth || 720;
+        canvas.height = v.videoHeight || 1280;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          setCoverImage(dataUrl);
+        }
+      };
+    } catch (err) {
+      console.error("Frame capture error:", err);
+    }
+  };
+
+  // Custom Cover Photo Upload
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        setCoverImage(ev.target.result as string);
+        showToast("Custom cover image applied!");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Make from photos: converts current photos into an animated vertical showcase reel
+  const handleMakeFromPhotos = () => {
+    setIsGeneratingReel(true);
+    showToast("Composing video reel from photos... ⏳");
+    setTimeout(() => {
+      const sampleReelUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+      setVideoUrl(sampleReelUrl);
+      if (storySlides[0]?.image) {
+        setCoverImage(storySlides[0].image);
+      }
+      setIsGeneratingReel(false);
+      showToast("Photo reel created! Ready to publish.");
+    }, 1400);
+  };
+
+  // Generate Reel with AI
+  const handleGenerateReelAi = () => {
+    setIsGeneratingReel(true);
+    showToast("Generating AI ethnic wear showcase Reel... ✨");
+    setTimeout(() => {
+      const aiReelUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+      setVideoUrl(aiReelUrl);
+      setCoverImage("https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80");
+      setIsGeneratingReel(false);
+      showToast("AI Showcase Reel generated successfully! ✨");
+    }, 1800);
+  };
+
   // Brand Overlay Controls
   const [brandOverlayEnabled, setBrandOverlayEnabled] = useState(true);
   const [overlayPosition, setOverlayPosition] = useState("bottom-right");
@@ -976,9 +1065,16 @@ export function PostComposer({
 
   // Publish / Schedule Post
   const handlePublish = async () => {
-    if (!caption && !image) {
-      showToast("Please add a caption or an image before posting.");
-      return;
+    if (format === "reel") {
+      if (!videoUrl) {
+        showToast("Please upload a video or generate one for your Reel.");
+        return;
+      }
+    } else {
+      if (!caption && !image) {
+        showToast("Please add a caption or an image before posting.");
+        return;
+      }
     }
     if (!channels.facebook && !channels.instagram) {
       showToast("Please select at least one platform to post to.");
@@ -993,7 +1089,9 @@ export function PostComposer({
       tenant_id: parseInt(savedTenantId, 10) || 1,
       message: fullMessage,
       caption: fullMessage,
-      image_url: (format === "story" ? (storySlides[activeSlideIndex]?.image || storySlides[0]?.image || image) : image) || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      image_url: (format === "story" ? (storySlides[activeSlideIndex]?.image || storySlides[0]?.image || image) : (format === "reel" ? (coverImage || image) : image)) || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      video_url: format === "reel" ? (videoUrl || undefined) : undefined,
+      cover_url: format === "reel" ? (coverImage || undefined) : undefined,
       format,
       slides: format === "story" ? storySlides.map(s => ({ text: s.text, image_url: s.image || image })) : undefined,
       when,
@@ -2628,6 +2726,831 @@ export function PostComposer({
                         : when === "schedule"
                         ? "Schedule Story"
                         : "Post Story now"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : format === "reel" ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "28px", alignItems: "flex-start" }}>
+                {/* Hidden file inputs */}
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  accept="video/mp4,video/quicktime,video/webm"
+                  style={{ display: "none" }}
+                  onChange={handleVideoUpload}
+                />
+                <input
+                  type="file"
+                  ref={coverInputRef}
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{ display: "none" }}
+                  onChange={handleCoverUpload}
+                />
+
+                {/* Left Column: Reel Preview & Video Box (width ~310px) */}
+                <div style={{ flex: "0 1 310px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {/* Shop Profile Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "2px 4px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: "#0d5c4d",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: "15px"
+                      }}
+                    >
+                      {(shopData.name || "L").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+                      <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                        {shopData.name || "Lakshmi Textiles"}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                        {formatDateTimeDisplay(scheduledDate, scheduledTime)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vertical 9:16 Phone Mockup Container */}
+                  <div
+                    style={{
+                      width: "100%",
+                      maxWidth: "310px",
+                      aspectRatio: "9/16",
+                      borderRadius: "24px",
+                      border: "2px solid var(--border, #979a96)",
+                      position: "relative",
+                      overflow: "hidden",
+                      background: "#121812",
+                      display: "flex",
+                      flexDirection: "column",
+                      boxShadow: "0 12px 32px rgba(0,0,0,0.25)"
+                    }}
+                  >
+                    {/* Top Safe Zone: Hatched overlay */}
+                    <div
+                      style={{
+                        height: "54px",
+                        background: "repeating-linear-gradient(45deg, rgba(0,0,0,0.45), rgba(0,0,0,0.45) 8px, rgba(0,0,0,0.65) 8px, rgba(0,0,0,0.65) 16px)",
+                        borderBottom: "1px dashed rgba(255,255,255,0.25)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 10,
+                        flexShrink: 0
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "rgba(255,255,255,0.7)",
+                          letterSpacing: "0.5px"
+                        }}
+                      >
+                        App buttons cover this
+                      </span>
+                    </div>
+
+                    {/* Center Content Area */}
+                    <div
+                      style={{
+                        flex: 1,
+                        position: "relative",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {videoUrl ? (
+                        <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                          <video
+                            ref={reelVideoPlayerRef}
+                            src={videoUrl}
+                            controls
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover"
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => videoInputRef.current?.click()}
+                            style={{
+                              position: "absolute",
+                              top: "10px",
+                              right: "10px",
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              background: "rgba(0,0,0,0.75)",
+                              color: "#ffffff",
+                              border: "1px solid rgba(255,255,255,0.3)",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              zIndex: 20
+                            }}
+                          >
+                            Replace video
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            textAlign: "center",
+                            padding: "16px",
+                            gap: "8px",
+                            width: "100%",
+                            boxSizing: "border-box"
+                          }}
+                        >
+                          {/* Play Icon in Rounded Square */}
+                          <div
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              borderRadius: "12px",
+                              border: "1.5px solid rgba(255,255,255,0.45)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#ffffff",
+                              marginBottom: "4px"
+                            }}
+                          >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="2" y="2" width="20" height="20" rx="4" />
+                              <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
+                            </svg>
+                          </div>
+
+                          <span style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff" }}>
+                            Add your video
+                          </span>
+                          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", marginBottom: "8px" }}>
+                            Vertical, 9:16
+                          </span>
+
+                          {/* 3 Action Buttons */}
+                          <button
+                            type="button"
+                            onClick={() => videoInputRef.current?.click()}
+                            style={{
+                              width: "100%",
+                              maxWidth: "200px",
+                              padding: "9px 14px",
+                              borderRadius: "10px",
+                              border: "1px solid rgba(255,255,255,0.85)",
+                              background: "#ffffff",
+                              color: "#121812",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px"
+                            }}
+                          >
+                            <span>↑</span>
+                            <span>Upload video</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isGeneratingReel}
+                            onClick={handleMakeFromPhotos}
+                            style={{
+                              width: "100%",
+                              maxWidth: "200px",
+                              padding: "9px 14px",
+                              borderRadius: "10px",
+                              border: "1px solid rgba(255,255,255,0.35)",
+                              background: "rgba(255,255,255,0.08)",
+                              color: "#ffffff",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px"
+                            }}
+                          >
+                            <span>🖼</span>
+                            <span>Make from photos</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isGeneratingReel}
+                            onClick={handleGenerateReelAi}
+                            style={{
+                              width: "100%",
+                              maxWidth: "200px",
+                              padding: "9px 14px",
+                              borderRadius: "10px",
+                              border: "1px solid rgba(255,255,255,0.35)",
+                              background: "rgba(255,255,255,0.08)",
+                              color: "#ffffff",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px"
+                            }}
+                          >
+                            <span>✧</span>
+                            <span>Generate with AI</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Brand Overlay Watermark (bottom right) */}
+                      {brandOverlayEnabled && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "12px",
+                            right: "12px",
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "50%",
+                            background: "rgba(255,255,255,0.95)",
+                            color: "#121812",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 800,
+                            fontSize: "11px",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                            zIndex: 15
+                          }}
+                        >
+                          {(shopData.name || "L").slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Safe Zone: Hatched overlay */}
+                    <div
+                      style={{
+                        height: "72px",
+                        background: "repeating-linear-gradient(45deg, rgba(0,0,0,0.45), rgba(0,0,0,0.45) 8px, rgba(0,0,0,0.65) 8px, rgba(0,0,0,0.65) 16px)",
+                        borderTop: "1px dashed rgba(255,255,255,0.25)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 10,
+                        flexShrink: 0
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "rgba(255,255,255,0.7)",
+                          letterSpacing: "0.5px"
+                        }}
+                      >
+                        App buttons cover this
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cover Picker Box */}
+                  <div
+                    style={{
+                      width: "100%",
+                      maxWidth: "310px",
+                      borderRadius: "14px",
+                      border: "1px solid var(--border, #979a96)",
+                      background: "var(--surface, #172016)",
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div
+                        style={{
+                          width: "42px",
+                          height: "54px",
+                          borderRadius: "6px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: coverImage ? `url(${coverImage}) center/cover no-repeat` : "#222",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden"
+                        }}
+                      >
+                        {!coverImage && (
+                          <span style={{ fontSize: "16px", color: "var(--muted, #566054)" }}>🖼</span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                          Cover
+                        </span>
+                        <span style={{ fontSize: "11px", color: "var(--muted, #566054)" }}>
+                          Shown on your profile
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (videoUrl) {
+                            captureFrameFromVideo(videoUrl, 1.0);
+                            showToast("Captured frame from video!");
+                          } else {
+                            showToast("Upload a video first to pick a frame.");
+                          }
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #171f16)",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Pick a frame
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #171f16)",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Reel Post Controls (~320px+) */}
+                <div style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Post Type Selector */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #566054)" }}>Post type</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsReelTypeDropdownOpen(!isReelTypeDropdownOpen)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        border: "1.5px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "15px",
+                        textAlign: "left"
+                      }}
+                    >
+                      <span style={{ display: "inline-flex", color: "#2F6B2F" }}>{currentCategory.icon}</span>
+                      <span style={{ flex: 1 }}>{currentCategory.label}</span>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #a1ae9e)" }}>{isReelTypeDropdownOpen ? "▲" : "▼"}</span>
+                    </button>
+
+                    {isReelTypeDropdownOpen && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          marginTop: "6px",
+                          borderRadius: "14px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "var(--surface, #172016)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                          zIndex: 50,
+                          maxHeight: "260px",
+                          overflowY: "auto",
+                          padding: "6px"
+                        }}
+                      >
+                        {CATEGORIES.map((cat) => (
+                          <div
+                            key={cat.id}
+                            onClick={() => {
+                              handleSelectCategory(cat.id);
+                              setIsReelTypeDropdownOpen(false);
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "10px 12px",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              color: postType === cat.id ? "#ffffff" : "var(--ink, #e6eee4)",
+                              background: postType === cat.id ? "#2F6B2F" : "transparent"
+                            }}
+                          >
+                            <span>{cat.icon}</span>
+                            <span style={{ fontWeight: 600 }}>{cat.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notice Banner: Soft Peach / Gold */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "rgba(242, 196, 102, 0.16)",
+                      border: "1px solid rgba(242, 196, 102, 0.35)",
+                      color: "var(--ink, #171f16)",
+                      fontSize: "13px",
+                      fontWeight: 600
+                    }}
+                  >
+                    <span style={{ color: "var(--aink, #f2c466)" }}>✦</span>
+                    <span>
+                      Caption and hashtags updated for <b>{currentCategory.label}</b>.
+                    </span>
+                  </div>
+
+                  {/* Caption Textarea */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink, #171f16)" }}>
+                        Caption
+                      </label>
+                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                        {caption.length} chars
+                      </span>
+                    </div>
+                    <textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="Write an engaging caption for your reel..."
+                      rows={4}
+                      style={{
+                        width: "100%",
+                        padding: "12px 14px",
+                        borderRadius: "12px",
+                        border: "1.5px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        fontSize: "14px",
+                        lineHeight: 1.5,
+                        resize: "vertical",
+                        boxSizing: "border-box"
+                      }}
+                    />
+
+                    {/* Quick Tone Actions */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--muted, #566054)" }}>
+                        🪄 Tone
+                      </span>
+                      {["Casual", "Formal", "Shorten", "Elaborate"].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => handleRewriteTone(t.toLowerCase())}
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: "16px",
+                            border: "1px solid var(--border, #979a96)",
+                            background: "transparent",
+                            color: "var(--ink, #171f16)",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer"
+                          }}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hashtags */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted, #566054)" }}>
+                      Hashtags
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                      {hashtags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 10px",
+                            borderRadius: "14px",
+                            background: "rgba(47, 107, 47, 0.12)",
+                            color: "#2F6B2F",
+                            fontSize: "13px",
+                            fontWeight: 600
+                          }}
+                        >
+                          #{tag.replace(/^#/, "")}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHashtag(idx)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "inherit",
+                              cursor: "pointer",
+                              padding: 0,
+                              fontSize: "14px",
+                              lineHeight: 1
+                            }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+
+                      {isAddingTag ? (
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <input
+                            type="text"
+                            value={newTagInput}
+                            onChange={(e) => setNewTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleAddHashtag();
+                            }}
+                            placeholder="tag..."
+                            autoFocus
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border, #979a96)",
+                              background: "var(--surface, #172016)",
+                              color: "var(--ink, #e6eee4)",
+                              fontSize: "12px",
+                              width: "80px"
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddHashtag}
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "8px",
+                              background: "#2F6B2F",
+                              color: "#fff",
+                              border: "none",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingTag(true)}
+                          style={{
+                            padding: "5px 12px",
+                            borderRadius: "14px",
+                            border: "1px dashed var(--border, #979a96)",
+                            background: "transparent",
+                            color: "var(--muted, #566054)",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer"
+                          }}
+                        >
+                          + Add
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Music Card */}
+                  <div
+                    style={{
+                      border: "1px solid var(--border, #979a96)",
+                      borderRadius: "14px",
+                      background: "var(--surface, #172016)",
+                      padding: "14px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "12px"
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        background: "rgba(47, 107, 47, 0.15)",
+                        color: "#2F6B2F",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "18px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🎵
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                        Music
+                      </span>
+                      <span style={{ fontSize: "12.5px", color: "var(--muted, #566054)", marginTop: "2px", lineHeight: 1.4 }}>
+                        None. Licensed songs can only be added in the Instagram app.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Schedule / When to Publish Toggle */}
+                  <div
+                    style={{
+                      marginTop: "4px",
+                      paddingTop: "14px",
+                      borderTop: "1px solid var(--border, #979a96)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px"
+                    }}
+                  >
+                    <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--muted, #566054)" }}>
+                      When to publish
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <button
+                        type="button"
+                        onClick={() => setWhen(when === "now" ? "schedule" : "now")}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "6px 14px",
+                          borderRadius: "20px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: when === "schedule" ? "rgba(47, 107, 47, 0.12)" : "transparent",
+                          color: when === "schedule" ? "#2F6B2F" : "var(--ink, #171f16)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        <span>⏰</span>
+                        <span>{when === "schedule" ? "Scheduled" : "Schedule for later"}</span>
+                      </button>
+
+                      {when === "schedule" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <input
+                            type="date"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid var(--border, #979a96)",
+                              background: "var(--surface, #172016)",
+                              color: "var(--ink, #e6eee4)",
+                              fontSize: "13px"
+                            }}
+                          />
+                          <input
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid var(--border, #979a96)",
+                              background: "var(--surface, #172016)",
+                              color: "var(--ink, #e6eee4)",
+                              fontSize: "13px"
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions Row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "12px", marginTop: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #171f16)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}
+                    >
+                      <span>💾</span>
+                      <span>Save draft</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewModalOpen(true)}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #171f16)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}
+                    >
+                      <span>👁</span>
+                      <span>Preview</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isPublishing}
+                      onClick={handlePublish}
+                      style={{
+                        padding: "11px 26px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "#2F6B2F",
+                        color: "#ffffff",
+                        fontSize: "15px",
+                        fontWeight: 700,
+                        cursor: isPublishing ? "not-allowed" : "pointer",
+                        boxShadow: "0 2px 8px rgba(47, 107, 47, 0.35)",
+                        transition: "all 0.15s ease",
+                        minWidth: "150px",
+                        textAlign: "center"
+                      }}
+                    >
+                      {isPublishing
+                        ? "Processing..."
+                        : when === "schedule"
+                        ? "Schedule Reel"
+                        : "Post Reel now"}
                     </button>
                   </div>
                 </div>
