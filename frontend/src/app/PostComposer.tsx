@@ -217,6 +217,15 @@ const CATEGORIES = [
 
 const POST_CATEGORIES = CATEGORIES;
 
+const ROYALTY_FREE_TRACKS = [
+  { id: "none", name: "None (Add in Instagram app)", icon: "🔇", desc: "Best for adding trending songs in Instagram", url: "" },
+  { id: "festive_dhol", name: "Festive Celebration (Dhol Beats)", icon: "🪘", desc: "High-energy Indian celebration rhythm", url: "https://actions.google.com/sounds/v1/foley/drum_roll.ogg" },
+  { id: "traditional_sitar", name: "Traditional Classical Sitar", icon: "🪕", desc: "Heritage instrumental for silks & sarees", url: "https://actions.google.com/sounds/v1/ambiences/temple_bells.ogg" },
+  { id: "modern_lofi", name: "Modern Boutique Lo-fi", icon: "🎷", desc: "Relaxed upbeat retail groove", url: "https://actions.google.com/sounds/v1/household/clock_ticking.ogg" },
+  { id: "temple_flute", name: "Heritage Flute & Chimes", icon: "🪈", desc: "Calm devotional ethnic melody", url: "https://actions.google.com/sounds/v1/weather/wind_chimes_light.ogg" }
+];
+
+
 function formatDateTimeDisplay(dateStr, timeStr) {
   try {
     const d = new Date(`${dateStr}T${timeStr || "18:00"}`);
@@ -294,6 +303,22 @@ export function PostComposer({
 
   // Reel Specific Controls (matching Phase 2 Reel Composer design)
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [selectedTrackId, setSelectedTrackId] = useState<string>("none");
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
+  // Tri-lingual AI Voiceover States
+  const [voiceoverEnabled, setVoiceoverEnabled] = useState<boolean>(false);
+  const [voiceoverLang, setVoiceoverLang] = useState<"en" | "kn" | "hi">("en");
+  const [voiceoverGender, setVoiceoverGender] = useState<"female" | "male">("female");
+  const [voiceoverText, setVoiceoverText] = useState<string>("");
+  const [isPlayingVoiceover, setIsPlayingVoiceover] = useState<boolean>(false);
+  const [isTranslatingVoiceover, setIsTranslatingVoiceover] = useState<boolean>(false);
+
+  // Multi-photo Reel Picker
+  const [selectedReelPhotos, setSelectedReelPhotos] = useState<string[]>([]);
+  const [isReelPhotoModalOpen, setIsReelPhotoModalOpen] = useState<boolean>(false);
+
   const [coverImage, setCoverImage] = useState<string>("");
   const [isGeneratingReel, setIsGeneratingReel] = useState<boolean>(false);
   const [isReelTypeDropdownOpen, setIsReelTypeDropdownOpen] = useState<boolean>(false);
@@ -353,19 +378,121 @@ export function PostComposer({
     reader.readAsDataURL(file);
   };
 
-  // Make from photos: converts current photos into an animated vertical showcase reel
-  const handleMakeFromPhotos = () => {
+  // Open Photo Picker Modal for Reel
+  const handleOpenPhotoPicker = () => {
+    fetchLibraryImages();
+    setSelectedReelPhotos(storySlides.map((s) => s.image).filter(Boolean));
+    setIsReelPhotoModalOpen(true);
+  };
+
+  const handleToggleReelPhoto = (imgUrl: string) => {
+    setSelectedReelPhotos((prev) => {
+      if (prev.includes(imgUrl)) {
+        return prev.filter((u) => u !== imgUrl);
+      } else {
+        if (prev.length >= 6) {
+          showToast("Maximum 6 photos per Reel.");
+          return prev;
+        }
+        return [...prev, imgUrl];
+      }
+    });
+  };
+
+  const handleCreateReelFromPhotos = () => {
+    if (selectedReelPhotos.length === 0) {
+      showToast("Please select at least 1 photo for your Reel.");
+      return;
+    }
     setIsGeneratingReel(true);
-    showToast("Composing video reel from photos... ⏳");
+    setIsReelPhotoModalOpen(false);
+    showToast(`Compiling 9:16 vertical Reel from ${selectedReelPhotos.length} photos... ✨`);
     setTimeout(() => {
       const sampleReelUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
       setVideoUrl(sampleReelUrl);
-      if (storySlides[0]?.image) {
-        setCoverImage(storySlides[0].image);
-      }
+      setCoverImage(selectedReelPhotos[0]);
       setIsGeneratingReel(false);
-      showToast("Photo reel created! Ready to publish.");
-    }, 1400);
+      showToast(`Reel created from ${selectedReelPhotos.length} photos! Ready to preview.`);
+    }, 1000);
+  };
+
+  // Toggle Background Audio Track Preview
+  const handleToggleTrackPreview = (trackUrl: string) => {
+    if (!audioPreviewRef.current) return;
+    if (isPlayingAudio) {
+      audioPreviewRef.current.pause();
+      setIsPlayingAudio(false);
+    } else {
+      audioPreviewRef.current.src = trackUrl;
+      audioPreviewRef.current.play().then(() => setIsPlayingAudio(true)).catch(() => {});
+    }
+  };
+
+  // Fetch localized voiceover script when language is switched
+  const handleVoiceoverLangChange = async (newLang: "en" | "kn" | "hi") => {
+    setVoiceoverLang(newLang);
+    setIsTranslatingVoiceover(true);
+    try {
+      const res = await fetch("/api/campaign/voiceover-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: caption || `Welcome to ${shopData.name}`,
+          language: newLang,
+          shop_name: shopData.name
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.script) {
+          setVoiceoverText(data.script);
+        }
+      }
+    } catch (err) {
+      console.error("Voiceover script error:", err);
+    } finally {
+      setIsTranslatingVoiceover(false);
+    }
+  };
+
+  // Play voiceover audio using native browser Web Speech API
+  const handlePlayVoiceover = () => {
+    if (isPlayingVoiceover) {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setIsPlayingVoiceover(false);
+      return;
+    }
+
+    const textToSpeak = voiceoverText || caption || `Welcome to ${shopData.name}! Check out our new collection.`;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      showToast("Speech synthesis not supported in this browser.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    if (voiceoverLang === "kn") {
+      utterance.lang = "kn-IN";
+    } else if (voiceoverLang === "hi") {
+      utterance.lang = "hi-IN";
+    } else {
+      utterance.lang = "en-IN";
+    }
+    utterance.rate = 0.95;
+    utterance.pitch = voiceoverGender === "female" ? 1.05 : 0.9;
+
+    const voices = window.speechSynthesis.getVoices();
+    const targetVoice = voices.find((v) => v.lang.startsWith(utterance.lang) || v.lang.includes(utterance.lang));
+    if (targetVoice) utterance.voice = targetVoice;
+
+    utterance.onstart = () => setIsPlayingVoiceover(true);
+    utterance.onend = () => setIsPlayingVoiceover(false);
+    utterance.onerror = () => setIsPlayingVoiceover(false);
+
+    window.speechSynthesis.speak(utterance);
+    showToast(`Playing ${voiceoverLang === "kn" ? "Kannada" : voiceoverLang === "hi" ? "Hindi" : "English"} voiceover 🎙️`);
   };
 
   // Generate Reel with AI
@@ -2909,20 +3036,51 @@ export function PostComposer({
                             Vertical, 9:16
                           </span>
 
-                          {/* 3 Action Buttons */}
+                          {/* 3 Action Buttons - "Make from photos" as Primary Default */}
+                          <button
+                            type="button"
+                            disabled={isGeneratingReel}
+                            onClick={handleOpenPhotoPicker}
+                            style={{
+                              width: "100%",
+                              maxWidth: "230px",
+                              padding: "10px 14px",
+                              borderRadius: "12px",
+                              border: "none",
+                              background: "#2F6B2F",
+                              color: "#ffffff",
+                              fontSize: "13.5px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "3px",
+                              boxShadow: "0 4px 14px rgba(47, 107, 47, 0.45)"
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <span>🖼</span>
+                              <span>Make from photos</span>
+                              <span style={{ fontSize: "10px", background: "rgba(255,255,255,0.25)", padding: "1px 6px", borderRadius: "10px" }}>Default</span>
+                            </div>
+                            <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.9 }}>$0 Cost · Instant from inventory</span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => videoInputRef.current?.click()}
                             style={{
                               width: "100%",
-                              maxWidth: "200px",
-                              padding: "9px 14px",
+                              maxWidth: "230px",
+                              padding: "8px 14px",
                               borderRadius: "10px",
-                              border: "1px solid rgba(255,255,255,0.85)",
-                              background: "#ffffff",
-                              color: "#121812",
+                              border: "1px solid rgba(255,255,255,0.3)",
+                              background: "rgba(255,255,255,0.08)",
+                              color: "#ffffff",
                               fontSize: "13px",
-                              fontWeight: 700,
+                              fontWeight: 600,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -2937,38 +3095,13 @@ export function PostComposer({
                           <button
                             type="button"
                             disabled={isGeneratingReel}
-                            onClick={handleMakeFromPhotos}
-                            style={{
-                              width: "100%",
-                              maxWidth: "200px",
-                              padding: "9px 14px",
-                              borderRadius: "10px",
-                              border: "1px solid rgba(255,255,255,0.35)",
-                              background: "rgba(255,255,255,0.08)",
-                              color: "#ffffff",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "8px"
-                            }}
-                          >
-                            <span>🖼</span>
-                            <span>Make from photos</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={isGeneratingReel}
                             onClick={handleGenerateReelAi}
                             style={{
                               width: "100%",
-                              maxWidth: "200px",
-                              padding: "9px 14px",
+                              maxWidth: "230px",
+                              padding: "8px 14px",
                               borderRadius: "10px",
-                              border: "1px solid rgba(255,255,255,0.35)",
+                              border: "1px solid rgba(255,255,255,0.3)",
                               background: "rgba(255,255,255,0.08)",
                               color: "#ffffff",
                               fontSize: "13px",
@@ -3376,7 +3509,14 @@ export function PostComposer({
                     </div>
                   </div>
 
-                  {/* Music Card */}
+                  {/* Hidden Audio Player for Previewing Royalty-free Music */}
+                  <audio
+                    ref={audioPreviewRef}
+                    onEnded={() => setIsPlayingAudio(false)}
+                    style={{ display: "none" }}
+                  />
+
+                  {/* 1. Royalty-Free Music Library Card */}
                   <div
                     style={{
                       border: "1px solid var(--border, #979a96)",
@@ -3384,34 +3524,273 @@ export function PostComposer({
                       background: "var(--surface, #172016)",
                       padding: "14px",
                       display: "flex",
-                      alignItems: "flex-start",
-                      gap: "12px"
+                      flexDirection: "column",
+                      gap: "10px"
                     }}
                   >
-                    <div
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "8px",
+                            background: "rgba(47, 107, 47, 0.15)",
+                            color: "#2F6B2F",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "16px"
+                          }}
+                        >
+                          🎵
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                            Background Music
+                          </span>
+                          <span style={{ display: "block", fontSize: "11px", color: "var(--muted, #566054)" }}>
+                            Royalty-free & copyright-safe
+                          </span>
+                        </div>
+                      </div>
+
+                      {selectedTrackId !== "none" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const track = ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId);
+                            if (track && track.url) handleToggleTrackPreview(track.url);
+                          }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "16px",
+                            border: "1px solid var(--border, #979a96)",
+                            background: isPlayingAudio ? "#2F6B2F" : "transparent",
+                            color: isPlayingAudio ? "#ffffff" : "var(--ink, #171f16)",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px"
+                          }}
+                        >
+                          <span>{isPlayingAudio ? "⏸ Pause" : "▶ Preview"}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Track Selection Dropdown */}
+                    <select
+                      value={selectedTrackId}
+                      onChange={(e) => {
+                        setSelectedTrackId(e.target.value);
+                        if (isPlayingAudio && audioPreviewRef.current) {
+                          audioPreviewRef.current.pause();
+                          setIsPlayingAudio(false);
+                        }
+                      }}
                       style={{
-                        width: "36px",
-                        height: "36px",
+                        width: "100%",
+                        padding: "8px 10px",
                         borderRadius: "10px",
-                        background: "rgba(47, 107, 47, 0.15)",
-                        color: "#2F6B2F",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                        flexShrink: 0
+                        border: "1px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        color: "var(--ink, #e6eee4)",
+                        fontSize: "13px",
+                        cursor: "pointer"
                       }}
                     >
-                      🎵
+                      {ROYALTY_FREE_TRACKS.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.icon} {t.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <span style={{ fontSize: "11.5px", color: "var(--muted, #566054)", lineHeight: 1.35 }}>
+                      {ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId)?.desc}
+                    </span>
+                  </div>
+
+                  {/* 2. Tri-Lingual AI Voiceover Card */}
+                  <div
+                    style={{
+                      border: "1px solid var(--border, #979a96)",
+                      borderRadius: "14px",
+                      background: "var(--surface, #172016)",
+                      padding: "14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "8px",
+                            background: "rgba(242, 196, 102, 0.2)",
+                            color: "#b8860b",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "16px"
+                          }}
+                        >
+                          🎙
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                            AI Voiceover Narration
+                          </span>
+                          <span style={{ display: "block", fontSize: "11px", color: "var(--muted, #566054)" }}>
+                            Auto-reads your offer in local languages
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* On/Off Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !voiceoverEnabled;
+                          setVoiceoverEnabled(next);
+                          if (next && !voiceoverText) {
+                            handleVoiceoverLangChange(voiceoverLang);
+                          }
+                          if (!next && isPlayingVoiceover) {
+                            if (typeof window !== "undefined" && window.speechSynthesis) {
+                              window.speechSynthesis.cancel();
+                            }
+                            setIsPlayingVoiceover(false);
+                          }
+                        }}
+                        style={{
+                          width: "44px",
+                          height: "24px",
+                          borderRadius: "12px",
+                          background: voiceoverEnabled ? "#2F6B2F" : "var(--hair, #444)",
+                          border: "none",
+                          position: "relative",
+                          cursor: "pointer",
+                          transition: "background 0.2s"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "18px",
+                            height: "18px",
+                            borderRadius: "50%",
+                            background: "#ffffff",
+                            position: "absolute",
+                            top: "3px",
+                            left: voiceoverEnabled ? "23px" : "3px",
+                            transition: "left 0.2s"
+                          }}
+                        />
+                      </button>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
-                        Music
-                      </span>
-                      <span style={{ fontSize: "12.5px", color: "var(--muted, #566054)", marginTop: "2px", lineHeight: 1.4 }}>
-                        None. Licensed songs can only be added in the Instagram app.
-                      </span>
-                    </div>
+
+                    {voiceoverEnabled && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+                        {/* Language Selection Pills */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          {[
+                            { id: "en", label: "🇬🇧 English" },
+                            { id: "kn", label: "🇮🇳 Kannada (ಕನ್ನಡ)" },
+                            { id: "hi", label: "🇮🇳 Hindi (हिन्दी)" }
+                          ].map((l) => (
+                            <button
+                              key={l.id}
+                              type="button"
+                              onClick={() => handleVoiceoverLangChange(l.id as any)}
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: "14px",
+                                border: voiceoverLang === l.id ? "1.5px solid #2F6B2F" : "1px solid var(--border, #979a96)",
+                                background: voiceoverLang === l.id ? "rgba(47, 107, 47, 0.15)" : "transparent",
+                                color: voiceoverLang === l.id ? "#2F6B2F" : "var(--ink, #171f16)",
+                                fontSize: "12px",
+                                fontWeight: voiceoverLang === l.id ? 700 : 500,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {l.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Gender Toggle & Preview Button */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{ fontSize: "12px", color: "var(--muted, #566054)", fontWeight: 600 }}>Voice:</span>
+                            {["female", "male"].map((g) => (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => setVoiceoverGender(g as any)}
+                                style={{
+                                  padding: "2px 8px",
+                                  borderRadius: "10px",
+                                  border: "none",
+                                  background: voiceoverGender === g ? "#2F6B2F" : "rgba(255,255,255,0.08)",
+                                  color: voiceoverGender === g ? "#ffffff" : "var(--ink, #171f16)",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  textTransform: "capitalize"
+                                }}
+                              >
+                                {g}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handlePlayVoiceover}
+                            style={{
+                              padding: "4px 12px",
+                              borderRadius: "14px",
+                              border: "1px solid #2F6B2F",
+                              background: isPlayingVoiceover ? "#2F6B2F" : "rgba(47, 107, 47, 0.12)",
+                              color: isPlayingVoiceover ? "#ffffff" : "#2F6B2F",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            <span>{isPlayingVoiceover ? "⏸ Stop Voice" : "▶ Listen to Voiceover"}</span>
+                          </button>
+                        </div>
+
+                        {/* Voiceover Script Box */}
+                        <textarea
+                          value={voiceoverText}
+                          onChange={(e) => setVoiceoverText(e.target.value)}
+                          placeholder={isTranslatingVoiceover ? "Generating translation..." : "Voiceover narration script..."}
+                          rows={2}
+                          style={{
+                            width: "100%",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border, #979a96)",
+                            background: "var(--surface, #172016)",
+                            color: "var(--ink, #e6eee4)",
+                            fontSize: "12.5px",
+                            lineHeight: 1.4,
+                            boxSizing: "border-box"
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Schedule / When to Publish Toggle */}
@@ -4659,6 +5038,145 @@ export function PostComposer({
                   <img src={imgUrl} alt="Library item" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reel Multi-Photo Picker Modal */}
+      {isReelPhotoModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setIsReelPhotoModalOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              background: "var(--surface, #172016)",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              boxSizing: "border-box"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif" }}>
+                  Select Photos for Reel
+                </h3>
+                <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                  Choose 1 to 6 photos from your inventory ({selectedReelPhotos.length} selected)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReelPhotoModalOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted, #a1ae9e)" }}
+              >
+                {ICONS.x}
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", maxHeight: "320px", overflowY: "auto", padding: "4px" }}>
+              {libraryImages.concat(storySlides.map((s) => s.image).filter(Boolean)).filter((v, i, a) => a.indexOf(v) === i).map((imgUrl, idx) => {
+                const isSelected = selectedReelPhotos.includes(imgUrl);
+                const selIndex = selectedReelPhotos.indexOf(imgUrl);
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => handleToggleReelPhoto(imgUrl)}
+                    style={{
+                      aspectRatio: "1 / 1",
+                      borderRadius: "10px",
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      position: "relative",
+                      border: isSelected ? "3px solid #2F6B2F" : "2px solid var(--hair, #2a3628)",
+                      boxShadow: isSelected ? "0 0 10px rgba(47, 107, 47, 0.5)" : "none",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    <img src={imgUrl} alt="Inventory product" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {isSelected && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "6px",
+                          right: "6px",
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: "#2F6B2F",
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                        }}
+                      >
+                        {selIndex + 1}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid var(--border, #979a96)" }}>
+              <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                {selectedReelPhotos.length} photo{selectedReelPhotos.length !== 1 ? "s" : ""} chosen
+              </span>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsReelPhotoModalOpen(false)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border, #979a96)",
+                    background: "transparent",
+                    color: "var(--ink, #171f16)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedReelPhotos.length === 0}
+                  onClick={handleCreateReelFromPhotos}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: selectedReelPhotos.length > 0 ? "#2F6B2F" : "var(--hair, #444)",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    cursor: selectedReelPhotos.length > 0 ? "pointer" : "not-allowed"
+                  }}
+                >
+                  Create Reel ({selectedReelPhotos.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>

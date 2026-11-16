@@ -1045,6 +1045,60 @@ def toggle_campaign_like(campaign_id: int, payload: LikeRequest, db: Session = D
 
     return {"status": "success", "is_liked": campaign.is_liked}
 
+class VoiceoverScriptRequest(BaseModel):
+    text: str
+    language: str = "en"  # en, kn, hi
+    shop_name: Optional[str] = "Lakshmi Textiles"
+
+@app.post("/api/campaign/voiceover-script")
+def generate_voiceover_script(payload: VoiceoverScriptRequest):
+    """
+    Generates a natural, spoken voiceover script in English, Kannada, or Hindi
+    for short video Reels.
+    """
+    lang = (payload.language or "en").lower()
+    shop = payload.shop_name or "our store"
+    raw_text = payload.text or f"Welcome to {shop}"
+
+    # Default localized templates as guaranteed fast fallbacks
+    if "kn" in lang:
+        script = f"{shop}ಗೆ ಸುಸ್ವಾಗತ! ನಮ್ಮ ಹೊಸ ಸಂಗ್ರಹವನ್ನು ಅನ್ವೇಷಿಸಿ ಮತ್ತು ಆಕರ್ಷಕ ರಿಯಾಯಿತಿಗಳನ್ನು ಪಡೆಯಿರಿ. ಇಂದೇ ಭೇಟಿ ನೀಡಿ!"
+    elif "hi" in lang:
+        script = f"{shop} में आपका स्वागत है! हमारे नए कलेक्शन को देखें और विशेष छूट पाएं। आज ही पधारें!"
+    else:
+        script = f"Welcome to {shop}! Discover our latest collection and special discounts today."
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            target_lang_name = "Kannada" if "kn" in lang else ("Hindi" if "hi" in lang else "Indian English")
+            prompt = f"""
+            Write a 2-sentence punchy, upbeat retail voiceover script in {target_lang_name} for a social media video Reel.
+            Shop Name: {shop}
+            Promotion context: {raw_text}
+            
+            Rules:
+            1. Keep it spoken, conversational, warm, and under 25 words.
+            2. In {target_lang_name} script (not Latin transliteration).
+            3. No hashtags, no emojis, only spoken words.
+            """
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            if response and response.text:
+                script = response.text.strip().replace("\"", "").replace("\n", " ")
+        except Exception as e:
+            print(f"Gemini voiceover script error (using localized fallback): {e}")
+
+    return {
+        "status": "success",
+        "language": lang,
+        "script": script
+    }
+
 class ImageGenRequest(BaseModel):
     prompt: str
     num_images: Optional[int] = 1

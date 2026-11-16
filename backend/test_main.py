@@ -758,3 +758,22 @@ def test_meta_instagram_reel_publishing_pipeline(monkeypatch):
     assert captured_fb_req[0].video_url == "https://example.com/saree_craft_reel.mp4"
 
     app.dependency_overrides.clear()
+
+def test_voiceover_script_generation():
+    # Test English
+    res_en = client.post("/api/campaign/voiceover-script", json={"text": "Diwali Offer", "language": "en", "shop_name": "Lakshmi Silks"})
+    assert res_en.status_code == 200
+    assert "Lakshmi Silks" in res_en.json()["script"]
+    assert res_en.json()["language"] == "en"
+
+    # Test Kannada
+    res_kn = client.post("/api/campaign/voiceover-script", json={"text": "Saree Offer", "language": "kn", "shop_name": "Lakshmi Silks"})
+    assert res_kn.status_code == 200
+    assert "Lakshmi Silks" in res_kn.json()["script"]
+    assert res_kn.json()["language"] == "kn"
+
+    # Test Hindi
+    res_hi = client.post("/api/campaign/voiceover-script", json={"text": "New Collection", "language": "hi", "shop_name": "Lakshmi Silks"})
+    assert res_hi.status_code == 200
+    assert "Lakshmi Silks" in res_hi.json()["script"]
+    assert res_hi.json()["language"] == "hi"
