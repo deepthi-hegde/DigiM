@@ -215,6 +215,8 @@ const CATEGORIES = [
   }
 ];
 
+const POST_CATEGORIES = CATEGORIES;
+
 function formatDateTimeDisplay(dateStr, timeStr) {
   try {
     const d = new Date(`${dateStr}T${timeStr || "18:00"}`);
@@ -2180,7 +2182,7 @@ export function PostComposer({
                           padding: "6px"
                         }}
                       >
-                        {POST_CATEGORIES.map((cat) => (
+                        {CATEGORIES.map((cat) => (
                           <div
                             key={cat.id}
                             onClick={() => {
@@ -2192,6 +2194,7 @@ export function PostComposer({
                                 if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], text: storyHeadline };
                                 return next;
                               });
+                              setIsTypeDropdownOpen(false);
                             }}
                             style={{
                               display: "flex",
