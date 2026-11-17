@@ -1919,7 +1919,11 @@ function SocialFeedPreviewModal({
 
             {imageUrl ? (
               <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                <img src={imageUrl} alt="Post creative" style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }} />
+                {imageUrl.endsWith('.mp4') || imageUrl.endsWith('.mov') || imageUrl.endsWith('.webm') || imageUrl.startsWith('blob:') || imageUrl.startsWith('data:video') ? (
+                  <video src={imageUrl} controls autoPlay loop muted playsInline style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }} />
+                ) : (
+                  <img src={imageUrl} alt="Post creative" style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }} />
+                )}
               </div>
             ) : (
               <div style={{ height: '240px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b3b8', gap: '8px' }}>

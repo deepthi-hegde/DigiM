@@ -5897,7 +5897,7 @@ export function PostComposer({
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: "#1877f2", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "18px", height: "18px", borderRadius: "9px", background: "#1877f2", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800 }}>f</span>
-                    Facebook Feed Preview
+                    {format === "reel" ? "Facebook Reel Preview" : format === "story" ? "Facebook Story Preview" : "Facebook Feed Preview"}
                   </span>
                   <div
                     style={{
@@ -5949,18 +5949,80 @@ export function PostComposer({
                         )}
                       </p>
 
-                      {/* FB Post Image with Live Brand Overlay */}
-                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f0f2f5", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {image ? (
-                          <>
-                            <img src={image} alt="Facebook post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            {renderBrandOverlay("preview")}
-                          </>
-                        ) : (
-                          <div style={{ color: "#65676b", fontSize: "13px", padding: "20px", textAlign: "center" }}>
-                            📷 Image preview will appear here
-                          </div>
-                        )}
+                      {/* FB Post Media (Video or Image) with Live Brand Overlay */}
+                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#000000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {(() => {
+                          const isVidReel = format === "reel" && Boolean(videoUrl && (reelMode === "video" || /\.(mp4|mov|webm)$/i.test(videoUrl) || videoUrl.startsWith("blob:") || videoUrl.startsWith("data:video")));
+                          const isVidStory = format === "story" && Boolean((storySlides[activeSlideIndex] as any)?.video || storyVideoUrl);
+                          const isPhotosReel = format === "reel" && reelMode === "photos" && reelPhotos.length > 0;
+
+                          if (isVidReel) {
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <video
+                                  src={videoUrl}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          if (isVidStory) {
+                            const sVid = (storySlides[activeSlideIndex] as any)?.video || storyVideoUrl;
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <video
+                                  src={sVid}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          if (isPhotosReel) {
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <img
+                                  src={reelPhotos[activeReelPhotoIdx] || reelPhotos[0]}
+                                  alt="Reel preview"
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "rgba(0,0,0,0.65)", color: "#fff", padding: "2px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+                                  <span>🎬</span> Reel ({reelPhotos.length} photos)
+                                </div>
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          const displayImg = format === "story" ? (storySlides[activeSlideIndex]?.image || image) : (format === "reel" ? (coverImage || image) : image);
+                          if (displayImg) {
+                            return (
+                              <>
+                                <img src={displayImg} alt="Facebook post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                {renderBrandOverlay("preview")}
+                              </>
+                            );
+                          }
+
+                          return (
+                            <div style={{ color: "#b0b3b8", fontSize: "13px", padding: "20px", textAlign: "center" }}>
+                              {format === "reel" ? "🎬 Video / Reel preview will appear here" : "📷 Image preview will appear here"}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* FB Post Footer Actions */}
@@ -5979,7 +6041,7 @@ export function PostComposer({
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: "#d92e7f", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "18px", height: "18px", borderRadius: "9px", background: "linear-gradient(135deg, #f9a03f, #d92e7f)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800 }}>📸</span>
-                    Instagram Feed Preview
+                    {format === "reel" ? "Instagram Reel Preview" : format === "story" ? "Instagram Story Preview" : "Instagram Feed Preview"}
                   </span>
                   <div
                     style={{
@@ -6020,18 +6082,80 @@ export function PostComposer({
                         <span style={{ color: "#262626", fontSize: "14px", cursor: "pointer" }}>•••</span>
                       </div>
 
-                      {/* IG Post Image with Live Brand Overlay */}
-                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#f8f9fa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {image ? (
-                          <>
-                            <img src={image} alt="Instagram post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            {renderBrandOverlay("preview")}
-                          </>
-                        ) : (
-                          <div style={{ color: "#8e8e8e", fontSize: "13px", padding: "20px", textAlign: "center" }}>
-                            📷 Image preview will appear here
-                          </div>
-                        )}
+                      {/* IG Post Media (Video or Image) with Live Brand Overlay */}
+                      <div style={{ position: "relative", width: "100%", aspectRatio: format === "post" ? "1 / 1" : "9 / 16", background: "#000000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {(() => {
+                          const isVidReel = format === "reel" && Boolean(videoUrl && (reelMode === "video" || /\.(mp4|mov|webm)$/i.test(videoUrl) || videoUrl.startsWith("blob:") || videoUrl.startsWith("data:video")));
+                          const isVidStory = format === "story" && Boolean((storySlides[activeSlideIndex] as any)?.video || storyVideoUrl);
+                          const isPhotosReel = format === "reel" && reelMode === "photos" && reelPhotos.length > 0;
+
+                          if (isVidReel) {
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <video
+                                  src={videoUrl}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          if (isVidStory) {
+                            const sVid = (storySlides[activeSlideIndex] as any)?.video || storyVideoUrl;
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <video
+                                  src={sVid}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          if (isPhotosReel) {
+                            return (
+                              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                <img
+                                  src={reelPhotos[activeReelPhotoIdx] || reelPhotos[0]}
+                                  alt="Reel preview"
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "rgba(0,0,0,0.65)", color: "#fff", padding: "2px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+                                  <span>🎬</span> Reel ({reelPhotos.length} photos)
+                                </div>
+                                {renderBrandOverlay("preview")}
+                              </div>
+                            );
+                          }
+
+                          const displayImg = format === "story" ? (storySlides[activeSlideIndex]?.image || image) : (format === "reel" ? (coverImage || image) : image);
+                          if (displayImg) {
+                            return (
+                              <>
+                                <img src={displayImg} alt="Instagram post" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                {renderBrandOverlay("preview")}
+                              </>
+                            );
+                          }
+
+                          return (
+                            <div style={{ color: "#b0b3b8", fontSize: "13px", padding: "20px", textAlign: "center" }}>
+                              {format === "reel" ? "🎬 Video / Reel preview will appear here" : "📷 Image preview will appear here"}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* IG Action Bar: Like, Comment, Share, Bookmark */}
