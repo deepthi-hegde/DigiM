@@ -655,7 +655,22 @@ def publish_campaign(payload: CampaignPublishRequest, db: Session = Depends(get_
             print(f"DEBUG IG PUBLISH - ig_user_id: {account.ig_user_id}")
             print(f"DEBUG IG PUBLISH - image_url: {image_url}")
             print(f"DEBUG IG PUBLISH - access_token prefix: {account.access_token[:30]}")
-            if is_story and payload.slides and len(payload.slides) > 1:
+            if is_story and payload.video_url:
+                # Video Story
+                perm_vid = save_permanent_asset_if_needed(payload.video_url)
+                if perm_vid and not perm_vid.startswith("http"):
+                    perm_vid = f"{public_backend_url.rstrip('/')}{perm_vid}"
+                print(f"DEBUG IG - Publishing Video Story: {perm_vid}")
+                ig_pub_req = InstagramPublishRequest(
+                    ig_user_id=account.ig_user_id,
+                    video_url=perm_vid,
+                    image_url=image_url,
+                    caption="",
+                    access_token=account.access_token,
+                    media_type="STORIES"
+                )
+                ig_res = publish_to_instagram(ig_pub_req)
+            elif is_story and payload.slides and len(payload.slides) > 1:
                 # Multi-slide Story: Publish each slide sequentially to Instagram Stories
                 ig_slides_res = []
                 for s_idx, slide in enumerate(payload.slides):

@@ -278,12 +278,19 @@ def publish_to_instagram(payload: InstagramPublishRequest):
     
     req_media_type = (getattr(payload, "media_type", "IMAGE") or "IMAGE").upper()
     if req_media_type in ["STORIES", "STORY"]:
-        # Instagram Stories API rejects captions; media_type must be STORIES
-        media_data = {
-            "image_url": payload.image_url,
-            "media_type": "STORIES",
-            "access_token": payload.access_token
-        }
+        # Instagram Stories API rejects captions; media_type must be STORIES (supports photo and video)
+        if getattr(payload, "video_url", None):
+            media_data = {
+                "video_url": payload.video_url,
+                "media_type": "STORIES",
+                "access_token": payload.access_token
+            }
+        else:
+            media_data = {
+                "image_url": payload.image_url,
+                "media_type": "STORIES",
+                "access_token": payload.access_token
+            }
     elif req_media_type in ["REELS", "REEL"]:
         media_data = {
             "media_type": "REELS",
@@ -310,7 +317,7 @@ def publish_to_instagram(payload: InstagramPublishRequest):
 
     # Step 1.5: Poll until the container status is FINISHED (up to 45 seconds for video transcoding)
     status_url = f"{META_GRAPH_URL}/{creation_id}"
-    max_attempts = 15 if req_media_type in ["REELS", "REEL"] else 10
+    max_attempts = 15 if req_media_type in ["REELS", "REEL"] or getattr(payload, "video_url", None) else 10
     for attempt in range(max_attempts):
         status_res = requests.get(status_url, params={
             "fields": "status_code",

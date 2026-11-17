@@ -324,6 +324,22 @@ export function PostComposer({
   const voiceoverAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Multi-photo Reel Picker
+  // Story Video States
+  const [storyVideoUrl, setStoryVideoUrl] = useState<string>("");
+  const [isStoryVideoPlaying, setIsStoryVideoPlaying] = useState<boolean>(true);
+  const storyVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const toggleStoryVideoPlay = () => {
+    if (!storyVideoRef.current) return;
+    if (storyVideoRef.current.paused) {
+      storyVideoRef.current.play();
+      setIsStoryVideoPlaying(true);
+    } else {
+      storyVideoRef.current.pause();
+      setIsStoryVideoPlaying(false);
+    }
+  };
+
   // Photo Reel Player States (for instant, smooth, $0 client-side playback)
   const [reelMode, setReelMode] = useState<"none" | "photos" | "video">("none");
   const [reelPhotos, setReelPhotos] = useState<string[]>([]);
@@ -346,6 +362,14 @@ export function PostComposer({
         const next = prev + progressPerStep;
         if (next >= 100) {
           setActiveReelPhotoIdx(0);
+          if (voiceoverAudioRef.current && voiceoverEnabled) {
+            voiceoverAudioRef.current.currentTime = 0;
+            voiceoverAudioRef.current.play().catch(() => {});
+          }
+          if (audioPreviewRef.current && selectedTrackId !== "none") {
+            audioPreviewRef.current.currentTime = 0;
+            audioPreviewRef.current.play().catch(() => {});
+          }
           return 0;
         }
         const currentIdx = Math.floor((next / 100) * reelPhotos.length);
@@ -477,6 +501,7 @@ export function PostComposer({
     setVoiceoverText(instantScript);
     if (voiceoverAudioRef.current) {
       voiceoverAudioRef.current.pause();
+      voiceoverAudioRef.current.src = "";
     }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -484,13 +509,77 @@ export function PostComposer({
     setIsPlayingVoiceover(false);
   };
 
+  // Synchronized Reel Playback Helpers
+  const playSyncedVoiceover = async () => {
+    if (!voiceoverEnabled) return;
+    if (voiceoverAudioRef.current && voiceoverAudioRef.current.src && !voiceoverAudioRef.current.src.endsWith("undefined")) {
+      try {
+        await voiceoverAudioRef.current.play();
+        setIsPlayingVoiceover(true);
+        return;
+      } catch (err) {
+        console.warn("Voiceover play error:", err);
+      }
+    }
+    await handlePlayVoiceover(true);
+  };
+
+  const pauseSyncedVoiceover = () => {
+    if (voiceoverAudioRef.current) {
+      voiceoverAudioRef.current.pause();
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.pause();
+    }
+    setIsPlayingVoiceover(false);
+  };
+
+  const playSyncedMusic = () => {
+    const currentTrack = ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId);
+    if (currentTrack && currentTrack.url && audioPreviewRef.current) {
+      if (audioPreviewRef.current.src !== currentTrack.url) {
+        audioPreviewRef.current.src = currentTrack.url;
+      }
+      audioPreviewRef.current.play().then(() => setIsPlayingAudio(true)).catch((e) => console.warn("Music play error:", e));
+    }
+  };
+
+  const pauseSyncedMusic = () => {
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.pause();
+    }
+    setIsPlayingAudio(false);
+  };
+
+  const togglePhotoReelPlayback = (forcedPlay?: boolean) => {
+    const nextPlay = typeof forcedPlay === "boolean" ? forcedPlay : !isPhotoReelPlaying;
+    setIsPhotoReelPlaying(nextPlay);
+    if (nextPlay) {
+      playSyncedVoiceover();
+      playSyncedMusic();
+    } else {
+      pauseSyncedVoiceover();
+      pauseSyncedMusic();
+    }
+  };
+
   // Play High-Fidelity Studio Neural Voiceover with Natural SSML Pauses & Emotion
-  const handlePlayVoiceover = async () => {
-    if (isPlayingVoiceover) {
+  const handlePlayVoiceover = async (forcePlay?: boolean) => {
+    if (!forcePlay && isPlayingVoiceover) {
       if (voiceoverAudioRef.current) voiceoverAudioRef.current.pause();
       if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
       setIsPlayingVoiceover(false);
       return;
+    }
+
+    if (voiceoverAudioRef.current && voiceoverAudioRef.current.src && !voiceoverAudioRef.current.src.endsWith("undefined")) {
+      try {
+        await voiceoverAudioRef.current.play();
+        setIsPlayingVoiceover(true);
+        return;
+      } catch (err) {
+        // synthesize fresh
+      }
     }
 
     const scriptFn = LOCALIZED_VOICEOVERS[voiceoverLang] || LOCALIZED_VOICEOVERS.en;
@@ -1105,20 +1194,41 @@ export function PostComposer({
     setIsAddingTag(false);
   };
 
-  // Handle Image Upload
-  const handleImageUpload = (e) => {
+  // Handle Media (Image or Video) Upload
+  const handleImageUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(file.name);
+    if (isVideo) {
+      const objUrl = URL.createObjectURL(file);
+      setStoryVideoUrl(objUrl);
+      setIsStoryVideoPlaying(true);
+      if (format === "story") {
+        setStorySlides((prev) => {
+          const next = [...prev];
+          if (next[activeSlideIndex]) {
+            next[activeSlideIndex] = { ...next[activeSlideIndex], video: objUrl, isVideo: true } as any;
+          }
+          return next;
+        });
+      }
+      showToast("Video loaded for Story! 🎬");
+      return;
+    }
 
     setIsUploading(true);
     const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target.result;
+      const result = event.target?.result as string;
       setImage(result);
       if (format === "story") {
+        setStoryVideoUrl("");
         setStorySlides((prev) => {
           const next = [...prev];
-          if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: result };
+          if (next[activeSlideIndex]) {
+            next[activeSlideIndex] = { ...next[activeSlideIndex], image: result, video: undefined, isVideo: false } as any;
+          }
           return next;
         });
       }
@@ -1271,10 +1381,10 @@ export function PostComposer({
       message: fullMessage,
       caption: fullMessage,
       image_url: (format === "story" ? (storySlides[activeSlideIndex]?.image || storySlides[0]?.image || image) : (format === "reel" ? (coverImage || image) : image)) || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
-      video_url: format === "reel" ? (videoUrl || undefined) : undefined,
+      video_url: format === "reel" ? (videoUrl || undefined) : (format === "story" ? ((storySlides[activeSlideIndex] as any)?.video || storyVideoUrl || undefined) : undefined),
       cover_url: format === "reel" ? (coverImage || undefined) : undefined,
       format,
-      slides: format === "story" ? storySlides.map(s => ({ text: s.text, image_url: s.image || image })) : undefined,
+      slides: format === "story" ? storySlides.map(s => ({ text: s.text, image_url: s.image || image, video_url: (s as any).video || undefined })) : undefined,
       when,
       scheduled_time: when === "schedule" ? `${scheduledDate}T${scheduledTime || "18:00"}:00` : null,
       publish_facebook: Boolean(channels.facebook),
@@ -2009,6 +2119,7 @@ export function PostComposer({
                   {(() => {
                     const activeSlide = storySlides[activeSlideIndex] || storySlides[0];
                     const currentSlideImage = activeSlide?.image || "";
+                    const currentSlideVideo = (activeSlide as any)?.video || storyVideoUrl || "";
                     return (
                   <div
                     style={{
@@ -2019,13 +2130,65 @@ export function PostComposer({
                       overflow: "hidden",
                       border: "2.5px solid var(--border, #2a3628)",
                       boxShadow: "0 12px 32px rgba(23, 31, 22, 0.22)",
-                      background: currentSlideImage
+                      background: currentSlideVideo
+                        ? "#000000"
+                        : currentSlideImage
                         ? `url(${currentSlideImage}) center / cover no-repeat`
                         : activeSlide?.bg || "repeating-linear-gradient(135deg, #7c1a40, #7c1a40 10px, #631031 10px, #631031 20px)",
                       display: "flex",
                       flexDirection: "column"
                     }}
                   >
+                    {/* Video Player if Story has Video */}
+                    {currentSlideVideo && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          zIndex: 0,
+                          cursor: "pointer"
+                        }}
+                        onClick={toggleStoryVideoPlay}
+                      >
+                        <video
+                          ref={storyVideoRef}
+                          src={currentSlideVideo}
+                          autoPlay
+                          loop
+                          playsInline
+                          muted={false}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover"
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "50%",
+                            background: "rgba(0,0,0,0.55)",
+                            backdropFilter: "blur(4px)",
+                            border: "1.5px solid rgba(255,255,255,0.4)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ffffff",
+                            fontSize: "20px",
+                            opacity: isStoryVideoPlaying ? 0 : 1,
+                            transition: "opacity 0.2s ease",
+                            zIndex: 15
+                          }}
+                        >
+                          {isStoryVideoPlaying ? "⏸" : "▶"}
+                        </div>
+                      </div>
+                    )}
                     {/* Top Progress / Slide Indicator Bars */}
                     <div style={{ display: "flex", gap: "5px", padding: "12px 14px 0", zIndex: 10 }}>
                       {storySlides.map((s, idx) => (
@@ -2217,7 +2380,7 @@ export function PostComposer({
                       >
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/mp4,video/quicktime,video/webm"
                           onChange={handleImageUpload}
                           style={{ display: "none" }}
                         />
@@ -2666,7 +2829,7 @@ export function PostComposer({
                           cursor: "pointer"
                         }}
                       >
-                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                        <input type="file" accept="image/*,video/mp4,video/quicktime,video/webm" onChange={handleImageUpload} style={{ display: "none" }} />
                         {ICONS.upload} Upload
                       </label>
                     </div>
@@ -3022,7 +3185,7 @@ export function PostComposer({
                             overflow: "hidden",
                             background: "#000000"
                           }}
-                          onClick={() => setIsPhotoReelPlaying(!isPhotoReelPlaying)}
+                          onClick={() => togglePhotoReelPlayback()}
                         >
                           {/* Active Photo with Smooth Transition & Ken Burns effect */}
                           <img
@@ -3035,54 +3198,28 @@ export function PostComposer({
                               transition: "transform 2.5s ease-out, opacity 0.35s ease",
                               transform: isPhotoReelPlaying ? "scale(1.08)" : "scale(1.0)"
                             }}
-                          />
-
-                          {/* Instagram-style Segmented Progress Bars at the Top */}
+                          />{/* Sleek Continuous Instagram Reel Bottom Scrubber Bar */}
                           <div
                             style={{
                               position: "absolute",
-                              top: "10px",
-                              left: "12px",
-                              right: "12px",
-                              display: "flex",
-                              gap: "4px",
-                              zIndex: 25
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              height: "3px",
+                              background: "rgba(255,255,255,0.25)",
+                              zIndex: 30
                             }}
                           >
-                            {reelPhotos.map((_, pIdx) => {
-                              let barFill = "0%";
-                              if (pIdx < activeReelPhotoIdx) barFill = "100%";
-                              else if (pIdx === activeReelPhotoIdx) {
-                                const photoDurationPct = 100 / reelPhotos.length;
-                                const currentPhotoStart = pIdx * photoDurationPct;
-                                const progressInPhoto = Math.max(0, Math.min(100, ((photoReelProgress - currentPhotoStart) / photoDurationPct) * 100));
-                                barFill = `${progressInPhoto}%`;
-                              }
-                              return (
-                                <div
-                                  key={pIdx}
-                                  style={{
-                                    flex: 1,
-                                    height: "3px",
-                                    borderRadius: "2px",
-                                    background: "rgba(255,255,255,0.35)",
-                                    overflow: "hidden"
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      width: barFill,
-                                      height: "100%",
-                                      background: "#ffffff",
-                                      transition: "width 0.05s linear"
-                                    }}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {/* Centered Play / Pause Icon Button */}
+                            <div
+                              style={{
+                                width: `${photoReelProgress}%`,
+                                height: "100%",
+                                background: "#ffffff",
+                                boxShadow: "0 0 6px rgba(255,255,255,0.9)",
+                                transition: "width 50ms linear"
+                              }}
+                            />
+                          </div>                          {/* Centered Play / Pause Icon Button */}
                           <div
                             style={{
                               position: "absolute",
@@ -3129,7 +3266,7 @@ export function PostComposer({
                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                               <button
                                 type="button"
-                                onClick={() => setIsPhotoReelPlaying(!isPhotoReelPlaying)}
+                                onClick={() => togglePhotoReelPlayback()}
                                 style={{
                                   background: "none",
                                   border: "none",
@@ -3795,8 +3932,18 @@ export function PostComposer({
                     <select
                       value={selectedTrackId}
                       onChange={(e) => {
-                        setSelectedTrackId(e.target.value);
-                        if (isPlayingAudio && audioPreviewRef.current) {
+                        const newTrackId = e.target.value;
+                        setSelectedTrackId(newTrackId);
+                        if (isPhotoReelPlaying) {
+                          const track = ROYALTY_FREE_TRACKS.find((t) => t.id === newTrackId);
+                          if (track && track.url && audioPreviewRef.current) {
+                            audioPreviewRef.current.src = track.url;
+                            audioPreviewRef.current.play().then(() => setIsPlayingAudio(true)).catch(() => {});
+                          } else if (audioPreviewRef.current) {
+                            audioPreviewRef.current.pause();
+                            setIsPlayingAudio(false);
+                          }
+                        } else if (isPlayingAudio && audioPreviewRef.current) {
                           audioPreviewRef.current.pause();
                           setIsPlayingAudio(false);
                         }
@@ -3872,11 +4019,10 @@ export function PostComposer({
                           if (next && !voiceoverText) {
                             handleVoiceoverLangChange(voiceoverLang);
                           }
-                          if (!next && isPlayingVoiceover) {
-                            if (typeof window !== "undefined" && window.speechSynthesis) {
-                              window.speechSynthesis.cancel();
-                            }
-                            setIsPlayingVoiceover(false);
+                          if (next && isPhotoReelPlaying) {
+                            playSyncedVoiceover();
+                          } else if (!next) {
+                            pauseSyncedVoiceover();
                           }
                         }}
                         style={{

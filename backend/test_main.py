@@ -759,6 +759,69 @@ def test_meta_instagram_reel_publishing_pipeline(monkeypatch):
 
     app.dependency_overrides.clear()
 
+def test_meta_instagram_video_story_publishing_pipeline(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from db.schema import Base, Tenant, MetaAccount
+    from db.database import get_db
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    t = Tenant(id=27, name="Video Story Shop", email="vidstory@test.com")
+    m = MetaAccount(tenant_id=27, page_id="fb_page_27", page_name="Story Page", access_token="tok_meta_27", ig_user_id="ig_story_27")
+    db.add(t)
+    db.add(m)
+    db.commit()
+
+    captured_ig_req = []
+    def mock_publish_to_instagram(req):
+        captured_ig_req.append(req)
+        return {"id": "video_story_ig_container_123"}
+
+    captured_fb_req = []
+    def mock_publish_to_facebook(req):
+        captured_fb_req.append(req)
+        return {"id": "video_story_fb_post_123"}
+
+    monkeypatch.setattr("main.publish_to_facebook", mock_publish_to_facebook)
+    monkeypatch.setattr("api.meta.publish_to_instagram", mock_publish_to_instagram)
+
+    video_story_payload = {
+        "message": "Exclusive Video Story",
+        "video_url": "https://example.com/diwali_story_clip.mp4",
+        "image_url": "https://example.com/diwali_story_poster.jpg",
+        "format": "story",
+        "publish_to_instagram": True,
+        "publish_to_facebook": True,
+        "tenant_id": 27
+    }
+
+    res = client.post("/api/campaign/publish", json=video_story_payload)
+    assert res.status_code == 200
+    assert res.json()["status"] == "success"
+    assert len(captured_ig_req) == 1
+    assert captured_ig_req[0].media_type == "STORIES"
+    assert captured_ig_req[0].video_url == "https://example.com/diwali_story_clip.mp4"
+    assert captured_ig_req[0].caption == ""
+
+    assert len(captured_fb_req) == 1
+    assert captured_fb_req[0].video_url == "https://example.com/diwali_story_clip.mp4"
+
+    app.dependency_overrides.clear()
+
 def test_voiceover_script_generation():
     # Test English
     res_en = client.post("/api/campaign/voiceover-script", json={"text": "Diwali Offer", "language": "en", "shop_name": "Lakshmi Silks"})
