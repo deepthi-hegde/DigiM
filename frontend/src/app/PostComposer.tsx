@@ -685,27 +685,58 @@ export function PostComposer({
     }
   };
 
-  // Generate Reel with AI
-  const handleGenerateReelAi = () => {
+  // Real AI Reel Generator with Google Gemini (Cost-effective ~$0.02 model)
+  const [isAiReelModalOpen, setIsAiReelModalOpen] = useState<boolean>(false);
+  const [aiReelPrompt, setAiReelPrompt] = useState<string>("");
+  const [aiSceneCount, setAiSceneCount] = useState<number>(2);
+
+  const handleOpenAiReelModal = () => {
+    const defaultPrompt = `Cinematic 9:16 vertical commercial showcase for ${shopData.name || "Lakshmi Textiles"}, luxury ${shopData.sells || "festive pure silk sarees and bridal collection"}, elegant boutique display with warm golden spotlight, intricate zari embroidery detail, 4k commercial photography`;
+    setAiReelPrompt(defaultPrompt);
+    setIsAiReelModalOpen(true);
+  };
+
+  const handleGenerateReelAi = async () => {
     setIsGeneratingReel(true);
-    showToast("Generating AI ethnic wear showcase Reel... ✨");
-    setTimeout(() => {
-      const aiPhotos = [
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80"
-      ];
-      setReelPhotos(aiPhotos);
-      setSelectedReelPhotos(aiPhotos);
-      setActiveReelPhotoIdx(0);
-      setPhotoReelProgress(0);
-      setIsPhotoReelPlaying(true);
-      setReelMode("photos");
-      setCoverImage(aiPhotos[0]);
-      setVideoUrl(aiPhotos[0]);
-      setIsGeneratingReel(false);
-      showToast("AI Showcase Reel generated successfully! ✨");
-    }, 1500);
+    showToast("Generating AI Reel with Google Gemini... ⏳");
+
+    try {
+      const promptToUse = aiReelPrompt.trim() || `Cinematic 9:16 vertical commercial showcase for ${shopData.name || "Lakshmi Textiles"}, luxury festive silk sarees and ethnic wear, 4k commercial photography`;
+      
+      const res = await fetch("/api/campaign/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptToUse,
+          num_images: aiSceneCount,
+          format_type: "story"
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const urls = (data.urls && data.urls.length > 0) ? data.urls : (data.url ? [data.url] : []);
+        if (urls.length > 0) {
+          setReelPhotos(urls);
+          setSelectedReelPhotos(urls);
+          setActiveReelPhotoIdx(0);
+          setPhotoReelProgress(0);
+          setIsPhotoReelPlaying(true);
+          setReelMode("photos");
+          setCoverImage(urls[0]);
+          setVideoUrl(urls[0]);
+          setIsAiReelModalOpen(false);
+          setIsGeneratingReel(false);
+          showToast(`Generated ${urls.length} AI scene${urls.length > 1 ? "s" : ""} with Google Gemini! 🎬✨`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("AI Reel generation error:", err);
+    }
+
+    setIsGeneratingReel(false);
+    showToast("AI generation failed. Please try again or refine the prompt.");
   };
 
   // Brand Overlay Controls
@@ -3596,7 +3627,7 @@ export function PostComposer({
                           <button
                             type="button"
                             disabled={isGeneratingReel}
-                            onClick={handleGenerateReelAi}
+                            onClick={handleOpenAiReelModal}
                             style={{
                               width: "100%",
                               maxWidth: "230px",
@@ -5633,6 +5664,217 @@ export function PostComposer({
                   <img src={imgUrl} alt="Library item" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Reel Generator Modal */}
+      {isAiReelModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.78)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => !isGeneratingReel && setIsAiReelModalOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              background: "var(--surface, #172016)",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              boxSizing: "border-box",
+              border: "1px solid var(--border, #979a96)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    background: "rgba(47, 107, 47, 0.2)",
+                    color: "#2F6B2F",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "18px"
+                  }}
+                >
+                  ✧
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, fontFamily: "'Baloo 2', sans-serif", color: "var(--ink, #e6eee4)" }}>
+                    Generate AI Reel
+                  </h3>
+                  <span style={{ fontSize: "11.5px", color: "var(--muted, #566054)" }}>
+                    Powered by Google Gemini · Cost-effective commercial 9:16 scenes
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isGeneratingReel}
+                onClick={() => setIsAiReelModalOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted, #a1ae9e)", fontSize: "18px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Prompt Textarea */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--ink, #e6eee4)" }}>
+                AI Visual Prompt
+              </label>
+              <textarea
+                value={aiReelPrompt}
+                onChange={(e) => setAiReelPrompt(e.target.value)}
+                disabled={isGeneratingReel}
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border, #979a96)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  color: "var(--ink, #e6eee4)",
+                  fontSize: "12.5px",
+                  lineHeight: "1.4",
+                  resize: "vertical",
+                  boxSizing: "border-box"
+                }}
+              />
+            </div>
+
+            {/* Quick Presets */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "11px", color: "var(--muted, #566054)", fontWeight: 600 }}>
+                Quick Presets:
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {[
+                  {
+                    name: "🪔 Festive & Wedding",
+                    prompt: `Grand festive wedding collection at ${shopData.name || "Lakshmi Textiles"}, pure Kanjeevaram silk sarees with ornate gold borders, warm temple lighting, luxury boutique interior, 9:16 vertical`
+                  },
+                  {
+                    name: "🛍️ Discount Sale",
+                    prompt: `Grand festive discount sale at ${shopData.name || "Lakshmi Textiles"}, vibrant silk sarees and ethnic wear on display with special festival offers, luxury retail setting, 9:16 vertical`
+                  },
+                  {
+                    name: "👑 Royal Heritage",
+                    prompt: `Heritage royal silk sarees craftsmanship showcase at ${shopData.name || "Lakshmi Textiles"}, handcrafted gold zari weaving details, rich traditional colors, 9:16 vertical`
+                  }
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={isGeneratingReel}
+                    onClick={() => setAiReelPrompt(preset.prompt)}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "14px",
+                      border: "1px solid var(--border, #979a96)",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      color: "var(--ink, #e6eee4)",
+                      fontSize: "11.5px",
+                      fontWeight: 500,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scene Count Selector */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "4px" }}>
+              <span style={{ fontSize: "12px", color: "var(--muted, #566054)", fontWeight: 600 }}>
+                Scenes to generate:
+              </span>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {[1, 2, 3].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    disabled={isGeneratingReel}
+                    onClick={() => setAiSceneCount(num)}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: "8px",
+                      border: aiSceneCount === num ? "1.5px solid #2F6B2F" : "1px solid var(--border, #979a96)",
+                      background: aiSceneCount === num ? "rgba(47, 107, 47, 0.15)" : "transparent",
+                      color: aiSceneCount === num ? "#2F6B2F" : "var(--ink, #e6eee4)",
+                      fontSize: "12px",
+                      fontWeight: aiSceneCount === num ? 700 : 500,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {num} Scene{num > 1 ? "s" : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "6px" }}>
+              <button
+                type="button"
+                disabled={isGeneratingReel}
+                onClick={() => setIsAiReelModalOpen(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border, #979a96)",
+                  background: "transparent",
+                  color: "var(--ink, #e6eee4)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={isGeneratingReel}
+                onClick={handleGenerateReelAi}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: isGeneratingReel ? "rgba(47, 107, 47, 0.5)" : "#2F6B2F",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  cursor: isGeneratingReel ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 4px 14px rgba(47, 107, 47, 0.4)"
+                }}
+              >
+                {isGeneratingReel ? "Generating AI Reel... ⏳" : "✨ Generate AI Reel with Gemini"}
+              </button>
             </div>
           </div>
         </div>
