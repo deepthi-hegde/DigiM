@@ -430,6 +430,23 @@ export function PostComposer({
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const reelVideoPlayerRef = useRef<HTMLVideoElement | null>(null);
 
+  // Reset Reel to initial choice screen (Make from photos, AI, Upload video)
+  const handleResetReel = () => {
+    if (reelVideoPlayerRef.current) {
+      reelVideoPlayerRef.current.pause();
+      reelVideoPlayerRef.current.src = "";
+    }
+    setIsPhotoReelPlaying(false);
+    pauseSyncedVoiceover();
+    pauseSyncedMusic();
+    setVideoUrl("");
+    setCoverImage("");
+    setReelPhotos([]);
+    setSelectedReelPhotos([]);
+    setReelMode("none");
+    showToast("Reel reset. Choose how you'd like to create your Reel ✨");
+  };
+
   // Reel Video Upload Handler
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3161,31 +3178,56 @@ export function PostComposer({
                 {/* Left Column: Reel Preview & Video Box (width ~310px) */}
                 <div style={{ flex: "0 1 310px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "14px" }}>
                   {/* Shop Profile Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "2px 4px" }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        background: "#0d5c4d",
-                        color: "#ffffff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 800,
-                        fontSize: "15px"
-                      }}
-                    >
-                      {(shopData.name || "L").charAt(0).toUpperCase()}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "2px 4px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          background: "#0d5c4d",
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                          fontSize: "15px"
+                        }}
+                      >
+                        {(shopData.name || "L").charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+                        <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
+                          {shopData.name || "Lakshmi Textiles"}
+                        </span>
+                        <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
+                          {formatDateTimeDisplay(scheduledDate, scheduledTime)}
+                        </span>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
-                      <span style={{ fontSize: "14.5px", fontWeight: 700, color: "var(--ink, #171f16)" }}>
-                        {shopData.name || "Lakshmi Textiles"}
-                      </span>
-                      <span style={{ fontSize: "12px", color: "var(--muted, #566054)" }}>
-                        {formatDateTimeDisplay(scheduledDate, scheduledTime)}
-                      </span>
-                    </div>
+
+                    {reelMode !== "none" && (
+                      <button
+                        type="button"
+                        onClick={handleResetReel}
+                        style={{
+                          padding: "5px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "rgba(255, 255, 255, 0.08)",
+                          color: "var(--ink, #171f16)",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px"
+                        }}
+                        title="Go back to the start options (Make from photos, AI, upload)"
+                      >
+                        ↺ Start Fresh
+                      </button>
+                    )}
                   </div>
 
                   {/* Vertical 9:16 Phone Mockup Container */}
@@ -3350,22 +3392,41 @@ export function PostComposer({
                               </span>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={handleOpenPhotoPicker}
-                              style={{
-                                background: "rgba(255,255,255,0.15)",
-                                border: "1px solid rgba(255,255,255,0.25)",
-                                borderRadius: "6px",
-                                color: "#ffffff",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                padding: "3px 8px",
-                                cursor: "pointer"
-                              }}
-                            >
-                              Change photos
-                            </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <button
+                                type="button"
+                                onClick={handleResetReel}
+                                style={{
+                                  background: "rgba(255,255,255,0.15)",
+                                  border: "1px solid rgba(255,255,255,0.25)",
+                                  borderRadius: "6px",
+                                  color: "#ffffff",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  padding: "3px 8px",
+                                  cursor: "pointer"
+                                }}
+                                title="Go back to start options"
+                              >
+                                ↺ Start Fresh
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleOpenPhotoPicker}
+                                style={{
+                                  background: "rgba(255,255,255,0.15)",
+                                  border: "1px solid rgba(255,255,255,0.25)",
+                                  borderRadius: "6px",
+                                  color: "#ffffff",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  padding: "3px 8px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Change photos
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ) : reelMode === "video" && videoUrl ? (
@@ -3384,26 +3445,59 @@ export function PostComposer({
                               objectFit: "cover"
                             }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => videoInputRef.current?.click()}
+                          {/* Top Navigation Bar for Video Reel */}
+                          <div
                             style={{
                               position: "absolute",
                               top: "10px",
+                              left: "10px",
                               right: "10px",
-                              padding: "6px 12px",
-                              borderRadius: "8px",
-                              background: "rgba(0,0,0,0.75)",
-                              color: "#ffffff",
-                              border: "1px solid rgba(255,255,255,0.3)",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
                               zIndex: 20
                             }}
                           >
-                            Replace video
-                          </button>
+                            <button
+                              type="button"
+                              onClick={handleResetReel}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: "8px",
+                                background: "rgba(0,0,0,0.75)",
+                                color: "#ffffff",
+                                border: "1px solid rgba(255,255,255,0.3)",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                backdropFilter: "blur(4px)"
+                              }}
+                              title="Go back to start options (Make from photos, AI, upload)"
+                            >
+                              ↺ Start Fresh
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => videoInputRef.current?.click()}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: "8px",
+                                background: "rgba(0,0,0,0.75)",
+                                color: "#ffffff",
+                                border: "1px solid rgba(255,255,255,0.3)",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                backdropFilter: "blur(4px)"
+                              }}
+                            >
+                              Replace video
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div
