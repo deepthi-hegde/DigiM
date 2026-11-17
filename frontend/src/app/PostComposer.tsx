@@ -3540,7 +3540,7 @@ export function PostComposer({
                             Vertical, 9:16
                           </span>
 
-                          {/* 3 Action Buttons - "Make from photos" as Primary Default */}
+                          {/* Primary Action Button - Make from Photos */}
                           <button
                             type="button"
                             disabled={isGeneratingReel}
@@ -3548,28 +3548,25 @@ export function PostComposer({
                             style={{
                               width: "100%",
                               maxWidth: "230px",
-                              padding: "10px 14px",
-                              borderRadius: "12px",
-                              border: "none",
-                              background: "#2F6B2F",
+                              padding: "11px 18px",
+                              borderRadius: "10px",
+                              border: "1px solid rgba(255,255,255,0.2)",
+                              background: "linear-gradient(135deg, #2F6B2F 0%, #1e4d1e 100%)",
                               color: "#ffffff",
-                              fontSize: "13.5px",
+                              fontSize: "14px",
                               fontWeight: 700,
                               cursor: "pointer",
                               display: "flex",
-                              flexDirection: "column",
                               alignItems: "center",
                               justifyContent: "center",
-                              gap: "3px",
-                              boxShadow: "0 4px 14px rgba(47, 107, 47, 0.45)"
+                              gap: "8px",
+                              boxShadow: "0 4px 14px rgba(47, 107, 47, 0.45), inset 0 1px 0 rgba(255,255,255,0.25)",
+                              transition: "all 0.15s ease",
+                              letterSpacing: "0.2px"
                             }}
                           >
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <span>🖼</span>
-                              <span>Make from photos</span>
-                              <span style={{ fontSize: "10px", background: "rgba(255,255,255,0.25)", padding: "1px 6px", borderRadius: "10px" }}>Default</span>
-                            </div>
-                            <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.9 }}>$0 Cost · Instant from inventory</span>
+                            <span style={{ fontSize: "16px" }}>📸</span>
+                            <span>Make from Photos</span>
                           </button>
 
                           <button
