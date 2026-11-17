@@ -225,10 +225,10 @@ const LOCALIZED_VOICEOVERS: Record<string, (shop: string) => string> = {
 
 const ROYALTY_FREE_TRACKS = [
   { id: "none", name: "None (Add in Instagram app)", icon: "🔇", desc: "Best for adding trending songs in Instagram", url: "" },
-  { id: "festive_dhol", name: "Festive Celebration (Dhol Beats)", icon: "🪘", desc: "High-energy Indian celebration rhythm", url: "https://actions.google.com/sounds/v1/foley/drum_roll.ogg" },
-  { id: "traditional_sitar", name: "Traditional Classical Sitar", icon: "🪕", desc: "Heritage instrumental for silks & sarees", url: "https://actions.google.com/sounds/v1/ambiences/temple_bells.ogg" },
-  { id: "modern_lofi", name: "Modern Boutique Lo-fi", icon: "🎷", desc: "Relaxed upbeat retail groove", url: "https://actions.google.com/sounds/v1/household/clock_ticking.ogg" },
-  { id: "temple_flute", name: "Heritage Flute & Chimes", icon: "🪈", desc: "Calm devotional ethnic melody", url: "https://actions.google.com/sounds/v1/weather/wind_chimes_light.ogg" }
+  { id: "festive_dhol", name: "Festive Celebration (Dhol Beats)", icon: "🪘", desc: "High-energy Indian celebration rhythm", url: "/audio/festive_dhol.mp3" },
+  { id: "traditional_sitar", name: "Traditional Classical Sitar", icon: "🪕", desc: "Heritage instrumental for silks & sarees", url: "/audio/traditional_sitar.mp3" },
+  { id: "modern_lofi", name: "Modern Boutique Lo-fi", icon: "🎷", desc: "Relaxed upbeat retail groove", url: "/audio/modern_lofi.mp3" },
+  { id: "temple_flute", name: "Heritage Flute & Chimes", icon: "🪈", desc: "Calm devotional ethnic melody", url: "/audio/temple_flute.mp3" }
 ];
 
 
@@ -271,6 +271,24 @@ export function PostComposer({
   // Formats: post (1:1), reel (9:16), story (9:16)
   const [format, setFormat] = useState("post");
 
+  // Pause all media and audio whenever switching format (e.g. Story -> Reel or Reel -> Story)
+  useEffect(() => {
+    if (format !== "story") {
+      if (storyVideoRef.current) {
+        storyVideoRef.current.pause();
+      }
+      setIsStoryVideoPlaying(false);
+    }
+    if (format !== "reel") {
+      if (reelVideoPlayerRef.current) {
+        reelVideoPlayerRef.current.pause();
+      }
+      setIsPhotoReelPlaying(false);
+      pauseSyncedVoiceover();
+      pauseSyncedMusic();
+    }
+  }, [format]);
+
   // When: 'now' | 'schedule'
   const [when, setWhen] = useState("schedule");
   const [scheduledDate, setScheduledDate] = useState(() => {
@@ -312,6 +330,28 @@ export function PostComposer({
   const [selectedTrackId, setSelectedTrackId] = useState<string>("none");
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const [customAudioTrack, setCustomAudioTrack] = useState<{ id: string; name: string; url: string } | null>(null);
+  const audioFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const availableAudioTracks = customAudioTrack
+    ? [...ROYALTY_FREE_TRACKS, { id: "custom", name: `🎵 Custom: ${customAudioTrack.name}`, icon: "🎧", desc: "Your uploaded custom audio", url: customAudioTrack.url }]
+    : ROYALTY_FREE_TRACKS;
+
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const objUrl = URL.createObjectURL(file);
+    const newTrack = { id: "custom", name: file.name, url: objUrl };
+    setCustomAudioTrack(newTrack);
+    setSelectedTrackId("custom");
+
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.src = objUrl;
+      audioPreviewRef.current.play().then(() => setIsPlayingAudio(true)).catch((err) => console.warn("Audio play:", err));
+    }
+    showToast(`Custom audio "${file.name}" added and selected! 🎵`);
+  };
 
   // Tri-lingual AI Voiceover States
   const [voiceoverEnabled, setVoiceoverEnabled] = useState<boolean>(false);
@@ -535,7 +575,7 @@ export function PostComposer({
   };
 
   const playSyncedMusic = () => {
-    const currentTrack = ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId);
+    const currentTrack = availableAudioTracks.find((t) => t.id === selectedTrackId);
     if (currentTrack && currentTrack.url && audioPreviewRef.current) {
       if (audioPreviewRef.current.src !== currentTrack.url) {
         audioPreviewRef.current.src = currentTrack.url;
@@ -2386,18 +2426,32 @@ export function PostComposer({
                         />
                         {ICONS.upload} Upload
                       </label>
-                      {currentSlideImage && (
+                      {(currentSlideImage || currentSlideVideo) && (
                         <button
                           type="button"
                           onClick={() => {
                             setImage(null);
+                            setStoryVideoUrl("");
+                            if (storyVideoRef.current) {
+                              storyVideoRef.current.pause();
+                              storyVideoRef.current.src = "";
+                            }
+                            setIsStoryVideoPlaying(false);
                             setStorySlides((prev) => {
                               const next = [...prev];
-                              if (next[activeSlideIndex]) next[activeSlideIndex] = { ...next[activeSlideIndex], image: "" };
+                              if (next[activeSlideIndex]) {
+                                next[activeSlideIndex] = {
+                                  ...next[activeSlideIndex],
+                                  image: "",
+                                  video: undefined,
+                                  isVideo: false
+                                };
+                              }
                               return next;
                             });
+                            showToast("Slide cleared! Pattern restored ✨");
                           }}
-                          title="Remove image and use pattern"
+                          title="Remove media and use pattern"
                           style={{
                             background: "rgba(180,35,24,0.75)",
                             color: "#ffffff",
@@ -2440,6 +2494,18 @@ export function PostComposer({
                               setActiveSlideIndex(idx);
                               setCaption(slide.text);
                               if (slide.image) setImage(slide.image);
+                              const slideVid = (slide as any).video || "";
+                              setStoryVideoUrl(slideVid);
+                              setIsStoryVideoPlaying(Boolean(slideVid));
+                              if (storyVideoRef.current) {
+                                if (slideVid) {
+                                  storyVideoRef.current.src = slideVid;
+                                  storyVideoRef.current.play().catch(() => {});
+                                } else {
+                                  storyVideoRef.current.pause();
+                                  storyVideoRef.current.src = "";
+                                }
+                              }
                             }}
                             style={{
                               position: "relative",
@@ -3863,6 +3929,15 @@ export function PostComposer({
                     style={{ display: "none" }}
                   />
 
+                  {/* Hidden Audio File Input for Custom Audio Upload */}
+                  <input
+                    type="file"
+                    ref={audioFileInputRef}
+                    accept="audio/mp3,audio/wav,audio/m4a,audio/aac,audio/ogg,audio/*"
+                    style={{ display: "none" }}
+                    onChange={handleAudioFileUpload}
+                  />
+
                   {/* 1. Royalty-Free Music Library Card */}
                   <div
                     style={{
@@ -3897,24 +3972,21 @@ export function PostComposer({
                             Background Music
                           </span>
                           <span style={{ display: "block", fontSize: "11px", color: "var(--muted, #566054)" }}>
-                            Royalty-free & copyright-safe
+                            Local library & custom audio upload
                           </span>
                         </div>
                       </div>
 
-                      {selectedTrackId !== "none" && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <button
                           type="button"
-                          onClick={() => {
-                            const track = ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId);
-                            if (track && track.url) handleToggleTrackPreview(track.url);
-                          }}
+                          onClick={() => audioFileInputRef.current?.click()}
                           style={{
                             padding: "4px 10px",
                             borderRadius: "16px",
                             border: "1px solid var(--border, #979a96)",
-                            background: isPlayingAudio ? "#2F6B2F" : "transparent",
-                            color: isPlayingAudio ? "#ffffff" : "var(--ink, #171f16)",
+                            background: "rgba(255,255,255,0.08)",
+                            color: "var(--ink, #171f16)",
                             fontSize: "12px",
                             fontWeight: 600,
                             cursor: "pointer",
@@ -3923,10 +3995,80 @@ export function PostComposer({
                             gap: "4px"
                           }}
                         >
-                          <span>{isPlayingAudio ? "⏸ Pause" : "▶ Preview"}</span>
+                          📁 Upload Audio
                         </button>
-                      )}
+
+                        {selectedTrackId !== "none" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const track = availableAudioTracks.find((t) => t.id === selectedTrackId);
+                              if (track && track.url) handleToggleTrackPreview(track.url);
+                            }}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: "16px",
+                              border: "1px solid var(--border, #979a96)",
+                              background: isPlayingAudio ? "#2F6B2F" : "transparent",
+                              color: isPlayingAudio ? "#ffffff" : "var(--ink, #171f16)",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            <span>{isPlayingAudio ? "⏸ Pause" : "▶ Preview"}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Custom Audio Banner if Uploaded */}
+                    {customAudioTrack && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          background: "rgba(47, 107, 47, 0.12)",
+                          border: "1px solid rgba(47, 107, 47, 0.3)",
+                          fontSize: "12px",
+                          color: "#2F6B2F",
+                          fontWeight: 600
+                        }}
+                      >
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          🎵 Custom: {customAudioTrack.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isPlayingAudio && audioPreviewRef.current) {
+                              audioPreviewRef.current.pause();
+                              setIsPlayingAudio(false);
+                            }
+                            setCustomAudioTrack(null);
+                            setSelectedTrackId("none");
+                            showToast("Custom audio removed");
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#b42318",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            padding: "0 4px"
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
+                    )}
 
                     {/* Track Selection Dropdown */}
                     <select
@@ -3935,7 +4077,7 @@ export function PostComposer({
                         const newTrackId = e.target.value;
                         setSelectedTrackId(newTrackId);
                         if (isPhotoReelPlaying) {
-                          const track = ROYALTY_FREE_TRACKS.find((t) => t.id === newTrackId);
+                          const track = availableAudioTracks.find((t) => t.id === newTrackId);
                           if (track && track.url && audioPreviewRef.current) {
                             audioPreviewRef.current.src = track.url;
                             audioPreviewRef.current.play().then(() => setIsPlayingAudio(true)).catch(() => {});
@@ -3959,7 +4101,7 @@ export function PostComposer({
                         cursor: "pointer"
                       }}
                     >
-                      {ROYALTY_FREE_TRACKS.map((t) => (
+                      {availableAudioTracks.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.icon} {t.name}
                         </option>
@@ -3967,7 +4109,7 @@ export function PostComposer({
                     </select>
 
                     <span style={{ fontSize: "11.5px", color: "var(--muted, #566054)", lineHeight: 1.35 }}>
-                      {ROYALTY_FREE_TRACKS.find((t) => t.id === selectedTrackId)?.desc}
+                      {availableAudioTracks.find((t) => t.id === selectedTrackId)?.desc}
                     </span>
                   </div>
 
