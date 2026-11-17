@@ -1099,6 +1099,91 @@ def generate_voiceover_script(payload: VoiceoverScriptRequest):
         "script": script
     }
 
+def get_google_access_token() -> str:
+    """Gets Google OAuth2 access token for Cloud Text-to-Speech API."""
+    import google.auth
+    from google.auth.transport.requests import Request
+    try:
+        credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        credentials.refresh(Request())
+        return credentials.token
+    except Exception:
+        import subprocess
+        try:
+            return subprocess.check_output(["gcloud", "auth", "print-access-token"], timeout=5).decode().strip()
+        except Exception:
+            return ""
+
+class VoiceoverSynthesizeRequest(BaseModel):
+    text: str
+    language: str = "en"  # en, kn, hi
+    gender: str = "female"  # female, male
+    shop_name: Optional[str] = "Lakshmi Textiles"
+
+@app.post("/api/campaign/synthesize-voiceover")
+def synthesize_voiceover(payload: VoiceoverSynthesizeRequest):
+    """
+    Synthesizes natural, human-like voiceover using Google Cloud Neural & WaveNet voices
+    with SSML prosody, retail intonation, and breath pauses.
+    """
+    import re, requests
+    lang = (payload.language or "en").lower()
+    gender = (payload.gender or "female").lower()
+    text = payload.text.strip() if payload.text else f"Welcome to {payload.shop_name or 'our store'}!"
+
+    # Voice selection
+    if "kn" in lang:
+        lang_code = "kn-IN"
+        voice_name = "kn-IN-Wavenet-A" if gender == "female" else "kn-IN-Wavenet-B"
+    elif "hi" in lang:
+        lang_code = "hi-IN"
+        voice_name = "hi-IN-Neural2-A" if gender == "female" else "hi-IN-Neural2-B"
+    else:
+        lang_code = "en-IN"
+        voice_name = "en-IN-Neural2-A" if gender == "female" else "en-IN-Neural2-B"
+
+    # Build SSML with natural breath pauses and retail inflection
+    ssml_body = re.sub(r"[!|।]\s*", " <break time=\"400ms\"/> ", text)
+    ssml_body = re.sub(r"[.,]\s*", " <break time=\"300ms\"/> ", ssml_body)
+    ssml = f"<speak><prosody rate=\"94%\" pitch=\"+1st\">{ssml_body}</prosody></speak>"
+
+    token = get_google_access_token()
+    if token:
+        try:
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "x-goog-user-project": os.environ.get("GOOGLE_CLOUD_PROJECT", "digim-496018")
+            }
+            body = {
+                "input": {"ssml": ssml},
+                "voice": {"languageCode": lang_code, "name": voice_name},
+                "audioConfig": {
+                    "audioEncoding": "MP3",
+                    "speakingRate": 0.94,
+                    "pitch": 0.5 if gender == "female" else -0.5
+                }
+            }
+            res = requests.post("https://texttospeech.googleapis.com/v1/text:synthesize", headers=headers, json=body, timeout=8)
+            if res.status_code == 200:
+                audio_base64 = res.json().get("audioContent", "")
+                if audio_base64:
+                    return {
+                        "status": "success",
+                        "audio_url": f"data:audio/mp3;base64,{audio_base64}",
+                        "language": lang,
+                        "voice": voice_name
+                    }
+        except Exception as err:
+            print(f"Google Cloud TTS API error: {err}")
+
+    return {
+        "status": "fallback",
+        "audio_url": None,
+        "text": text,
+        "language": lang_code
+    }
+
 class ImageGenRequest(BaseModel):
     prompt: str
     num_images: Optional[int] = 1

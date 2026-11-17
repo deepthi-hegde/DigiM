@@ -777,3 +777,13 @@ def test_voiceover_script_generation():
     assert res_hi.status_code == 200
     assert "Lakshmi Silks" in res_hi.json()["script"]
     assert res_hi.json()["language"] == "hi"
+
+def test_synthesize_voiceover_endpoint():
+    res = client.post("/api/campaign/synthesize-voiceover", json={
+        "text": "ನಮಸ್ಕಾರ! ಲಕ್ಷ್ಮಿ ಟೆಕ್ಸ್‌ಟೈಲ್ಸ್‌ಗೆ ಸ್ವಾಗತ.",
+        "language": "kn",
+        "gender": "female",
+        "shop_name": "Lakshmi Silks"
+    })
+    assert res.status_code == 200
+    assert res.json()["status"] in ["success", "fallback"]

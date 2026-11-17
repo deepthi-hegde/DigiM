@@ -217,6 +217,12 @@ const CATEGORIES = [
 
 const POST_CATEGORIES = CATEGORIES;
 
+const LOCALIZED_VOICEOVERS: Record<string, (shop: string) => string> = {
+  en: (shop: string) => `Namaste! Welcome to ${shop}. Discover our exclusive pure silk sarees and festive collection with special discounts. Visit us today!`,
+  kn: (shop: string) => `ನಮಸ್ಕಾರ! ${shop}ಗೆ ಆತ್ಮೀಯ ಸ್ವಾಗತ. ನಮ್ಮಲ್ಲಿ ಅತ್ಯುತ್ತಮ ಶುದ್ಧ ರೇಷ್ಮೆ ಸೀರೆಗಳ ಮೇಲೆ ಭರ್ಜರಿ ರಿಯಾಯಿತಿ ಲಭ್ಯವಿದೆ. ಇಂದೇ ಭೇಟಿ ನೀಡಿ!`,
+  hi: (shop: string) => `नमस्ते! ${shop} में आपका स्वागत है। हमारे पास शुद्ध सिल्क साड़ियों और नए कलेक्शन पर विशेष छूट उपलब्ध है। आज ही पधारें!`
+};
+
 const ROYALTY_FREE_TRACKS = [
   { id: "none", name: "None (Add in Instagram app)", icon: "🔇", desc: "Best for adding trending songs in Instagram", url: "" },
   { id: "festive_dhol", name: "Festive Celebration (Dhol Beats)", icon: "🪘", desc: "High-energy Indian celebration rhythm", url: "https://actions.google.com/sounds/v1/foley/drum_roll.ogg" },
@@ -314,8 +320,42 @@ export function PostComposer({
   const [voiceoverText, setVoiceoverText] = useState<string>("");
   const [isPlayingVoiceover, setIsPlayingVoiceover] = useState<boolean>(false);
   const [isTranslatingVoiceover, setIsTranslatingVoiceover] = useState<boolean>(false);
+  const [isSynthesizingVoice, setIsSynthesizingVoice] = useState<boolean>(false);
+  const voiceoverAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Multi-photo Reel Picker
+  // Photo Reel Player States (for instant, smooth, $0 client-side playback)
+  const [reelMode, setReelMode] = useState<"none" | "photos" | "video">("none");
+  const [reelPhotos, setReelPhotos] = useState<string[]>([]);
+  const [activeReelPhotoIdx, setActiveReelPhotoIdx] = useState<number>(0);
+  const [isPhotoReelPlaying, setIsPhotoReelPlaying] = useState<boolean>(true);
+  const [photoReelProgress, setPhotoReelProgress] = useState<number>(0);
+
+  // Auto-play loop for Photo Reel
+  useEffect(() => {
+    if (reelMode !== "photos" || reelPhotos.length === 0 || !isPhotoReelPlaying) {
+      return;
+    }
+
+    const intervalMs = 2500; // 2.5s per photo
+    const stepMs = 50;
+    const progressPerStep = (stepMs / (intervalMs * reelPhotos.length)) * 100;
+
+    const timer = setInterval(() => {
+      setPhotoReelProgress((prev) => {
+        const next = prev + progressPerStep;
+        if (next >= 100) {
+          setActiveReelPhotoIdx(0);
+          return 0;
+        }
+        const currentIdx = Math.floor((next / 100) * reelPhotos.length);
+        setActiveReelPhotoIdx(Math.min(currentIdx, reelPhotos.length - 1));
+        return next;
+      });
+    }, stepMs);
+
+    return () => clearInterval(timer);
+  }, [reelMode, reelPhotos, isPhotoReelPlaying]);
   const [selectedReelPhotos, setSelectedReelPhotos] = useState<string[]>([]);
   const [isReelPhotoModalOpen, setIsReelPhotoModalOpen] = useState<boolean>(false);
 
@@ -332,6 +372,7 @@ export function PostComposer({
     if (!file) return;
     const objectUrl = URL.createObjectURL(file);
     setVideoUrl(objectUrl);
+    setReelMode("video");
     setTimeout(() => {
       captureFrameFromVideo(objectUrl, 0.5);
     }, 600);
@@ -404,16 +445,16 @@ export function PostComposer({
       showToast("Please select at least 1 photo for your Reel.");
       return;
     }
-    setIsGeneratingReel(true);
+    const chosenPhotos = [...selectedReelPhotos];
+    setReelPhotos(chosenPhotos);
+    setActiveReelPhotoIdx(0);
+    setPhotoReelProgress(0);
+    setIsPhotoReelPlaying(true);
+    setReelMode("photos");
+    setCoverImage(chosenPhotos[0]);
+    setVideoUrl(chosenPhotos[0]);
     setIsReelPhotoModalOpen(false);
-    showToast(`Compiling 9:16 vertical Reel from ${selectedReelPhotos.length} photos... ✨`);
-    setTimeout(() => {
-      const sampleReelUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
-      setVideoUrl(sampleReelUrl);
-      setCoverImage(selectedReelPhotos[0]);
-      setIsGeneratingReel(false);
-      showToast(`Reel created from ${selectedReelPhotos.length} photos! Ready to preview.`);
-    }, 1000);
+    showToast(`Reel created from ${chosenPhotos.length} photos! Playing preview.`);
   };
 
   // Toggle Background Audio Track Preview
@@ -428,71 +469,74 @@ export function PostComposer({
     }
   };
 
-  // Fetch localized voiceover script when language is switched
-  const handleVoiceoverLangChange = async (newLang: "en" | "kn" | "hi") => {
+  // Instant 0ms Localized Voiceover Switch
+  const handleVoiceoverLangChange = (newLang: "en" | "kn" | "hi") => {
     setVoiceoverLang(newLang);
-    setIsTranslatingVoiceover(true);
-    try {
-      const res = await fetch("/api/campaign/voiceover-script", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: caption || `Welcome to ${shopData.name}`,
-          language: newLang,
-          shop_name: shopData.name
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.script) {
-          setVoiceoverText(data.script);
-        }
-      }
-    } catch (err) {
-      console.error("Voiceover script error:", err);
-    } finally {
-      setIsTranslatingVoiceover(false);
+    const scriptFn = LOCALIZED_VOICEOVERS[newLang] || LOCALIZED_VOICEOVERS.en;
+    const instantScript = scriptFn(shopData.name || "Lakshmi Textiles");
+    setVoiceoverText(instantScript);
+    if (voiceoverAudioRef.current) {
+      voiceoverAudioRef.current.pause();
     }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPlayingVoiceover(false);
   };
 
-  // Play voiceover audio using native browser Web Speech API
-  const handlePlayVoiceover = () => {
+  // Play High-Fidelity Studio Neural Voiceover with Natural SSML Pauses & Emotion
+  const handlePlayVoiceover = async () => {
     if (isPlayingVoiceover) {
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      if (voiceoverAudioRef.current) voiceoverAudioRef.current.pause();
+      if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
       setIsPlayingVoiceover(false);
       return;
     }
 
-    const textToSpeak = voiceoverText || caption || `Welcome to ${shopData.name}! Check out our new collection.`;
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      showToast("Speech synthesis not supported in this browser.");
-      return;
+    const scriptFn = LOCALIZED_VOICEOVERS[voiceoverLang] || LOCALIZED_VOICEOVERS.en;
+    const textToSpeak = voiceoverText || scriptFn(shopData.name || "Lakshmi Textiles");
+    setIsSynthesizingVoice(true);
+
+    try {
+      const res = await fetch("/api/campaign/synthesize-voiceover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: textToSpeak,
+          language: voiceoverLang,
+          gender: voiceoverGender,
+          shop_name: shopData.name
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.audio_url && voiceoverAudioRef.current) {
+          voiceoverAudioRef.current.src = data.audio_url;
+          await voiceoverAudioRef.current.play();
+          setIsPlayingVoiceover(true);
+          setIsSynthesizingVoice(false);
+          showToast(`Playing studio Neural voiceover (${voiceoverLang === "kn" ? "ಕನ್ನಡ" : voiceoverLang === "hi" ? "हिन्दी" : "English"}) 🎙️`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Server TTS error, using browser fallback:", err);
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    if (voiceoverLang === "kn") {
-      utterance.lang = "kn-IN";
-    } else if (voiceoverLang === "hi") {
-      utterance.lang = "hi-IN";
-    } else {
-      utterance.lang = "en-IN";
+    setIsSynthesizingVoice(false);
+    // Fallback to Web Speech API if server TTS is unreachable
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(textToSpeak);
+      u.lang = voiceoverLang === "kn" ? "kn-IN" : (voiceoverLang === "hi" ? "hi-IN" : "en-IN");
+      u.rate = 0.92;
+      u.pitch = voiceoverGender === "female" ? 1.05 : 0.9;
+      u.onstart = () => setIsPlayingVoiceover(true);
+      u.onend = () => setIsPlayingVoiceover(false);
+      u.onerror = () => setIsPlayingVoiceover(false);
+      window.speechSynthesis.speak(u);
     }
-    utterance.rate = 0.95;
-    utterance.pitch = voiceoverGender === "female" ? 1.05 : 0.9;
-
-    const voices = window.speechSynthesis.getVoices();
-    const targetVoice = voices.find((v) => v.lang.startsWith(utterance.lang) || v.lang.includes(utterance.lang));
-    if (targetVoice) utterance.voice = targetVoice;
-
-    utterance.onstart = () => setIsPlayingVoiceover(true);
-    utterance.onend = () => setIsPlayingVoiceover(false);
-    utterance.onerror = () => setIsPlayingVoiceover(false);
-
-    window.speechSynthesis.speak(utterance);
-    showToast(`Playing ${voiceoverLang === "kn" ? "Kannada" : voiceoverLang === "hi" ? "Hindi" : "English"} voiceover 🎙️`);
   };
 
   // Generate Reel with AI
@@ -500,12 +544,22 @@ export function PostComposer({
     setIsGeneratingReel(true);
     showToast("Generating AI ethnic wear showcase Reel... ✨");
     setTimeout(() => {
-      const aiReelUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
-      setVideoUrl(aiReelUrl);
-      setCoverImage("https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80");
+      const aiPhotos = [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80"
+      ];
+      setReelPhotos(aiPhotos);
+      setSelectedReelPhotos(aiPhotos);
+      setActiveReelPhotoIdx(0);
+      setPhotoReelProgress(0);
+      setIsPhotoReelPlaying(true);
+      setReelMode("photos");
+      setCoverImage(aiPhotos[0]);
+      setVideoUrl(aiPhotos[0]);
       setIsGeneratingReel(false);
       showToast("AI Showcase Reel generated successfully! ✨");
-    }, 1800);
+    }, 1500);
   };
 
   // Brand Overlay Controls
@@ -2958,7 +3012,160 @@ export function PostComposer({
                         overflow: "hidden"
                       }}
                     >
-                      {videoUrl ? (
+                      {reelMode === "photos" && reelPhotos.length > 0 ? (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            position: "relative",
+                            cursor: "pointer",
+                            overflow: "hidden",
+                            background: "#000000"
+                          }}
+                          onClick={() => setIsPhotoReelPlaying(!isPhotoReelPlaying)}
+                        >
+                          {/* Active Photo with Smooth Transition & Ken Burns effect */}
+                          <img
+                            src={reelPhotos[activeReelPhotoIdx]}
+                            alt={`Photo ${activeReelPhotoIdx + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              transition: "transform 2.5s ease-out, opacity 0.35s ease",
+                              transform: isPhotoReelPlaying ? "scale(1.08)" : "scale(1.0)"
+                            }}
+                          />
+
+                          {/* Instagram-style Segmented Progress Bars at the Top */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "10px",
+                              left: "12px",
+                              right: "12px",
+                              display: "flex",
+                              gap: "4px",
+                              zIndex: 25
+                            }}
+                          >
+                            {reelPhotos.map((_, pIdx) => {
+                              let barFill = "0%";
+                              if (pIdx < activeReelPhotoIdx) barFill = "100%";
+                              else if (pIdx === activeReelPhotoIdx) {
+                                const photoDurationPct = 100 / reelPhotos.length;
+                                const currentPhotoStart = pIdx * photoDurationPct;
+                                const progressInPhoto = Math.max(0, Math.min(100, ((photoReelProgress - currentPhotoStart) / photoDurationPct) * 100));
+                                barFill = `${progressInPhoto}%`;
+                              }
+                              return (
+                                <div
+                                  key={pIdx}
+                                  style={{
+                                    flex: 1,
+                                    height: "3px",
+                                    borderRadius: "2px",
+                                    background: "rgba(255,255,255,0.35)",
+                                    overflow: "hidden"
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: barFill,
+                                      height: "100%",
+                                      background: "#ffffff",
+                                      transition: "width 0.05s linear"
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Centered Play / Pause Icon Button */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              width: "56px",
+                              height: "56px",
+                              borderRadius: "50%",
+                              background: "rgba(0,0,0,0.55)",
+                              backdropFilter: "blur(4px)",
+                              border: "1.5px solid rgba(255,255,255,0.4)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#ffffff",
+                              fontSize: "22px",
+                              opacity: isPhotoReelPlaying ? 0 : 1,
+                              transition: "opacity 0.2s ease",
+                              zIndex: 20
+                            }}
+                          >
+                            {isPhotoReelPlaying ? "⏸" : "▶"}
+                          </div>
+
+                          {/* Bottom Control Pill */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: "10px",
+                              left: "10px",
+                              right: "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "rgba(0,0,0,0.65)",
+                              backdropFilter: "blur(6px)",
+                              borderRadius: "10px",
+                              padding: "6px 12px",
+                              zIndex: 25
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <button
+                                type="button"
+                                onClick={() => setIsPhotoReelPlaying(!isPhotoReelPlaying)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#ffffff",
+                                  fontSize: "13px",
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  padding: 0
+                                }}
+                              >
+                                {isPhotoReelPlaying ? "⏸ Pause" : "▶ Play"}
+                              </button>
+                              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
+                                Photo {activeReelPhotoIdx + 1} of {reelPhotos.length}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleOpenPhotoPicker}
+                              style={{
+                                background: "rgba(255,255,255,0.15)",
+                                border: "1px solid rgba(255,255,255,0.25)",
+                                borderRadius: "6px",
+                                color: "#ffffff",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                padding: "3px 8px",
+                                cursor: "pointer"
+                              }}
+                            >
+                              Change photos
+                            </button>
+                          </div>
+                        </div>
+                      ) : reelMode === "video" && videoUrl ? (
                         <div style={{ width: "100%", height: "100%", position: "relative" }}>
                           <video
                             ref={reelVideoPlayerRef}
@@ -3219,11 +3426,14 @@ export function PostComposer({
                       <button
                         type="button"
                         onClick={() => {
-                          if (videoUrl) {
+                          if (reelMode === "photos" && reelPhotos.length > 0) {
+                            setCoverImage(reelPhotos[activeReelPhotoIdx]);
+                            showToast(`Photo ${activeReelPhotoIdx + 1} set as cover photo!`);
+                          } else if (videoUrl) {
                             captureFrameFromVideo(videoUrl, 1.0);
                             showToast("Captured frame from video!");
                           } else {
-                            showToast("Upload a video first to pick a frame.");
+                            showToast("Create a Reel first to pick a cover frame.");
                           }
                         }}
                         style={{
@@ -3750,8 +3960,14 @@ export function PostComposer({
                             ))}
                           </div>
 
+                          <audio
+                            ref={voiceoverAudioRef}
+                            onEnded={() => setIsPlayingVoiceover(false)}
+                            style={{ display: "none" }}
+                          />
                           <button
                             type="button"
+                            disabled={isSynthesizingVoice}
                             onClick={handlePlayVoiceover}
                             style={{
                               padding: "4px 12px",
@@ -3761,13 +3977,13 @@ export function PostComposer({
                               color: isPlayingVoiceover ? "#ffffff" : "#2F6B2F",
                               fontSize: "12px",
                               fontWeight: 700,
-                              cursor: "pointer",
+                              cursor: isSynthesizingVoice ? "wait" : "pointer",
                               display: "flex",
                               alignItems: "center",
                               gap: "4px"
                             }}
                           >
-                            <span>{isPlayingVoiceover ? "⏸ Stop Voice" : "▶ Listen to Voiceover"}</span>
+                            <span>{isSynthesizingVoice ? "Loading Studio Audio... ⏳" : isPlayingVoiceover ? "⏸ Stop Voice" : "▶ Listen to Voiceover"}</span>
                           </button>
                         </div>
 
