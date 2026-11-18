@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { PostComposer } from './PostComposer';
+import { PostComposer, getNowInIST } from './PostComposer';
 import Script from 'next/script';
 import { GoogleOAuthProvider, GoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 
@@ -6687,7 +6687,7 @@ function CalendarTab({
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'calendar' | 'upcoming' | 'drafts' | 'past'>(activeSubTab);
-  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [currentDate, setCurrentDate] = useState(() => { const t = getNowInIST(); return new Date(t.year, t.monthIndex, t.day); });
   const [activeMenuPostId, setActiveMenuPostId] = useState<number | null>(null);
   const [postingId, setPostingId] = useState<number | null>(null);
 
@@ -6733,8 +6733,8 @@ function CalendarTab({
     }
   };
 
-  // Calendar month navigation state
-  const today = new Date();
+  // Calendar month navigation state in IST
+  const istToday = getNowInIST();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -6745,7 +6745,8 @@ function CalendarTab({
     setCurrentDate(new Date(year, month + 1, 1));
   };
   const handleToday = () => {
-    setCurrentDate(new Date());
+    const nowIst = getNowInIST();
+    setCurrentDate(new Date(nowIst.year, nowIst.monthIndex, nowIst.day));
   };
 
   const firstDayIndex = new Date(year, month, 1).getDay();
@@ -7077,7 +7078,7 @@ function CalendarTab({
               Next ›
             </button>
           </div>
-          {(year !== today.getFullYear() || month !== today.getMonth()) && (
+          {(year !== istToday.year || month !== istToday.monthIndex) && (
             <button
               type="button"
               onClick={handleToday}
@@ -7127,7 +7128,7 @@ function CalendarTab({
             return eYear === year && eMonth === month && eDay === day;
           });
 
-          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const isToday = day === istToday.day && month === istToday.monthIndex && year === istToday.year;
 
           const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           return (

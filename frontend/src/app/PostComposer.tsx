@@ -232,15 +232,48 @@ const ROYALTY_FREE_TRACKS = [
 ];
 
 
-function formatDateTimeDisplay(dateStr, timeStr) {
+export function getNowInIST() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(now);
+
+  const map: Record<string, string> = {};
+  for (const p of parts) map[p.type] = p.value;
+
+  const year = parseInt(map.year, 10);
+  const month = parseInt(map.month, 10);
+  const day = parseInt(map.day, 10);
+  const hour = parseInt(map.hour, 10);
+  const minute = parseInt(map.minute, 10);
+
+  const dateStr = `${map.year}-${map.month}-${map.day}`;
+  const timeStr = `${map.hour}:${map.minute}`;
+
+  return { year, monthIndex: month - 1, day, hour, minute, dateStr, timeStr };
+}
+
+function formatDateTimeDisplay(dateStr: string, timeStr?: string) {
   try {
-    const d = new Date(`${dateStr}T${timeStr || "18:00"}`);
-    if (isNaN(d.getTime())) return `${dateStr}, ${timeStr}`;
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short"
-    }) + `, ` + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const [hours, minutes] = (timeStr || "18:00").split(":").map(Number);
+    const d = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(d);
+    const monthName = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(d);
+    
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const h12 = hours % 12 || 12;
+    const mStr = String(minutes).padStart(2, "0");
+    
+    return `${weekday}, ${monthName} ${day}, ${h12}:${mStr} ${ampm} IST`;
   } catch (e) {
     return `${dateStr}, ${timeStr}`;
   }
@@ -291,12 +324,8 @@ export function PostComposer({
 
   // When: 'now' | 'schedule'
   const [when, setWhen] = useState<"now" | "schedule">("now");
-  const [scheduledDate, setScheduledDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
-  });
-  const [scheduledTime, setScheduledTime] = useState("18:00");
+  const [scheduledDate, setScheduledDate] = useState(() => getNowInIST().dateStr);
+  const [scheduledTime, setScheduledTime] = useState(() => getNowInIST().timeStr);
 
   // Post to channels
   const [channels, setChannels] = useState({ facebook: true, instagram: true });
@@ -1247,13 +1276,19 @@ export function PostComposer({
           try {
             const dt = new Date(state.scheduled_time);
             if (!isNaN(dt.getTime())) {
-              const y = dt.getFullYear();
-              const m = String(dt.getMonth() + 1).padStart(2, '0');
-              const d = String(dt.getDate()).padStart(2, '0');
-              setScheduledDate(`${y}-${m}-${d}`);
-              const hh = String(dt.getHours()).padStart(2, '0');
-              const mm = String(dt.getMinutes()).padStart(2, '0');
-              setScheduledTime(`${hh}:${mm}`);
+              const parts = new Intl.DateTimeFormat("en-US", {
+                timeZone: "Asia/Kolkata",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+              }).formatToParts(dt);
+              const map: Record<string, string> = {};
+              for (const p of parts) map[p.type] = p.value;
+              setScheduledDate(`${map.year}-${map.month}-${map.day}`);
+              setScheduledTime(`${map.hour}:${map.minute}`);
               setWhen("schedule");
             }
           } catch (e) {}
