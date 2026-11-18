@@ -383,6 +383,15 @@ export function PostComposer({
   // Photo Reel Player States (for instant, smooth, $0 client-side playback)
   const [reelMode, setReelMode] = useState<"none" | "photos" | "video">("none");
   const [reelPhotos, setReelPhotos] = useState<string[]>([]);
+  const [sceneDurationSec, setSceneDurationSec] = useState<number>(2.5);
+  const [reelOverlayText, setReelOverlayText] = useState<string>("Festive Collection • Special Offer");
+  const [reelOverlayEnabled, setReelOverlayEnabled] = useState<boolean>(true);
+  const [reelOverlayStyle, setReelOverlayStyle] = useState<"glass" | "gold" | "minimal">("glass");
+  const [tweakSceneIdx, setTweakSceneIdx] = useState<number | null>(null);
+  const [tweakScenePrompt, setTweakScenePrompt] = useState<string>("");
+  const [isTweakingScene, setIsTweakingScene] = useState<boolean>(false);
+  const replaceSingleSceneInputRef = useRef<HTMLInputElement | null>(null);
+  const singleSceneInputRef = useRef<HTMLInputElement | null>(null);
   const [activeReelPhotoIdx, setActiveReelPhotoIdx] = useState<number>(0);
   const [isPhotoReelPlaying, setIsPhotoReelPlaying] = useState<boolean>(true);
   const [photoReelProgress, setPhotoReelProgress] = useState<number>(0);
@@ -393,7 +402,7 @@ export function PostComposer({
       return;
     }
 
-    const intervalMs = 2500; // 2.5s per photo
+    const intervalMs = (sceneDurationSec || 2.5) * 1000;
     const stepMs = 50;
     const progressPerStep = (stepMs / (intervalMs * reelPhotos.length)) * 100;
 
@@ -419,7 +428,7 @@ export function PostComposer({
     }, stepMs);
 
     return () => clearInterval(timer);
-  }, [reelMode, reelPhotos, isPhotoReelPlaying]);
+  }, [reelMode, reelPhotos, isPhotoReelPlaying, sceneDurationSec]);
   const [selectedReelPhotos, setSelectedReelPhotos] = useState<string[]>([]);
   const [isReelPhotoModalOpen, setIsReelPhotoModalOpen] = useState<boolean>(false);
 
@@ -737,6 +746,134 @@ export function PostComposer({
 
     setIsGeneratingReel(false);
     showToast("AI generation failed. Please try again or refine the prompt.");
+  };
+
+  // Scene-by-Scene Tweaks & Modular Edits (Gemini 1-scene regeneration, swapping, reordering)
+  const handleOpenTweakScene = (idx: number) => {
+    setTweakSceneIdx(idx);
+    const basePrompt = aiReelPrompt.trim() || `Cinematic 9:16 vertical commercial showcase for ${shopData.name || "Lakshmi Textiles"}, luxury ${shopData.sells || "festive pure silk sarees and bridal collection"}`;
+    setTweakScenePrompt(`${basePrompt}, Scene ${idx + 1} focal showcase, elegant boutique atmosphere, 4k commercial photography`);
+  };
+
+  const handleRegenerateSingleScene = async () => {
+    if (tweakSceneIdx === null) return;
+    setIsTweakingScene(true);
+    showToast(`Regenerating Scene ${tweakSceneIdx + 1} with Google Gemini... ⏳`);
+
+    try {
+      const promptToUse = tweakScenePrompt.trim() || `Cinematic 9:16 vertical showcase for ${shopData.name || "Lakshmi Textiles"}, luxury festive ethnic wear, 4k commercial photography`;
+      const res = await fetch("/api/campaign/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptToUse,
+          num_images: 1,
+          format_type: "story"
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const urls = (data.urls && data.urls.length > 0) ? data.urls : (data.url ? [data.url] : []);
+        if (urls.length > 0) {
+          const newUrl = urls[0];
+          setReelPhotos((prev) => {
+            const next = [...prev];
+            next[tweakSceneIdx] = newUrl;
+            return next;
+          });
+          setSelectedReelPhotos((prev) => {
+            const next = [...prev];
+            if (tweakSceneIdx < next.length) next[tweakSceneIdx] = newUrl;
+            return next;
+          });
+          setActiveReelPhotoIdx(tweakSceneIdx);
+          setIsTweakingScene(false);
+          setTweakSceneIdx(null);
+          showToast(`Scene ${tweakSceneIdx + 1} updated with Google Gemini! ✨`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Single scene tweak error:", err);
+    }
+
+    setIsTweakingScene(false);
+    showToast("Failed to regenerate scene. Please try again.");
+  };
+
+  const handleReplaceSingleSceneFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || tweakSceneIdx === null) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (dataUrl) {
+        setReelPhotos((prev) => {
+          const next = [...prev];
+          next[tweakSceneIdx] = dataUrl;
+          return next;
+        });
+        setSelectedReelPhotos((prev) => {
+          const next = [...prev];
+          if (tweakSceneIdx < next.length) next[tweakSceneIdx] = dataUrl;
+          return next;
+        });
+        setActiveReelPhotoIdx(tweakSceneIdx);
+        showToast(`Replaced Scene ${tweakSceneIdx + 1} with uploaded photo!`);
+        setTweakSceneIdx(null);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleAddSingleSceneFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (dataUrl) {
+        setReelPhotos((prev) => [...prev, dataUrl]);
+        setSelectedReelPhotos((prev) => [...prev, dataUrl]);
+        setActiveReelPhotoIdx(reelPhotos.length);
+        showToast(`Added Scene ${reelPhotos.length + 1}!`);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleMoveScene = (idx: number, direction: "prev" | "next") => {
+    const targetIdx = direction === "prev" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= reelPhotos.length) return;
+    setReelPhotos((prev) => {
+      const copy = [...prev];
+      const temp = copy[idx];
+      copy[idx] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+    setSelectedReelPhotos((prev) => {
+      const copy = [...prev];
+      const temp = copy[idx];
+      copy[idx] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+    setActiveReelPhotoIdx(targetIdx);
+  };
+
+  const handleDeleteScene = (idx: number) => {
+    if (reelPhotos.length <= 1) {
+      showToast("A Reel must have at least one scene.");
+      return;
+    }
+    setReelPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setSelectedReelPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setActiveReelPhotoIdx((prev) => Math.max(0, Math.min(prev, reelPhotos.length - 2)));
+    showToast(`Deleted Scene ${idx + 1}`);
   };
 
   // Brand Overlay Controls
@@ -3337,7 +3474,38 @@ export function PostComposer({
                               transition: "transform 2.5s ease-out, opacity 0.35s ease",
                               transform: isPhotoReelPlaying ? "scale(1.08)" : "scale(1.0)"
                             }}
-                          />{/* Sleek Continuous Instagram Reel Bottom Scrubber Bar */}
+                          />{/* Live On-Screen Text Overlay Banner */}
+                          {reelOverlayEnabled && reelOverlayText && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: "16px",
+                                left: "14px",
+                                right: "14px",
+                                padding: "8px 12px",
+                                borderRadius: "10px",
+                                background: reelOverlayStyle === "gold"
+                                  ? "linear-gradient(135deg, rgba(212,175,55,0.92) 0%, rgba(184,134,11,0.92) 100%)"
+                                  : reelOverlayStyle === "minimal"
+                                  ? "rgba(0,0,0,0.72)"
+                                  : "rgba(255,255,255,0.22)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
+                                border: "1px solid rgba(255,255,255,0.35)",
+                                boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+                                color: reelOverlayStyle === "gold" ? "#1a1200" : "#ffffff",
+                                textAlign: "center",
+                                zIndex: 22,
+                                pointerEvents: "none"
+                              }}
+                            >
+                              <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                                {reelOverlayText}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Sleek Continuous Instagram Reel Bottom Scrubber Bar */}
                           <div
                             style={{
                               position: "absolute",
@@ -3702,6 +3870,228 @@ export function PostComposer({
                       </span>
                     </div>
                   </div>
+
+                  {/* Hidden inputs for single scene replacement & addition */}
+                  <input
+                    ref={replaceSingleSceneInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleReplaceSingleSceneFile}
+                  />
+                  <input
+                    ref={singleSceneInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleAddSingleSceneFile}
+                  />
+
+                  {/* Reel Scene Storyboard & Quick Tweak Strip */}
+                  {reelMode === "photos" && reelPhotos.length > 0 && (
+                    <div
+                      style={{
+                        width: "100%",
+                        maxWidth: "310px",
+                        borderRadius: "14px",
+                        border: "1px solid var(--border, #979a96)",
+                        background: "var(--surface, #172016)",
+                        padding: "12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                        boxSizing: "border-box"
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                            🎬 Scenes ({reelPhotos.length})
+                          </span>
+                          <span style={{ fontSize: "11px", color: "var(--muted, #566054)" }}>
+                            • Tap to preview
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => singleSceneInputRef.current?.click()}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#2F6B2F",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            padding: 0
+                          }}
+                        >
+                          + Add scene
+                        </button>
+                      </div>
+
+                      {/* Scene cards row */}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          overflowX: "auto",
+                          paddingBottom: "4px"
+                        }}
+                      >
+                        {reelPhotos.map((photo, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              position: "relative",
+                              flex: "0 0 66px",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            <div
+                              onClick={() => {
+                                setActiveReelPhotoIdx(idx);
+                                setIsPhotoReelPlaying(false);
+                              }}
+                              style={{
+                                width: "66px",
+                                height: "92px",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                                border: activeReelPhotoIdx === idx ? "2.5px solid #2F6B2F" : "1.5px solid var(--border, #979a96)",
+                                cursor: "pointer",
+                                position: "relative",
+                                boxShadow: activeReelPhotoIdx === idx ? "0 0 10px rgba(47,107,47,0.45)" : "none"
+                              }}
+                            >
+                              <img src={photo} alt={`Scene ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "3px",
+                                  left: "3px",
+                                  background: "rgba(0,0,0,0.7)",
+                                  color: "#ffffff",
+                                  fontSize: "9px",
+                                  fontWeight: 700,
+                                  padding: "1px 4px",
+                                  borderRadius: "3px"
+                                }}
+                              >
+                                {idx + 1}
+                              </div>
+                              {activeReelPhotoIdx === idx && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: "3px",
+                                    right: "3px",
+                                    background: "#2F6B2F",
+                                    color: "#ffffff",
+                                    fontSize: "8px",
+                                    fontWeight: 800,
+                                    padding: "1px 3px",
+                                    borderRadius: "3px"
+                                  }}
+                                >
+                                  LIVE
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Quick action buttons under thumbnail */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveScene(idx, "prev")}
+                                  title="Move scene left"
+                                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "10px", padding: "1px", color: "var(--muted, #566054)" }}
+                                >
+                                  ◀
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenTweakScene(idx)}
+                                title="Tweak this scene with Gemini AI"
+                                style={{
+                                  background: "rgba(47,107,47,0.15)",
+                                  border: "1px solid rgba(47,107,47,0.35)",
+                                  color: "#2F6B2F",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  borderRadius: "4px",
+                                  padding: "2px 4px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                ✏️ Tweak
+                              </button>
+                              {idx < reelPhotos.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveScene(idx, "next")}
+                                  title="Move scene right"
+                                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "10px", padding: "1px", color: "var(--muted, #566054)" }}
+                                >
+                                  ▶
+                                </button>
+                              )}
+                              {reelPhotos.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteScene(idx)}
+                                  title="Delete scene"
+                                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "11px", padding: "1px", color: "#b42318" }}
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Scene Duration / Speed Selector */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          borderTop: "1px dashed var(--border, #979a96)",
+                          paddingTop: "8px",
+                          fontSize: "11px",
+                          color: "var(--muted, #566054)"
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>⏱ Speed: {sceneDurationSec}s / scene</span>
+                        <div style={{ display: "flex", gap: "4px" }}>
+                          {[2.0, 2.5, 3.5].map((sec) => (
+                            <button
+                              key={sec}
+                              type="button"
+                              onClick={() => setSceneDurationSec(sec)}
+                              style={{
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border, #979a96)",
+                                background: sceneDurationSec === sec ? "#2F6B2F" : "transparent",
+                                color: sceneDurationSec === sec ? "#ffffff" : "var(--ink, #e6eee4)",
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {sec}s
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Cover Picker Box */}
                   <div
@@ -4233,6 +4623,115 @@ export function PostComposer({
                     <span style={{ fontSize: "11.5px", color: "var(--muted, #566054)", lineHeight: 1.35 }}>
                       {availableAudioTracks.find((t) => t.id === selectedTrackId)?.desc}
                     </span>
+                  </div>
+
+                  {/* Video On-Screen Banner Overlay Card */}
+                  <div
+                    style={{
+                      border: "1px solid var(--border, #979a96)",
+                      borderRadius: "14px",
+                      background: "var(--surface, #172016)",
+                      padding: "14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "16px" }}>🏷️</span>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                            On-Screen Text Banner
+                          </span>
+                          <span style={{ fontSize: "11px", color: "var(--muted, #566054)" }}>
+                            Live headline overlay on video
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={reelOverlayEnabled}
+                        onClick={() => setReelOverlayEnabled(!reelOverlayEnabled)}
+                        style={{
+                          position: "relative",
+                          width: "44px",
+                          height: "24px",
+                          borderRadius: "12px",
+                          background: reelOverlayEnabled ? "#2F6B2F" : "var(--hair, #444)",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          transition: "background 0.2s ease",
+                          flexShrink: 0
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "3px",
+                            left: reelOverlayEnabled ? "23px" : "3px",
+                            width: "18px",
+                            height: "18px",
+                            borderRadius: "50%",
+                            background: "#ffffff",
+                            transition: "left 0.2s ease"
+                          }}
+                        />
+                      </button>
+                    </div>
+
+                    {reelOverlayEnabled && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+                        <input
+                          type="text"
+                          value={reelOverlayText}
+                          onChange={(e) => setReelOverlayText(e.target.value)}
+                          placeholder="e.g. Festive Collection • Special Offer"
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            borderRadius: "10px",
+                            border: "1px solid var(--border, #979a96)",
+                            background: "rgba(0,0,0,0.15)",
+                            color: "var(--ink, #e6eee4)",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            boxSizing: "border-box"
+                          }}
+                        />
+
+                        {/* Banner Style Selector */}
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          {[
+                            { id: "glass", label: "Frosted Glass" },
+                            { id: "gold", label: "Golden Luxe" },
+                            { id: "minimal", label: "Dark Minimal" }
+                          ].map((st) => (
+                            <button
+                              key={st.id}
+                              type="button"
+                              onClick={() => setReelOverlayStyle(st.id as any)}
+                              style={{
+                                flex: 1,
+                                padding: "5px 8px",
+                                borderRadius: "8px",
+                                border: reelOverlayStyle === st.id ? "1.5px solid #2F6B2F" : "1px solid var(--border, #979a96)",
+                                background: reelOverlayStyle === st.id ? "rgba(47, 107, 47, 0.15)" : "transparent",
+                                color: reelOverlayStyle === st.id ? "#2F6B2F" : "var(--ink, #e6eee4)",
+                                fontSize: "11px",
+                                fontWeight: reelOverlayStyle === st.id ? 700 : 500,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {st.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 2. Tri-Lingual AI Voiceover Card */}
@@ -5875,6 +6374,250 @@ export function PostComposer({
               >
                 {isGeneratingReel ? "Generating AI Reel... ⏳" : "✨ Generate AI Reel with Gemini"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tweak Single Scene Modal (Gemini AI or Replace Photo) */}
+      {tweakSceneIdx !== null && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.78)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => !isTweakingScene && setTweakSceneIdx(null)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "500px",
+              background: "var(--surface, #172016)",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              boxSizing: "border-box",
+              border: "1px solid var(--border, #979a96)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    background: "rgba(47, 107, 47, 0.15)",
+                    border: "1px solid rgba(47, 107, 47, 0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#2F6B2F",
+                    fontSize: "18px"
+                  }}
+                >
+                  ✏️
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                    Tweak Scene {tweakSceneIdx + 1}
+                  </h3>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "var(--muted, #566054)" }}>
+                    Edits only this scene — Scenes {reelPhotos.map((_, i) => i + 1).filter((i) => i !== tweakSceneIdx + 1).join(", ")} and audio remain untouched.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isTweakingScene}
+                onClick={() => setTweakSceneIdx(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  color: "var(--muted, #566054)",
+                  cursor: "pointer",
+                  padding: "4px"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Current Scene Preview & Local File Swap */}
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                alignItems: "center",
+                background: "rgba(0,0,0,0.15)",
+                borderRadius: "12px",
+                padding: "10px",
+                border: "1px solid var(--border, #979a96)"
+              }}
+            >
+              <img
+                src={reelPhotos[tweakSceneIdx]}
+                alt={`Scene ${tweakSceneIdx + 1}`}
+                style={{
+                  width: "50px",
+                  height: "70px",
+                  borderRadius: "8px",
+                  objectFit: "cover",
+                  border: "1.5px solid var(--border, #979a96)"
+                }}
+              />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                  Current Scene {tweakSceneIdx + 1}
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--muted, #566054)" }}>
+                  Want to use your own photo instead of AI?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => replaceSingleSceneInputRef.current?.click()}
+                  style={{
+                    alignSelf: "flex-start",
+                    marginTop: "2px",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border, #979a96)",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "var(--ink, #e6eee4)",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  📁 Upload Local Photo
+                </button>
+              </div>
+            </div>
+
+            {/* AI Prompt Input */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                ✨ Re-prompt with Google Gemini
+              </label>
+              <textarea
+                value={tweakScenePrompt}
+                onChange={(e) => setTweakScenePrompt(e.target.value)}
+                placeholder="Describe how to tweak or replace this specific scene..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  border: "1.5px solid var(--border, #979a96)",
+                  background: "var(--surface, #172016)",
+                  color: "var(--ink, #e6eee4)",
+                  fontSize: "13px",
+                  lineHeight: 1.4,
+                  resize: "vertical",
+                  boxSizing: "border-box"
+                }}
+              />
+
+              {/* Quick Tweak Modifier Chips */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted, #566054)", alignSelf: "center" }}>
+                  Quick tweaks:
+                </span>
+                {[
+                  "🔍 Close-up macro detail",
+                  "✨ Warm golden spotlight",
+                  "🌸 Festive floral decor",
+                  "👗 Holding silk drape",
+                  "💫 Modern studio backdrop"
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      setTweakScenePrompt((prev) => `${prev.trim()}, ${preset.replace(/^[^\s]+\s/, "")}`);
+                    }}
+                    style={{
+                      fontSize: "11px",
+                      padding: "3px 8px",
+                      borderRadius: "12px",
+                      border: "1px solid var(--border, #979a96)",
+                      background: "transparent",
+                      color: "var(--ink, #e6eee4)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer with Cost & Action */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingTop: "6px",
+                borderTop: "1px solid var(--border, #979a96)"
+              }}
+            >
+              <span style={{ fontSize: "11.5px", color: "var(--muted, #566054)" }}>
+                Cost: <b>~$0.02</b> (1 scene only)
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  disabled={isTweakingScene}
+                  onClick={() => setTweakSceneIdx(null)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--border, #979a96)",
+                    background: "transparent",
+                    color: "var(--ink, #e6eee4)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isTweakingScene}
+                  onClick={handleRegenerateSingleScene}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: isTweakingScene ? "rgba(47, 107, 47, 0.5)" : "#2F6B2F",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    cursor: isTweakingScene ? "wait" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    boxShadow: "0 4px 14px rgba(47, 107, 47, 0.4)"
+                  }}
+                >
+                  {isTweakingScene ? "Regenerating Scene... ⏳" : "✨ Regenerate Scene with Gemini"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
