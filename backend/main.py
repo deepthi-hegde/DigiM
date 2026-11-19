@@ -1435,7 +1435,7 @@ class AvatarReelRequest(BaseModel):
     language: str = "en"  # "en" | "kn" | "hi"
 
 @app.post("/api/campaign/generate-avatar-reel")
-def generate_avatar_reel(payload: AvatarReelRequest):
+def generate_avatar_reel(payload: AvatarReelRequest, db: Session = Depends(get_db)):
     """
     Generates a Talking Avatar Reel with a Male or Female presenter tailored to the business.
     1. Generates (or reuses) a 9:16 vertical studio presenter portrait via Gemini.
@@ -1447,24 +1447,44 @@ def generate_avatar_reel(payload: AvatarReelRequest):
     lang = (payload.language or "en").lower()
     script_text = (payload.script or "").strip() or f"Namaste! Welcome to {payload.business_name}. Explore our exclusive {payload.business_type} collection today!"
 
-    # Step 1: Generate or reuse presenter portrait
+    # Step 1: Reuse fixed per-account Male/Female avatar if already created, else generate & save once
+    avatar_tag = f"brand_avatar_{gender}"
     avatar_url = payload.avatar_image_url
     if not avatar_url:
-        person_desc = (
-            "friendly, charismatic Indian female boutique presenter in her late 20s wearing elegant festive ethnic attire, warm welcoming smile, looking directly into the camera"
-            if gender == "female"
-            else "friendly, charismatic Indian male brand presenter in his early 30s wearing smart ethnic-modern attire, warm confident smile, looking directly into the camera"
+        existing_avatar = (
+            db.query(MediaAsset)
+            .filter(MediaAsset.tenant_id == payload.tenant_id, MediaAsset.ai_tags == avatar_tag)
+            .order_by(MediaAsset.id.asc())
+            .first()
         )
-        avatar_prompt = (
-            f"Vertical 9:16 medium close-up studio portrait of a {person_desc}, "
-            f"standing inside a softly blurred upscale {payload.business_name} ({payload.business_type}) store background, "
-            f"soft golden commercial key lighting, crisp 4k DSLR video frame look, centered head and shoulders for talking-head video."
-        )
-        img_res = generate_ai_image(ImageGenRequest(prompt=avatar_prompt, num_images=1, format_type="story"))
-        urls = img_res.get("urls") or ([img_res.get("url")] if img_res.get("url") else [])
-        if not urls:
-            raise HTTPException(status_code=500, detail="Failed to generate presenter avatar portrait")
-        avatar_url = urls[0]
+        if existing_avatar and existing_avatar.url:
+            avatar_url = existing_avatar.url
+        else:
+            person_desc = (
+                "friendly, charismatic Indian female boutique presenter in her late 20s wearing elegant festive ethnic attire, warm welcoming smile, looking directly into the camera"
+                if gender == "female"
+                else "friendly, charismatic Indian male brand presenter in his early 30s wearing smart ethnic-modern attire, warm confident smile, looking directly into the camera"
+            )
+            avatar_prompt = (
+                f"Vertical 9:16 medium close-up studio portrait of a {person_desc}, "
+                f"standing inside a softly blurred upscale {payload.business_name} ({payload.business_type}) store background, "
+                f"soft golden commercial key lighting, crisp 4k DSLR video frame look, centered head and shoulders for talking-head video."
+            )
+            img_res = generate_ai_image(ImageGenRequest(prompt=avatar_prompt, num_images=1, format_type="story"))
+            urls = img_res.get("urls") or ([img_res.get("url")] if img_res.get("url") else [])
+            if not urls:
+                raise HTTPException(status_code=500, detail="Failed to generate presenter avatar portrait")
+            perm_avatar_url = save_permanent_asset_if_needed(urls[0]) or urls[0]
+            avatar_url = perm_avatar_url
+            db.add(MediaAsset(
+                tenant_id=payload.tenant_id,
+                filename=f"brand_avatar_{gender}_{payload.tenant_id}.jpg",
+                url=avatar_url,
+                file_type="image",
+                ai_tags=avatar_tag,
+                ai_description=f"Fixed {gender} brand presenter avatar for {payload.business_name}"
+            ))
+            db.commit()
 
     # Step 2: Synthesize studio voiceover matching gender and language
     vo_res = synthesize_voiceover(VoiceoverSynthesizeRequest(

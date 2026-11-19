@@ -440,7 +440,7 @@ export function PostComposer({
         const next = prev + progressPerStep;
         if (next >= 100) {
           setActiveReelPhotoIdx(0);
-          if (voiceoverAudioRef.current && voiceoverEnabled) {
+          if (voiceoverAudioRef.current && voiceoverEnabled && voiceoverAudioRef.current.paused) {
             voiceoverAudioRef.current.currentTime = 0;
             voiceoverAudioRef.current.play().catch(() => {});
           }
@@ -785,6 +785,7 @@ export function PostComposer({
           setVideoUrl(data.avatar_url);
           if (data.audio_url && voiceoverAudioRef.current) {
             voiceoverAudioRef.current.src = data.audio_url;
+            voiceoverAudioRef.current.currentTime = 0;
             voiceoverAudioRef.current.play().then(() => setIsPlayingVoiceover(true)).catch(() => {});
           }
           setIsAiReelModalOpen(false);
@@ -3563,6 +3564,13 @@ export function PostComposer({
               </div>
             ) : format === "reel" ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "28px", alignItems: "flex-start" }}>
+                {/* Always-mounted Voiceover Audio Element so 0s playback works on first generation */}
+                <audio
+                  ref={voiceoverAudioRef}
+                  onEnded={() => setIsPlayingVoiceover(false)}
+                  style={{ display: "none" }}
+                />
+
                 {/* Hidden file inputs */}
                 <input
                   type="file"
@@ -5165,11 +5173,7 @@ export function PostComposer({
                             ))}
                           </div>
 
-                          <audio
-                            ref={voiceoverAudioRef}
-                            onEnded={() => setIsPlayingVoiceover(false)}
-                            style={{ display: "none" }}
-                          />
+
                           <button
                             type="button"
                             disabled={isSynthesizingVoice}
