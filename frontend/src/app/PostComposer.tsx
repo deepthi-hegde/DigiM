@@ -727,11 +727,141 @@ export function PostComposer({
   const [isAiReelModalOpen, setIsAiReelModalOpen] = useState<boolean>(false);
   const [aiReelPrompt, setAiReelPrompt] = useState<string>("");
   const [aiSceneCount, setAiSceneCount] = useState<number>(2);
+  const [aiReelGenMode, setAiReelGenMode] = useState<"avatar" | "scenes">("avatar");
+  const [avatarGender, setAvatarGender] = useState<"female" | "male">("female");
+  const [avatarScript, setAvatarScript] = useState<string>("");
+  const [isSavingReelToLibrary, setIsSavingReelToLibrary] = useState<boolean>(false);
+  const [savedReelToLibrary, setSavedReelToLibrary] = useState<boolean>(false);
 
   const handleOpenAiReelModal = () => {
     const defaultPrompt = `Cinematic 9:16 vertical commercial showcase for ${shopData.name || "Lakshmi Textiles"}, luxury ${shopData.sells || "festive pure silk sarees and bridal collection"}, elegant boutique display with warm golden spotlight, intricate zari embroidery detail, 4k commercial photography`;
     setAiReelPrompt(defaultPrompt);
+    const scriptFn = LOCALIZED_VOICEOVERS[voiceoverLang] || LOCALIZED_VOICEOVERS.en;
+    setAvatarScript(voiceoverText || scriptFn(shopData.name || "Lakshmi Textiles"));
     setIsAiReelModalOpen(true);
+  };
+
+  const handleGenerateAvatarReel = async () => {
+    setIsGeneratingReel(true);
+    setSavedReelToLibrary(false);
+    showToast(`Generating ${avatarGender === "female" ? "Female" : "Male"} Talking Avatar Reel... ⏳`);
+    try {
+      const savedTenantId = typeof window !== "undefined" ? parseInt(localStorage.getItem("tenant_id") || "1", 10) || 1 : 1;
+      const res = await fetch("/api/campaign/generate-avatar-reel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: savedTenantId,
+          avatar_gender: avatarGender,
+          business_name: shopData.name || "Lakshmi Textiles",
+          business_type: shopData.sells || "festive silk sarees and ethnic wear",
+          script: avatarScript.trim(),
+          language: voiceoverLang
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVoiceoverGender(avatarGender);
+        setVoiceoverText(avatarScript.trim());
+        setVoiceoverEnabled(true);
+        if (data.mode === "lip_sync_mp4" && data.video_url) {
+          setVideoUrl(data.video_url);
+          setCoverImage(data.avatar_url || "");
+          setReelMode("video");
+          setIsAiReelModalOpen(false);
+          setIsGeneratingReel(false);
+          showToast("Lip-synced Talking Avatar video generated! 🎬🗣️");
+          return;
+        } else if (data.avatar_url) {
+          setReelPhotos([data.avatar_url]);
+          setSelectedReelPhotos([data.avatar_url]);
+          setActiveReelPhotoIdx(0);
+          setPhotoReelProgress(0);
+          setIsPhotoReelPlaying(true);
+          setReelMode("photos");
+          setCoverImage(data.avatar_url);
+          setVideoUrl(data.avatar_url);
+          if (data.audio_url && voiceoverAudioRef.current) {
+            voiceoverAudioRef.current.src = data.audio_url;
+            voiceoverAudioRef.current.play().then(() => setIsPlayingVoiceover(true)).catch(() => {});
+          }
+          setIsAiReelModalOpen(false);
+          setIsGeneratingReel(false);
+          showToast(
+            data.needs_fal_key
+              ? "Presenter Avatar & Voiceover ready! (Add FAL_API_KEY in backend/.env for full lip-sync MP4) 🗣️"
+              : "Talking Avatar presenter generated! 🗣️✨"
+          );
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Avatar Reel generation error:", err);
+    }
+    setIsGeneratingReel(false);
+    showToast("Avatar Reel generation failed. Please try again.");
+  };
+
+  const handleSaveReelToLibrary = async () => {
+    const mediaUrl = reelMode === "video" ? videoUrl : (reelPhotos[activeReelPhotoIdx] || videoUrl);
+    if (!mediaUrl) {
+      showToast("Generate or upload a Reel first before saving.");
+      return;
+    }
+    setIsSavingReelToLibrary(true);
+    try {
+      const savedTenantId = typeof window !== "undefined" ? parseInt(localStorage.getItem("tenant_id") || "1", 10) || 1 : 1;
+      const res = await fetch("/api/assets/save-to-library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: savedTenantId,
+          image_url: mediaUrl,
+          file_type: reelMode === "video" ? "video" : "image"
+        })
+      });
+      if (res.ok) {
+        setSavedReelToLibrary(true);
+        showToast("Saved Reel to Media Library! 📚✨");
+      } else {
+        showToast("Could not save to Media Library.");
+      }
+    } catch (e) {
+      showToast("Network error while saving to Media Library.");
+    } finally {
+      setIsSavingReelToLibrary(false);
+    }
+  };
+
+  const handleDownloadReel = async () => {
+    const mediaUrl = reelMode === "video" ? videoUrl : (reelPhotos[activeReelPhotoIdx] || videoUrl);
+    if (!mediaUrl) {
+      showToast("No Reel media available to download.");
+      return;
+    }
+    try {
+      const ext = reelMode === "video" || /\.(mp4|mov|webm)$/i.test(mediaUrl) || mediaUrl.startsWith("data:video") ? "mp4" : "jpg";
+      const fileName = `${(shopData.name || "digim").toLowerCase().replace(/[^a-z0-9]+/g, "_")}_reel_${Date.now()}.${ext}`;
+      const res = await fetch(mediaUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      showToast(`Downloading ${fileName}... ⬇️`);
+    } catch (e) {
+      const a = document.createElement("a");
+      a.href = mediaUrl;
+      a.download = `digim_reel_${Date.now()}.mp4`;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const handleGenerateReelAi = async () => {
@@ -4193,6 +4323,66 @@ export function PostComposer({
                     </div>
                   )}
 
+                  {/* Save to Media Library & Download to Computer */}
+                  {reelMode !== "none" && (
+                    <div
+                      style={{
+                        width: "100%",
+                        maxWidth: "310px",
+                        display: "flex",
+                        gap: "8px",
+                        boxSizing: "border-box"
+                      }}
+                    >
+                      <button
+                        type="button"
+                        disabled={isSavingReelToLibrary}
+                        onClick={handleSaveReelToLibrary}
+                        style={{
+                          flex: 1,
+                          padding: "9px 10px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: savedReelToLibrary ? "rgba(47, 107, 47, 0.18)" : "var(--surface, #172016)",
+                          color: savedReelToLibrary ? "#2F6B2F" : "var(--ink, #e6eee4)",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          cursor: isSavingReelToLibrary ? "wait" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "5px"
+                        }}
+                      >
+                        <span>{savedReelToLibrary ? "✓" : "💾"}</span>
+                        <span>{isSavingReelToLibrary ? "Saving..." : savedReelToLibrary ? "Saved to Library" : "Save to Library"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadReel}
+                        style={{
+                          flex: 1,
+                          padding: "9px 10px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border, #979a96)",
+                          background: "var(--surface, #172016)",
+                          color: "var(--ink, #e6eee4)",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "5px"
+                        }}
+                      >
+                        <span>⬇️</span>
+                        <span>Download</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Cover Picker Box */}
                   <div
                     style={{
@@ -6365,6 +6555,159 @@ export function PostComposer({
               </button>
             </div>
 
+            {/* Mode Switcher: Talking Avatar vs Scene Showcase */}
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                padding: "4px",
+                borderRadius: "10px",
+                background: "rgba(0,0,0,0.18)",
+                border: "1px solid var(--border, #979a96)"
+              }}
+            >
+              <button
+                type="button"
+                disabled={isGeneratingReel}
+                onClick={() => setAiReelGenMode("avatar")}
+                style={{
+                  flex: 1,
+                  padding: "8px 10px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: aiReelGenMode === "avatar" ? "#2F6B2F" : "transparent",
+                  color: aiReelGenMode === "avatar" ? "#ffffff" : "var(--ink, #e6eee4)",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                🗣️ Talking Avatar (Male / Female)
+              </button>
+              <button
+                type="button"
+                disabled={isGeneratingReel}
+                onClick={() => setAiReelGenMode("scenes")}
+                style={{
+                  flex: 1,
+                  padding: "8px 10px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: aiReelGenMode === "scenes" ? "#2F6B2F" : "transparent",
+                  color: aiReelGenMode === "scenes" ? "#ffffff" : "var(--ink, #e6eee4)",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                🎬 AI Scene Showcase
+              </button>
+            </div>
+
+            {aiReelGenMode === "avatar" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* Presenter Gender Selector */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                    Choose Business Presenter Avatar
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    {[
+                      { id: "female", icon: "👩", title: "Female Presenter", desc: "Warm boutique spokesperson" },
+                      { id: "male", icon: "👨", title: "Male Presenter", desc: "Confident brand spokesperson" }
+                    ].map((av) => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        disabled={isGeneratingReel}
+                        onClick={() => setAvatarGender(av.id as "female" | "male")}
+                        style={{
+                          padding: "10px 12px",
+                          borderRadius: "10px",
+                          border: avatarGender === av.id ? "2px solid #2F6B2F" : "1px solid var(--border, #979a96)",
+                          background: avatarGender === av.id ? "rgba(47, 107, 47, 0.16)" : "transparent",
+                          color: "var(--ink, #e6eee4)",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px"
+                        }}
+                      >
+                        <span style={{ fontSize: "24px" }}>{av.icon}</span>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 700 }}>{av.title}</span>
+                          <span style={{ fontSize: "11px", color: "var(--muted, #566054)" }}>{av.desc}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Language Selector */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                    Spoken Language:
+                  </span>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {[
+                      { id: "en", label: "English" },
+                      { id: "kn", label: "ಕನ್ನಡ" },
+                      { id: "hi", label: "हिन्दी" }
+                    ].map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        disabled={isGeneratingReel}
+                        onClick={() => {
+                          handleVoiceoverLangChange(l.id as any);
+                          const fn = LOCALIZED_VOICEOVERS[l.id] || LOCALIZED_VOICEOVERS.en;
+                          setAvatarScript(fn(shopData.name || "Lakshmi Textiles"));
+                        }}
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "8px",
+                          border: voiceoverLang === l.id ? "1.5px solid #2F6B2F" : "1px solid var(--border, #979a96)",
+                          background: voiceoverLang === l.id ? "rgba(47, 107, 47, 0.15)" : "transparent",
+                          color: voiceoverLang === l.id ? "#2F6B2F" : "var(--ink, #e6eee4)",
+                          fontSize: "12px",
+                          fontWeight: voiceoverLang === l.id ? 700 : 500,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Spoken Script */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ink, #e6eee4)" }}>
+                    What should the presenter say?
+                  </label>
+                  <textarea
+                    value={avatarScript}
+                    onChange={(e) => setAvatarScript(e.target.value)}
+                    rows={3}
+                    placeholder="Enter the script your presenter will speak..."
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "10px",
+                      border: "1.5px solid var(--border, #979a96)",
+                      background: "var(--surface, #172016)",
+                      color: "var(--ink, #e6eee4)",
+                      fontSize: "13px",
+                      lineHeight: 1.4,
+                      resize: "vertical",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Prompt Textarea */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--ink, #e6eee4)" }}>
@@ -6461,6 +6804,9 @@ export function PostComposer({
               </div>
             </div>
 
+            </>
+            )}
+
             {/* Action Buttons */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "6px" }}>
               <button
@@ -6484,7 +6830,7 @@ export function PostComposer({
               <button
                 type="button"
                 disabled={isGeneratingReel}
-                onClick={handleGenerateReelAi}
+                onClick={aiReelGenMode === "avatar" ? handleGenerateAvatarReel : handleGenerateReelAi}
                 style={{
                   padding: "9px 18px",
                   borderRadius: "10px",
@@ -6500,7 +6846,9 @@ export function PostComposer({
                   boxShadow: "0 4px 14px rgba(47, 107, 47, 0.4)"
                 }}
               >
-                {isGeneratingReel ? "Generating AI Reel... ⏳" : "✨ Generate AI Reel with Gemini"}
+                {isGeneratingReel
+                  ? (aiReelGenMode === "avatar" ? "Generating Talking Avatar... ⏳" : "Generating AI Reel... ⏳")
+                  : (aiReelGenMode === "avatar" ? "🗣️ Generate Talking Avatar Reel" : "✨ Generate AI Reel with Gemini")}
               </button>
             </div>
           </div>

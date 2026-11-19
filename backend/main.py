@@ -1396,30 +1396,146 @@ def list_campaigns(tenant_id: int = 1, db: Session = Depends(get_db)):
 class SaveToLibraryRequest(BaseModel):
     tenant_id: int = 1
     image_url: str
+    file_type: Optional[str] = None
 
 @app.post("/api/assets/save-to-library")
 def save_asset_to_library(payload: SaveToLibraryRequest, db: Session = Depends(get_db)):
     """
-    Saves an AI-generated image (temp path or GCS URL) permanently to the media library database.
+    Saves an AI-generated image or video (temp path, data URL, or remote URL) permanently to the media library database.
     """
     if not payload.image_url:
-        raise HTTPException(status_code=400, detail="Image URL is required")
+        raise HTTPException(status_code=400, detail="Media URL is required")
         
     perm_url = save_permanent_asset_if_needed(payload.image_url)
+    url_lower = (perm_url or payload.image_url).lower()
+    inferred_type = payload.file_type or ("video" if (any(url_lower.endswith(ext) for ext in (".mp4", ".mov", ".webm")) or url_lower.startswith("data:video")) else "image")
+    default_name = "ai_gen_video.mp4" if inferred_type == "video" else "ai_gen_asset.jpg"
     
     media_entry = MediaAsset(
         tenant_id=payload.tenant_id,
-        filename=os.path.basename(perm_url) if perm_url else "ai_gen_asset.jpg",
+        filename=os.path.basename(perm_url) if perm_url and not perm_url.startswith("data:") else default_name,
         url=perm_url,
-        file_type="image",
-        ai_tags="ai_generated, saved",
-        ai_description="Saved AI-generated marketing visual"
+        file_type=inferred_type,
+        ai_tags=f"ai_generated, saved, {inferred_type}",
+        ai_description=f"Saved AI-generated marketing {inferred_type}"
     )
     db.add(media_entry)
     db.commit()
     db.refresh(media_entry)
     
-    return {"status": "success", "url": perm_url, "message": "Asset added to library successfully!"}
+    return {"status": "success", "url": perm_url, "file_type": inferred_type, "message": f"{inferred_type.capitalize()} added to media library!"}
+
+class AvatarReelRequest(BaseModel):
+    tenant_id: int = 1
+    avatar_gender: str = "female"  # "female" | "male"
+    avatar_image_url: Optional[str] = None
+    business_name: str = "Lakshmi Textiles"
+    business_type: str = "festive silk sarees and ethnic wear"
+    script: str = ""
+    language: str = "en"  # "en" | "kn" | "hi"
+
+@app.post("/api/campaign/generate-avatar-reel")
+def generate_avatar_reel(payload: AvatarReelRequest):
+    """
+    Generates a Talking Avatar Reel with a Male or Female presenter tailored to the business.
+    1. Generates (or reuses) a 9:16 vertical studio presenter portrait via Gemini.
+    2. Synthesizes studio Neural2/WaveNet voiceover in en/kn/hi matching the presenter gender.
+    3. If FAL_API_KEY is configured, runs lip-sync (fal-ai/sadtalker) to output a real talking .mp4 video.
+       Otherwise returns the presenter portrait + synced voiceover for live preview.
+    """
+    gender = "male" if (payload.avatar_gender or "").lower() == "male" else "female"
+    lang = (payload.language or "en").lower()
+    script_text = (payload.script or "").strip() or f"Namaste! Welcome to {payload.business_name}. Explore our exclusive {payload.business_type} collection today!"
+
+    # Step 1: Generate or reuse presenter portrait
+    avatar_url = payload.avatar_image_url
+    if not avatar_url:
+        person_desc = (
+            "friendly, charismatic Indian female boutique presenter in her late 20s wearing elegant festive ethnic attire, warm welcoming smile, looking directly into the camera"
+            if gender == "female"
+            else "friendly, charismatic Indian male brand presenter in his early 30s wearing smart ethnic-modern attire, warm confident smile, looking directly into the camera"
+        )
+        avatar_prompt = (
+            f"Vertical 9:16 medium close-up studio portrait of a {person_desc}, "
+            f"standing inside a softly blurred upscale {payload.business_name} ({payload.business_type}) store background, "
+            f"soft golden commercial key lighting, crisp 4k DSLR video frame look, centered head and shoulders for talking-head video."
+        )
+        img_res = generate_image(ImageGenerateRequest(prompt=avatar_prompt, num_images=1, format_type="story"))
+        urls = img_res.get("urls") or ([img_res.get("url")] if img_res.get("url") else [])
+        if not urls:
+            raise HTTPException(status_code=500, detail="Failed to generate presenter avatar portrait")
+        avatar_url = urls[0]
+
+    # Step 2: Synthesize studio voiceover matching gender and language
+    vo_res = synthesize_voiceover(VoiceoverSynthesizeRequest(
+        text=script_text,
+        language=lang,
+        gender=gender,
+        shop_name=payload.business_name
+    ))
+    audio_url = vo_res.get("audio_url", "")
+
+    # Step 3: Lip-sync to real MP4 via fal.ai SadTalker if FAL_API_KEY is configured
+    fal_key = (os.environ.get("FAL_API_KEY") or "").strip()
+    if fal_key and "SUPERADMIN_PASSWORD" not in fal_key and audio_url:
+        try:
+            import fal_client, base64, tempfile, uuid
+            os.environ["FAL_KEY"] = fal_key
+
+            # Upload portrait and audio to fal storage if they are local paths or data URLs
+            source_img_url = avatar_url
+            if avatar_url.startswith("/api/assets/temp/") or avatar_url.startswith("/api/assets/raw/"):
+                fname = os.path.basename(avatar_url)
+                local_img = os.path.join(TEMP_ASSETS_DIR if "/temp/" in avatar_url else ASSETS_DIR, fname)
+                if os.path.exists(local_img):
+                    source_img_url = fal_client.upload_file(local_img)
+
+            driven_audio_url = audio_url
+            if audio_url.startswith("data:audio"):
+                b64_data = audio_url.split(",", 1)[1]
+                tmp_mp3 = os.path.join(TEMP_ASSETS_DIR, f"vo_{uuid.uuid4().hex[:8]}.mp3")
+                with open(tmp_mp3, "wb") as f_mp3:
+                    f_mp3.write(base64.b64decode(b64_data))
+                driven_audio_url = fal_client.upload_file(tmp_mp3)
+
+            result = fal_client.subscribe(
+                "fal-ai/sadtalker",
+                arguments={
+                    "source_image_url": source_img_url,
+                    "driven_audio_url": driven_audio_url,
+                    "still": False,
+                    "preprocess": "full"
+                }
+            )
+            remote_video_url = (result.get("video") or {}).get("url")
+            if remote_video_url:
+                # Download locally so it can be previewed, saved to library, and downloaded
+                import requests as req_lib
+                v_resp = req_lib.get(remote_video_url, timeout=60)
+                if v_resp.status_code == 200:
+                    vid_fname = f"avatar_reel_{uuid.uuid4().hex[:8]}.mp4"
+                    vid_path = os.path.join(TEMP_ASSETS_DIR, vid_fname)
+                    with open(vid_path, "wb") as vf:
+                        vf.write(v_resp.content)
+                    return {
+                        "status": "success",
+                        "mode": "lip_sync_mp4",
+                        "video_url": f"/api/assets/temp/{vid_fname}",
+                        "avatar_url": avatar_url,
+                        "audio_url": audio_url,
+                        "gender": gender
+                    }
+        except Exception as e:
+            print(f"fal.ai SadTalker error (falling back to avatar preview): {e}")
+
+    return {
+        "status": "success",
+        "mode": "avatar_preview",
+        "avatar_url": avatar_url,
+        "audio_url": audio_url,
+        "gender": gender,
+        "needs_fal_key": not (bool(fal_key) and "SUPERADMIN_PASSWORD" not in fal_key)
+    }
 
 @app.get("/api/assets")
 def list_assets(tenant_id: int = 1, db: Session = Depends(get_db)):
