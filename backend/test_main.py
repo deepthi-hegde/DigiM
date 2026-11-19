@@ -850,3 +850,38 @@ def test_synthesize_voiceover_endpoint():
     })
     assert res.status_code == 200
     assert res.json()["status"] in ["success", "fallback"]
+
+
+def test_generate_avatar_reel_endpoint(monkeypatch):
+    import main as main_mod
+    monkeypatch.setattr(
+        main_mod,
+        "generate_ai_image",
+        lambda payload: {"status": "success", "urls": ["https://example.com/mock_presenter.jpg"], "url": "https://example.com/mock_presenter.jpg"}
+    )
+    for gender in ("female", "male"):
+        res = client.post("/api/campaign/generate-avatar-reel", json={
+            "tenant_id": 1,
+            "avatar_gender": gender,
+            "business_name": "Lakshmi Silks",
+            "business_type": "festive silk sarees",
+            "script": "Welcome to Lakshmi Silks!",
+            "language": "en"
+        })
+        assert res.status_code == 200, res.text
+        data = res.json()
+        assert data["status"] == "success"
+        assert data["gender"] == gender
+        assert data["avatar_url"] == "https://example.com/mock_presenter.jpg"
+
+
+def test_save_video_to_library_endpoint():
+    res = client.post("/api/assets/save-to-library", json={
+        "tenant_id": 1,
+        "image_url": "https://example.com/sample_reel.mp4",
+        "file_type": "video"
+    })
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["file_type"] == "video"
