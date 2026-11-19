@@ -1495,7 +1495,55 @@ def generate_avatar_reel(payload: AvatarReelRequest, db: Session = Depends(get_d
     ))
     audio_url = vo_res.get("audio_url", "")
 
-    # Step 3: Lip-sync to real MP4 via fal.ai SadTalker if FAL_API_KEY is configured
+    # Step 3A: Lip-sync to real MP4 via Modal.com Serverless GPU (Preferred - ~$0.003/video, $30/mo free tier)
+    modal_url = (os.environ.get("MODAL_LIPSYNC_URL") or "").strip()
+    if modal_url and audio_url:
+        try:
+            import base64, uuid, requests as req_lib
+            # Read presenter image bytes
+            img_bytes = None
+            if avatar_url.startswith("/api/assets/temp/") or avatar_url.startswith("/api/assets/raw/"):
+                fname = os.path.basename(avatar_url)
+                local_img = os.path.join(TEMP_ASSETS_DIR if "/temp/" in avatar_url else ASSETS_DIR, fname)
+                if os.path.exists(local_img):
+                    with open(local_img, "rb") as f_img:
+                        img_bytes = f_img.read()
+            elif avatar_url.startswith("http://") or avatar_url.startswith("https://"):
+                r_img = req_lib.get(avatar_url, timeout=20)
+                if r_img.status_code == 200:
+                    img_bytes = r_img.content
+            elif avatar_url.startswith("data:image"):
+                img_bytes = base64.b64decode(avatar_url.split(",", 1)[1])
+
+            audio_b64 = audio_url.split(",", 1)[1] if audio_url.startswith("data:audio") else ""
+            if img_bytes and audio_b64:
+                m_res = req_lib.post(
+                    modal_url,
+                    json={
+                        "image_base64": base64.b64encode(img_bytes).decode("utf-8"),
+                        "audio_base64": audio_b64,
+                    },
+                    timeout=180,
+                )
+                if m_res.status_code == 200:
+                    m_data = m_res.json()
+                    if m_data.get("status") == "success" and m_data.get("video_base64"):
+                        vid_fname = f"avatar_reel_{uuid.uuid4().hex[:8]}.mp4"
+                        vid_path = os.path.join(TEMP_ASSETS_DIR, vid_fname)
+                        with open(vid_path, "wb") as vf:
+                            vf.write(base64.b64decode(m_data["video_base64"]))
+                        return {
+                            "status": "success",
+                            "mode": "lip_sync_mp4",
+                            "video_url": f"/api/assets/temp/{vid_fname}",
+                            "avatar_url": avatar_url,
+                            "audio_url": audio_url,
+                            "gender": gender,
+                        }
+        except Exception as e:
+            print(f"Modal.com lip-sync error (falling back): {e}")
+
+    # Step 3B: Lip-sync to real MP4 via fal.ai SadTalker if FAL_API_KEY is configured
     fal_key = (os.environ.get("FAL_API_KEY") or "").strip()
     if fal_key and "SUPERADMIN_PASSWORD" not in fal_key and audio_url:
         try:
