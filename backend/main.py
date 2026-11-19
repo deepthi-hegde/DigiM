@@ -1460,7 +1460,7 @@ def generate_avatar_reel(payload: AvatarReelRequest):
             f"standing inside a softly blurred upscale {payload.business_name} ({payload.business_type}) store background, "
             f"soft golden commercial key lighting, crisp 4k DSLR video frame look, centered head and shoulders for talking-head video."
         )
-        img_res = generate_image(ImageGenerateRequest(prompt=avatar_prompt, num_images=1, format_type="story"))
+        img_res = generate_ai_image(ImageGenRequest(prompt=avatar_prompt, num_images=1, format_type="story"))
         urls = img_res.get("urls") or ([img_res.get("url")] if img_res.get("url") else [])
         if not urls:
             raise HTTPException(status_code=500, detail="Failed to generate presenter avatar portrait")

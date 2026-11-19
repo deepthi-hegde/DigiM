@@ -732,6 +732,7 @@ export function PostComposer({
   const [avatarScript, setAvatarScript] = useState<string>("");
   const [isSavingReelToLibrary, setIsSavingReelToLibrary] = useState<boolean>(false);
   const [savedReelToLibrary, setSavedReelToLibrary] = useState<boolean>(false);
+  const [aiReelError, setAiReelError] = useState<string>("");
 
   const handleOpenAiReelModal = () => {
     const defaultPrompt = `Cinematic 9:16 vertical commercial showcase for ${shopData.name || "Lakshmi Textiles"}, luxury ${shopData.sells || "festive pure silk sarees and bridal collection"}, elegant boutique display with warm golden spotlight, intricate zari embroidery detail, 4k commercial photography`;
@@ -743,6 +744,7 @@ export function PostComposer({
 
   const handleGenerateAvatarReel = async () => {
     setIsGeneratingReel(true);
+    setAiReelError("");
     setSavedReelToLibrary(false);
     showToast(`Generating ${avatarGender === "female" ? "Female" : "Male"} Talking Avatar Reel... ⏳`);
     try {
@@ -794,9 +796,13 @@ export function PostComposer({
           );
           return;
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setAiReelError(errData.detail || `Server returned ${res.status}. Please try again.`);
       }
     } catch (err) {
       console.warn("Avatar Reel generation error:", err);
+      setAiReelError("Network error while generating Talking Avatar. Please try again.");
     }
     setIsGeneratingReel(false);
     showToast("Avatar Reel generation failed. Please try again.");
@@ -6805,6 +6811,46 @@ export function PostComposer({
             </div>
 
             </>
+            )}
+
+            {/* Inline Progress / Error Feedback */}
+            {isGeneratingReel && (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: "rgba(47, 107, 47, 0.14)",
+                  border: "1px solid rgba(47, 107, 47, 0.4)",
+                  color: "var(--ink, #e6eee4)",
+                  fontSize: "12.5px",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+              >
+                <span>⏳</span>
+                <span>
+                  {aiReelGenMode === "avatar"
+                    ? "Generating business presenter portrait & synthesizing voiceover (takes ~8–15s)..."
+                    : "Generating AI Reel scenes with Google Gemini (takes ~8–12s)..."}
+                </span>
+              </div>
+            )}
+            {aiReelError && !isGeneratingReel && (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: "rgba(180, 35, 24, 0.14)",
+                  border: "1px solid rgba(180, 35, 24, 0.45)",
+                  color: "#ffb4ab",
+                  fontSize: "12.5px",
+                  fontWeight: 600
+                }}
+              >
+                ⚠️ {aiReelError}
+              </div>
             )}
 
             {/* Action Buttons */}
